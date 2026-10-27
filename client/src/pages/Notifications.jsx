@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
+import { useLang } from '../i18n/LanguageContext.jsx';
 
 export function Notifications() {
+  const { t } = useLang();
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState('');
@@ -33,16 +35,16 @@ export function Notifications() {
 
   return (
     <section>
-      <h1>Notifications {unread > 0 && <span className="badge">{unread} unread</span>}</h1>
-      {unread > 0 && <button className="secondary" onClick={readAll}>Mark all read</button>}
+      <h1>{t('notifications')} {unread > 0 && <span className="badge">{unread} {t('unread')}</span>}</h1>
+      {unread > 0 && <button className="secondary" onClick={readAll}>{t('markAllRead')}</button>}
       {error && <div className="error">{error}</div>}
-      {items.length === 0 && <p className="muted">No notifications yet.</p>}
+      {items.length === 0 && <p className="muted">{t('noNotifications')}</p>}
       {items.map((n) => (
         <div className="card" key={n.id} style={{ opacity: n.read ? 0.65 : 1 }}>
           <div className="row">
             <strong>{n.title}</strong>
             <span className="muted">{new Date(n.createdAt).toLocaleString()}</span>
-            {!n.read && <button className="secondary" onClick={() => markRead(n.id)}>Mark read</button>}
+            {!n.read && <button className="secondary" onClick={() => markRead(n.id)}>{t('markRead')}</button>}
           </div>
           <p>{n.body}</p>
         </div>

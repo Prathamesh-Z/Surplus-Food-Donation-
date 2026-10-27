@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
+import { useLang } from '../i18n/LanguageContext.jsx';
 import { api } from '../lib/api.js';
 
 // Pickup by QR: the claimer shows a QR of their pickup code; the provider
@@ -7,18 +8,35 @@ import { api } from '../lib/api.js';
 // falls back to typing the 8-character code. The code — and the whole
 // verification design behind it — is unchanged.
 export function PickupCodeDisplay({ code }) {
-  const canvasRef = useRef(null);
+  const { t } = useLang();
+  const [qrUrl, setQrUrl] = useState('');
   useEffect(() => {
-    if (canvasRef.current && code) {
-      QRCode.toCanvas(canvasRef.current, code, { width: 168, margin: 1 }).catch(() => {});
+    let live = true;
+    if (code) {
+      QRCode.toDataURL(code, { width: 200, margin: 1 })
+        .then((url) => {
+          if (live) setQrUrl(url);
+        })
+        .catch(() => {});
     }
+    return () => {
+      live = false;
+    };
   }, [code]);
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
       <span>
-        Pickup code: <span className="code">{code}</span>
+        {t('pickupCode')}: <span className="code">{code}</span>
       </span>
-      <canvas ref={canvasRef} style={{ borderRadius: 8, background: '#fff' }} />
+      {qrUrl && (
+        <img
+          src={qrUrl}
+          alt={`QR — ${code}`}
+          width={132}
+          height={132}
+          style={{ borderRadius: 8, background: '#fff', border: '1px solid #d9e8d2' }}
+        />
+      )}
     </span>
   );
 }

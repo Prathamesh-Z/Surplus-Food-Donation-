@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { VerifyPickup } from '../components/Pickup.jsx';
+import { useLang } from '../i18n/LanguageContext.jsx';
 
 export function timeRemaining(deadline) {
   const ms = new Date(deadline).getTime() - Date.now();
@@ -12,6 +13,7 @@ export function timeRemaining(deadline) {
 }
 
 export function MyListings() {
+  const { t } = useLang();
   const [listings, setListings] = useState([]);
   const [error, setError] = useState('');
   const [claims, setClaims] = useState({});
@@ -53,22 +55,22 @@ export function MyListings() {
 
   return (
     <section>
-      <h1>My listings</h1>
-      <p><Link className="btn" to="/listings/new">+ Post surplus food</Link></p>
+      <h1>{t('myListings')}</h1>
+      <p><Link className="btn" to="/listings/new">{t('postFoodCta')}</Link></p>
       {error && <div className="error">{error}</div>}
-      {listings.length === 0 && <p className="muted">No listings yet.</p>}
+      {listings.length === 0 && <p className="muted">{t('noListingsYet')}</p>}
       {listings.map((l) => (
         <div className="card" key={l.id}>
           <div className="row">
             <strong>{l.foodName}</strong>
             <span className="badge">{l.status}</span>
-            <span className="muted">{l.portionsRemaining}/{l.totalPortions} portions remaining</span>
+            <span className="muted">{l.portionsRemaining}/{l.totalPortions} {t('portions')} {t('remaining')}</span>
             <span className="muted">{timeRemaining(l.collectionDeadline)}</span>
           </div>
           <p className="muted">📍 {l.pickupLocationText}</p>
           {(claims[l.id] ?? []).length > 0 && (
             <div>
-              <strong>Claims on this listing</strong>
+              <strong>{t('claimsOnListing')}</strong>
               {(claims[l.id] ?? []).map((c) => (
                 <div className="row" key={c.id} style={{ marginTop: 6 }}>
                   <span>{c.claimerName} — {c.portionsClaimed} portions — {c.status}</span>
@@ -78,7 +80,7 @@ export function MyListings() {
             </div>
           )}
           {['LIVE', 'PARTIALLY_CLAIMED', 'FULLY_CLAIMED', 'DRAFT'].includes(l.status) && (
-            <button className="danger" onClick={() => cancel(l.id)}>Cancel listing</button>
+            <button className="danger" onClick={() => cancel(l.id)}>{t('cancelListing')}</button>
           )}
         </div>
       ))}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getAccessToken } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
+import { useLang } from '../i18n/LanguageContext.jsx';
 
 function toLocalInput(d) {
   const pad = (n) => String(n).padStart(2, '0');
@@ -9,6 +10,7 @@ function toLocalInput(d) {
 }
 
 export function CreateListing() {
+  const { t } = useLang();
   const navigate = useNavigate();
   const now = new Date();
   const [form, setForm] = useState({
@@ -61,13 +63,13 @@ export function CreateListing() {
 
   return (
     <section>
-      <h1>Post surplus food</h1>
+      <h1>{t('createListingTitle')}</h1>
       {error && <div className="error">{error}</div>}
       <form onSubmit={submit}>
-        <label>Food name<input value={form.foodName} onChange={set('foodName')} required /></label>
-        <label>Details<textarea value={form.foodDetails} onChange={set('foodDetails')} required /></label>
+        <label>{t('foodName')}<input value={form.foodName} onChange={set('foodName')} required /></label>
+        <label>{t('details')}<textarea value={form.foodDetails} onChange={set('foodDetails')} required /></label>
         <label>
-          Category
+          {t('category')}
           <select value={form.category} onChange={set('category')}>
             <option value="COOKED_MEALS">Cooked meals</option>
             <option value="RAW_PRODUCE">Raw produce</option>
@@ -79,7 +81,7 @@ export function CreateListing() {
           </select>
         </label>
         <label>
-          Dietary type
+          {t('dietaryType')}
           <select value={form.dietaryType} onChange={set('dietaryType')}>
             <option value="VEG">Veg</option>
             <option value="NON_VEG">Non-veg</option>
@@ -87,7 +89,7 @@ export function CreateListing() {
           </select>
         </label>
         <label>
-          Portion type
+          {t('portionType')}
           <select value={form.portionType} onChange={set('portionType')}>
             <option value="INDIVIDUAL_MEALS">Individual meals</option>
             <option value="BULK_SERVINGS">Bulk servings</option>
@@ -96,17 +98,17 @@ export function CreateListing() {
             <option value="PACKETS">Packets</option>
           </select>
         </label>
-        <label>Total portions<input type="number" min="1" value={form.totalPortions} onChange={set('totalPortions')} required /></label>
+        <label>{t('totalPortions')}<input type="number" min="1" value={form.totalPortions} onChange={set('totalPortions')} required /></label>
         <label>
           <input type="checkbox" checked={form.ngoSuitable} onChange={set('ngoSuitable')} style={{ width: 'auto' }} />{' '}
-          Suitable for NGO bulk collection &amp; onward distribution
+          {t('ngoSuitableLabel')}
         </label>
-        <label>Pickup location (text)<input value={form.pickupLocationText} onChange={set('pickupLocationText')} required /></label>
-        <label>Cooked / prepared at<input type="datetime-local" value={form.cookedAt} onChange={set('cookedAt')} required /></label>
-        <label>Collection deadline<input type="datetime-local" value={form.collectionDeadline} onChange={set('collectionDeadline')} required /></label>
+        <label>{t('pickupLocation')} (text)<input value={form.pickupLocationText} onChange={set('pickupLocationText')} required /></label>
+        <label>{t('cookedAt')}<input type="datetime-local" value={form.cookedAt} onChange={set('cookedAt')} required /></label>
+        <label>{t('deadline')}<input type="datetime-local" value={form.collectionDeadline} onChange={set('collectionDeadline')} required /></label>
 
         <fieldset>
-          <legend><strong>Food-safety checklist — all 8 must be confirmed to publish</strong></legend>
+          <legend><strong>{t('checklistTitle')}</strong></legend>
           {CHECKLIST.map(([id, text]) => (
             <label key={id} style={{ display: 'block', fontWeight: 400 }}>
               <input
@@ -121,7 +123,7 @@ export function CreateListing() {
             </label>
           ))}
         </fieldset>
-        <button type="submit">Publish listing</button>
+        <button type="submit">{t('publish')}</button>
       </form>
     </section>
   );

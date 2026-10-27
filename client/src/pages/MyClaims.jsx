@@ -47,17 +47,17 @@ export function MyClaims() {
     <section>
       <h1>{t('myClaims')}</h1>
       {error && <div className="error">{error}</div>}
-      {claims.length === 0 && <p className="muted">No claims yet — browse available food to make your first claim.</p>}
+      {claims.length === 0 && <p className="muted">{t('noClaimsYet')}</p>}
       {claims.map((c) => (
         <div className="card" key={c.id}>
           <div className="row">
             <strong>{c.listing.foodName}</strong>
             <span className="badge">{c.status}</span>
-            <span className="muted">{c.portionsClaimed} portions</span>
+            <span className="muted">{c.portionsClaimed} {t('portions')}</span>
             <span className="muted">⏰ {timeRemaining(c.listing.collectionDeadline)}</span>
           </div>
           <p className="muted">
-            📍 {c.listing.pickupLocationText} · Provider: {c.listing.providerName}
+            📍 {c.listing.pickupLocationText} · {t('provider')}: {c.listing.providerName}
             <br />Deadline: {new Date(c.listing.collectionDeadline).toLocaleString()}
           </p>
           {c.status === 'CONFIRMED' && (
