@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: fws-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fws
+      POSTGRES_PASSWORD: fws_dev_password
+      POSTGRES_DB: food_waste_saver
+    ports:
+      - "5432:5432"
+    volumes:
+      - fws-pgdata:/var/lib/postgresql/data
+
+volumes:
+  fws-pgdata:

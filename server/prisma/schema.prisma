@@ -1,0 +1,283 @@
+// Food Waste Saver (HA040) — Prisma schema
+// Implements PRD v3.1, Section 7 (Data model).
+// PostgreSQL is required: claim safety relies on row locks and transactions.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────
+
+enum Role {
+  PROVIDER
+  CLAIMER
+  NGO
+  ADMIN
+}
+
+enum LanguagePref {
+  EN
+  MR
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED
+}
+
+enum Category {
+  COOKED_MEALS
+  RAW_PRODUCE
+  BAKERY
+  DAIRY
+  PACKAGED_FOOD
+  BEVERAGES
+  OTHER
+}
+
+enum DietaryType {
+  VEG
+  NON_VEG
+  VEGAN
+}
+
+enum PortionType {
+  INDIVIDUAL_MEALS
+  BULK_SERVINGS
+  KILOGRAMS
+  LITRES
+  PACKETS
+}
+
+enum ListingStatus {
+  DRAFT
+  LIVE
+  PARTIALLY_CLAIMED
+  FULLY_CLAIMED
+  EXPIRED
+  CANCELLED
+  REMOVED_BY_ADMIN
+}
+
+enum ClaimStatus {
+  CONFIRMED
+  COLLECTED
+  CANCELLED_ON_TIME
+  CANCELLED_LATE
+  EXPIRED
+  CANCELLED_BY_PROVIDER
+  CANCELLED_BY_ADMIN
+}
+
+enum DestinationType {
+  SHELTER
+  COMMUNITY_KITCHEN
+  OLD_AGE_HOME
+  SCHOOL
+  INDIVIDUALS
+  OTHER
+}
+
+enum NotificationType {
+  NEW_LISTING
+  CLAIM_PLACED
+  CLAIM_CANCELLED
+  LISTING_CANCELLED
+  NEAR_DEADLINE_PROVIDER
+  NEAR_DEADLINE_CLAIMERS
+  CLAIM_COLLECTED
+  CLAIM_EXPIRED
+  RECURRING_OCCURRENCE
+  ADMIN_ALERT
+}
+
+enum AuditAction {
+  VERIFY_NGO
+  UNVERIFY_NGO
+  SUSPEND_USER
+  UNSUSPEND_USER
+  REMOVE_LISTING
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────
+
+model User {
+  id               String       @id @default(uuid())
+  name             String
+  email            String       @unique
+  mobile           String       @unique
+  passwordHash     String
+  role             Role
+  languagePref     LanguagePref @default(EN)
+  suspended        Boolean      @default(false)
+  suspensionReason String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  ngoProfile         NgoProfile?
+  sessions           Session[]
+  listings           Listing[]           @relation("ProviderListings")
+  claims             Claim[]             @relation("ClaimerClaims")
+  recurringSchedules RecurringSchedule[]
+  redistributionLogs RedistributionLog[] @relation("NgoRedistributions")
+  notifications      Notification[]
+  auditLogs          AuditLog[]          @relation("AdminAuditLogs")
+}
+
+model NgoProfile {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisationName   String
+  registrationDetail String
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  verifiedById       String?
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  expiresAt        DateTime
+  revoked          Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Listing {
+  id                      String        @id @default(uuid())
+  providerId              String
+  provider                User          @relation("ProviderListings", fields: [providerId], references: [id])
+  foodName                String
+  foodDetails             String
+  category                Category
+  dietaryType             DietaryType
+  portionType             PortionType
+  totalPortions           Int
+  portionsRemaining       Int
+  ngoSuitable             Boolean       @default(false)
+  photoPath               String?
+  pickupLocationText      String
+  cookedAt                DateTime
+  collectionDeadline      DateTime
+  checklistConfirmedItems Json          @default("[]")
+  checklistConfirmedAt    DateTime?
+  status                  ListingStatus @default(DRAFT)
+  cancelReason            String?
+  // FR-14: at most one near-deadline notification per listing per threshold.
+  nearDeadlineProviderNotifiedAt  DateTime?
+  nearDeadlineClaimersNotifiedAt  DateTime?
+  recurringScheduleId     String?
+  recurringSchedule       RecurringSchedule? @relation(fields: [recurringScheduleId], references: [id], onDelete: SetNull)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  claims Claim[]
+
+  @@index([status, collectionDeadline])
+  @@index([providerId])
+}
+
+model Claim {
+  id                  String      @id @default(uuid())
+  listingId           String
+  listing             Listing     @relation(fields: [listingId], references: [id])
+  claimerId           String
+  claimer             User        @relation("ClaimerClaims", fields: [claimerId], references: [id])
+  portionsClaimed     Int
+  status              ClaimStatus @default(CONFIRMED)
+  // Pickup code storage (PRD FR-11): no plaintext code in any column.
+  pickupCodeHash      String?
+  pickupCodeSalt      String?
+  pickupCodeEncrypted String?
+  pickupCodeIv        String?
+  pickupCodeAuthTag   String?
+  // HMAC-SHA-256(code, server pepper); unique among ACTIVE claims only,
+  // because it is cleared (null) at every terminal state. Postgres unique
+  // indexes allow multiple NULLs, which is exactly the semantics FR-11 needs.
+  pickupCodeHmac      String?     @unique
+  verifyFailCount     Int         @default(0)
+  verifyLockedUntil   DateTime?
+  collectedAt         DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  redistributionLogs RedistributionLog[]
+
+  @@index([listingId])
+  @@index([claimerId])
+}
+
+model RecurringSchedule {
+  id                   String   @id @default(uuid())
+  providerId           String
+  provider             User     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  templateFields       Json
+  daysOfWeek           Int[]
+  generationTimeLocal  String // "HH:MM", Asia/Kolkata
+  deadlineOffsetMinutes Int     @default(180)
+  active               Boolean  @default(true)
+  lastGeneratedOn      String? // "YYYY-MM-DD" in Asia/Kolkata, prevents duplicate occurrences
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  listings Listing[]
+}
+
+model RedistributionLog {
+  id              String          @id @default(uuid())
+  claimId         String
+  claim           Claim           @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  ngoId           String
+  ngo             User            @relation("NgoRedistributions", fields: [ngoId], references: [id])
+  destinationName String
+  destinationType DestinationType
+  portions        Int
+  redistributedAt DateTime
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([claimId])
+  @@index([ngoId])
+}
+
+model Notification {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            NotificationType
+  title           String
+  body            String
+  relatedListingId String?
+  relatedClaimId   String?
+  read            Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  adminId    String
+  admin      User        @relation("AdminAuditLogs", fields: [adminId], references: [id])
+  action     AuditAction
+  targetType String
+  targetId   String
+  reason     String?
+  createdAt  DateTime    @default(now())
+
+  @@index([action])
+  @@index([adminId])
+}

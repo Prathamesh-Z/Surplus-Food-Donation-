@@ -1,0 +1,304 @@
+import { Router } from 'express';
+import multer from 'multer';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { prisma } from '../lib/prisma.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import {
+  createListingSchema,
+  editListingSchema,
+  cancelListingSchema,
+} from '../validators/listings.js';
+import { CHECKLIST_IDS, allChecklistConfirmed } from '../lib/checklist.js';
+import {
+  claimedPortions,
+  clearedCodeFields,
+  listingView,
+  refreshListingStatus,
+} from '../services/listingService.js';
+import { createNotification, notifyAllClaimersAndNgos } from '../services/notificationService.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.join(__dirname, '../../uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: uploadsDir,
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // PRD FR-04: max 5 MB
+  fileFilter: (req, file, cb) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+      const err = new Error('Photo must be JPEG, PNG or WebP');
+      err.status = 422;
+      return cb(err);
+    }
+    return cb(null, true);
+  },
+});
+
+export const listingsRouter = Router();
+
+// ── Create (FR-04 + FR-05 gate) ────────────────────────────────────────────
+listingsRouter.post('/', requireAuth, requireRole('PROVIDER'), async (req, res, next) => {
+  try {
+    const data = createListingSchema.parse(req.body);
+    const confirmedItems = CHECKLIST_IDS.filter((id) => (data.checklistItems ?? []).includes(id));
+    const isLive = allChecklistConfirmed(confirmedItems);
+    const listing = await prisma.listing.create({
+      data: {
+        providerId: req.user.id,
+        foodName: data.foodName,
+        foodDetails: data.foodDetails,
+        category: data.category,
+        dietaryType: data.dietaryType,
+        portionType: data.portionType,
+        totalPortions: data.totalPortions,
+        portionsRemaining: data.totalPortions,
+        ngoSuitable: data.ngoSuitable ?? false,
+        pickupLocationText: data.pickupLocationText,
+        cookedAt: new Date(data.cookedAt),
+        collectionDeadline: new Date(data.collectionDeadline),
+        checklistConfirmedItems: confirmedItems,
+        checklistConfirmedAt: isLive ? new Date() : null,
+        status: isLive ? 'LIVE' : 'DRAFT',
+        recurringScheduleId: data.recurringScheduleId ?? null,
+      },
+    });
+    if (isLive) {
+      await notifyAllClaimersAndNgos({
+        type: 'NEW_LISTING',
+        title: `New food available: ${listing.foodName}`,
+        body: `${listing.totalPortions} portions — collect by ${listing.collectionDeadline.toISOString()}`,
+        relatedListingId: listing.id,
+      });
+    }
+    return res.status(201).json({ listing: listingView(listing) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// ── Publish a draft (FR-05) ────────────────────────────────────────────────
+listingsRouter.post('/:id/publish', requireAuth, requireRole('PROVIDER'), async (req, res, next) => {
+  try {
+    const listing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+    if (!listing || listing.providerId !== req.user.id) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+    if (listing.status !== 'DRAFT') {
+      return res.status(409).json({ error: `Listing is ${listing.status}, not DRAFT` });
+    }
+    const items = Array.isArray(req.body?.checklistItems)
+      ? CHECKLIST_IDS.filter((id) => req.body.checklistItems.includes(id))
+      : listing.checklistConfirmedItems;
+    if (!allChecklistConfirmed(items)) {
+      const missing = CHECKLIST_IDS.filter((id) => !items.includes(id));
+      return res.status(422).json({
+        error: 'Food-safety checklist incomplete — all 8 items must be confirmed to publish',
+        missing,
+      });
+    }
+    const updated = await prisma.listing.update({
+      where: { id: listing.id },
+      data: {
+        checklistConfirmedItems: items,
+        checklistConfirmedAt: new Date(),
+        status: 'LIVE',
+      },
+    });
+    await notifyAllClaimersAndNgos({
+      type: 'NEW_LISTING',
+      title: `New food available: ${updated.foodName}`,
+      body: `${updated.totalPortions} portions — collect by ${updated.collectionDeadline.toISOString()}`,
+      relatedListingId: updated.id,
+    });
+    return res.json({ listing: listingView(updated) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// ── Photo upload (FR-04/FR-10 of v2 numbering; FR-04 here) ─────────────────
+listingsRouter.post(
+  '/:id/photo',
+  requireAuth,
+  requireRole('PROVIDER'),
+  upload.single('photo'),
+  async (req, res, next) => {
+    try {
+      const listing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+      if (!listing || listing.providerId !== req.user.id) {
+        return res.status(404).json({ error: 'Listing not found' });
+      }
+      if (!req.file) return res.status(422).json({ error: 'No photo file provided' });
+      const photoPath = `/uploads/${req.file.filename}`;
+      const updated = await prisma.listing.update({
+        where: { id: listing.id },
+        data: { photoPath },
+      });
+      return res.json({ listing: listingView(updated), photoPath });
+    } catch (err) {
+      return next(err);
+    }
+  }
+);
+
+// ── Provider's own listings (all statuses) ─────────────────────────────────
+listingsRouter.get('/mine', requireAuth, requireRole('PROVIDER'), async (req, res) => {
+  const listings = await prisma.listing.findMany({
+    where: { providerId: req.user.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  return res.json({ listings: listings.map(listingView) });
+});
+
+// ── Browse / search / filters (FR-07, FR-08) ───────────────────────────────
+// Ordering rule (PRD FR-07, final): collection deadline ascending,
+// ties break by created-at descending. Pickup location is TEXT only —
+// no coordinates, no distances, no nearest-first sorting anywhere.
+listingsRouter.get('/', requireAuth, async (req, res) => {
+  const {
+    q,
+    category,
+    dietaryType,
+    portionType,
+    ngoSuitable,
+    endingSoon,
+    availableOnly,
+  } = req.query;
+  const showAvailableOnly = availableOnly !== 'false';
+  const statuses = showAvailableOnly
+    ? ['LIVE', 'PARTIALLY_CLAIMED']
+    : ['LIVE', 'PARTIALLY_CLAIMED', 'FULLY_CLAIMED'];
+  const where = { status: { in: statuses } };
+  if (category) where.category = { in: String(category).split(',').filter(Boolean) };
+  if (dietaryType) where.dietaryType = String(dietaryType);
+  if (portionType) where.portionType = String(portionType);
+  if (ngoSuitable === 'true') where.ngoSuitable = true;
+  if (endingSoon === 'true') {
+    where.collectionDeadline = {
+      gt: new Date(),
+      lte: new Date(Date.now() + 60 * 60 * 1000),
+    };
+  }
+  if (q) {
+    where.OR = [
+      { foodName: { contains: String(q), mode: 'insensitive' } },
+      { foodDetails: { contains: String(q), mode: 'insensitive' } },
+    ];
+  }
+  const listings = await prisma.listing.findMany({
+    where,
+    include: { provider: { select: { name: true } } },
+    orderBy: [{ collectionDeadline: 'asc' }, { createdAt: 'desc' }],
+  });
+  const now = Date.now();
+  return res.json({
+    listings: listings.map((l) => ({
+      ...listingView(l),
+      timeRemainingMinutes: Math.max(
+        0,
+        Math.round((new Date(l.collectionDeadline).getTime() - now) / 60000)
+      ),
+    })),
+  });
+});
+
+// ── Single listing ─────────────────────────────────────────────────────────
+listingsRouter.get('/:id', requireAuth, async (req, res) => {
+  const listing = await prisma.listing.findUnique({
+    where: { id: req.params.id },
+    include: { provider: { select: { name: true } } },
+  });
+  if (!listing) return res.status(404).json({ error: 'Listing not found' });
+  return res.json({ listing: listingView(listing) });
+});
+
+// ── Edit (FR-06) ───────────────────────────────────────────────────────────
+listingsRouter.patch('/:id', requireAuth, requireRole('PROVIDER'), async (req, res, next) => {
+  try {
+    const data = editListingSchema.parse(req.body);
+    const listing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+    if (!listing || listing.providerId !== req.user.id) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+    if (['EXPIRED', 'CANCELLED', 'REMOVED_BY_ADMIN'].includes(listing.status)) {
+      return res.status(409).json({ error: `Cannot edit a ${listing.status} listing` });
+    }
+    if (data.collectionDeadline && new Date(data.collectionDeadline) <= new Date()) {
+      return res.status(422).json({ error: 'collectionDeadline cannot be in the past' });
+    }
+    const update = { ...data };
+    delete update.checklistItems;
+    if (data.checklistItems) {
+      update.checklistConfirmedItems = CHECKLIST_IDS.filter((id) =>
+        data.checklistItems.includes(id)
+      );
+    }
+    if (data.cookedAt) update.cookedAt = new Date(data.cookedAt);
+    if (data.collectionDeadline) update.collectionDeadline = new Date(data.collectionDeadline);
+    if (data.totalPortions !== undefined) {
+      const claimed = await claimedPortions(listing.id);
+      if (data.totalPortions < claimed) {
+        return res.status(409).json({
+          error: `Total portions (${data.totalPortions}) cannot be below already-claimed portions (${claimed})`,
+        });
+      }
+      update.portionsRemaining = data.totalPortions - claimed;
+    }
+    const updated = await prisma.listing.update({ where: { id: listing.id }, data: update });
+    const refreshed = await refreshListingStatus(updated.id);
+    return res.json({ listing: listingView(refreshed ?? updated) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// ── Cancel listing (FR-06) ─────────────────────────────────────────────────
+listingsRouter.post('/:id/cancel', requireAuth, requireRole('PROVIDER'), async (req, res, next) => {
+  try {
+    const { reason } = cancelListingSchema.parse(req.body);
+    const listing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+    if (!listing || listing.providerId !== req.user.id) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+    if (['CANCELLED', 'EXPIRED', 'REMOVED_BY_ADMIN'].includes(listing.status)) {
+      return res.status(409).json({ error: `Listing is already ${listing.status}` });
+    }
+    const openClaims = await prisma.claim.findMany({
+      where: { listingId: listing.id, status: 'CONFIRMED' },
+    });
+    const updated = await prisma.$transaction(async (tx) => {
+      for (const claim of openClaims) {
+        await tx.claim.update({
+          where: { id: claim.id },
+          data: { status: 'CANCELLED_BY_PROVIDER', ...clearedCodeFields() },
+        });
+        await createNotification(
+          {
+            userId: claim.claimerId,
+            type: 'LISTING_CANCELLED',
+            title: 'A listing you claimed was cancelled',
+            body: `"${listing.foodName}" was cancelled by the provider: ${reason}`,
+            relatedListingId: listing.id,
+            relatedClaimId: claim.id,
+          },
+          tx
+        );
+      }
+      return tx.listing.update({
+        where: { id: listing.id },
+        data: { status: 'CANCELLED', cancelReason: reason },
+      });
+    });
+    return res.json({ listing: listingView(updated), cancelledClaims: openClaims.length });
+  } catch (err) {
+    return next(err);
+  }
+});
