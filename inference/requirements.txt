@@ -1,0 +1,11 @@
+# Food Waste Saver — Indian food recognition inference service (PRD v3.3).
+# CPU-only PyTorch keeps the install as small as practical (~800 MB total).
+# Install torch from the CPU wheel index first (see setup script / README):
+#   pip install --index-url https://download.pytorch.org/whl/cpu torch
+torch
+transformers>=4.41
+fastapi>=0.111
+uvicorn[standard]>=0.30
+Pillow>=10.3
+psutil>=5.9
+python-multipart>=0.0.9

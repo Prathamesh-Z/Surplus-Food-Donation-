@@ -15,3 +15,5 @@ process.env.PICKUP_CODE_PEPPER = process.env.PICKUP_CODE_PEPPER || 'test-pepper-
 process.env.PICKUP_CODE_ENC_KEY =
   process.env.PICKUP_CODE_ENC_KEY ||
   '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+// Recognition tests run a stub inference service on this port (never a real model).
+process.env.INFERENCE_URL = process.env.INFERENCE_URL || 'http://127.0.0.1:18099';

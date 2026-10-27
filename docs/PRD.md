@@ -413,3 +413,35 @@ named v3.1 decisions where they conflict. Everything else in v3.1 stands.
 7. **12-hour split date/time entry** for cooked-at and deadline on the
    create form (separate date field + hour/minute/AM-PM). Validation rules
    are unchanged.
+
+---
+
+## Amendment v3.3 (2026-10-27, team-directed) — Indian food recognition replacement
+
+Supersedes the v3.2 §1 on-device detector where they conflict.
+
+1. **Recognition moves to a local Python inference service** (`inference/`,
+   FastAPI, CPU) called by a new Express route `POST /api/listings/recognize`
+   (PROVIDER-only; 5 MB cap; JPEG/PNG/WebP verified by magic bytes; the image
+   is held in memory and never stored). The TensorFlow.js/MobileNet on-device
+   detector is removed — root cause of inaccuracy: generic ImageNet has
+   almost no Indian dishes, so most Indian food could never be predicted.
+2. **Models** (both Apache-2.0, weights cached locally, loaded once):
+   primary `dima806/indian_food_image_detection` (80 Indian dishes);
+   specialist `therealcyberlord/vit-indian-food` (15 dishes incl. dosa, pav
+   bhaji, vada pav, dhokla, chole bhature — absent from the primary).
+   **FoodLens (Google Research) is a citation only**: no public weights,
+   inference code or hosted API exist.
+3. **Scores are never blended across models.** The specialist runs only when
+   the primary top score < 0.60 and is returned in its own field. Below the
+   calibrated uncertainty threshold (0.35, see `docs/RECOGNITION_EVAL.md`)
+   the API flags `uncertain` and the UI asks for a clearer photo.
+4. **Descriptions** come from a curated server-side map
+   (`server/src/data/dishInfo.js`, ~92 labels incl. a category suggestion);
+   they are reference content keyed by label, not facts read from the image.
+   A label without an entry returns a fallback line, never invented detail.
+5. **No fake fallback**: if the service or model is unavailable the route
+   returns an explicit 503 and the UI offers retry/manual entry.
+6. **Known coverage gaps, stated honestly**: idli, samosa, upma and misal pav
+   are in neither model. `Amrrs/indian-foods` (5 classes incl. idli/samosa)
+   was evaluated and deferred by team decision on 2026-10-27.

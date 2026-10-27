@@ -12,7 +12,8 @@
     "dev": "npm run dev --workspace=server",
     "dev:client": "npm run dev --workspace=client",
     "test": "npm run test --workspace=server",
-    "fetch-model": "node scripts/fetch-model.js"
+    "inference:setup": "python -m venv inference/.venv && inference/.venv/Scripts/pip install torch --index-url https://download.pytorch.org/whl/cpu && inference/.venv/Scripts/pip install -r inference/requirements.txt && inference/.venv/Scripts/python inference/download_models.py",
+    "inference:start": "inference/.venv/Scripts/python -m uvicorn app:app --app-dir inference --host 127.0.0.1 --port 8001"
   },
   "version": "0.1.0",
   "workspaces": [

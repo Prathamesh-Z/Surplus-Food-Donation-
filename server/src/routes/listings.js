@@ -18,6 +18,12 @@ import {
   refreshListingStatus,
 } from '../services/listingService.js';
 import { createNotification, notifyAllClaimersAndNgos } from '../services/notificationService.js';
+import { recognizeFood } from '../services/recognitionService.js';
+
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // same 5 MB cap as listing photos
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -43,6 +49,29 @@ const upload = multer({
 });
 
 export const listingsRouter = Router();
+
+// ── AI food recognition (PRD v3.3) ─────────────────────────────────────────
+// Provider-only. The image is held in memory and forwarded to the local
+// inference service; it is NOT stored by this route.
+listingsRouter.post(
+  '/recognize',
+  requireAuth,
+  requireRole('PROVIDER'),
+  memoryUpload.single('photo'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) {
+        const err = new Error('No image uploaded.');
+        err.status = 400;
+        throw err;
+      }
+      const result = await recognizeFood(req.file.buffer, req.file.originalname);
+      return res.json(result);
+    } catch (err) {
+      return next(err);
+    }
+  }
+);
 
 // ── Create (FR-04 + FR-05 gate) ────────────────────────────────────────────
 listingsRouter.post('/', requireAuth, requireRole('PROVIDER'), async (req, res, next) => {

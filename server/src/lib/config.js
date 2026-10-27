@@ -13,6 +13,8 @@ function required(name, fallback) {
 
 export const config = {
   port: Number(process.env.PORT ?? 4000),
+  /** Python food-recognition inference service (PRD v3.3). */
+  inferenceUrl: process.env.INFERENCE_URL ?? 'http://127.0.0.1:8001',
   jwtAccessSecret: required('JWT_ACCESS_SECRET', 'dev-access-secret-change-me-0123456789'),
   jwtRefreshSecret: required('JWT_REFRESH_SECRET', 'dev-refresh-secret-change-me-0123456789'),
   pickupPepper: required('PICKUP_CODE_PEPPER', 'dev-pepper-change-me-01234567890123456789'),

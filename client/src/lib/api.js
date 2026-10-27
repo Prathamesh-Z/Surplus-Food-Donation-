@@ -33,3 +33,21 @@ export async function api(path, { method = 'GET', body, token } = {}) {
   }
   return data;
 }
+
+/** Food recognition (PRD v3.3): multipart upload to the backend proxy. */
+export async function recognizeFood(file) {
+  const fd = new FormData();
+  fd.append('photo', file);
+  const res = await fetch('/api/listings/recognize', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getAccessToken()}` },
+    body: fd,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || `Recognition failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}

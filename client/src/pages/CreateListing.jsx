@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, getAccessToken } from '../lib/api.js';
+import { api, getAccessToken, recognizeFood } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
-import { detectFood } from '../lib/foodDetect.js';
 
 const ALL_IDS = CHECKLIST.map(([id]) => id);
 
@@ -91,9 +90,9 @@ export function CreateListing() {
   const [error, setError] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
-  const [detectState, setDetectState] = useState('');
+  /** Recognition (PRD v3.3): { status: idle|loading|done|error, result, error } */
+  const [detect, setDetect] = useState({ status: 'idle', result: null, error: '' });
   const [locating, setLocating] = useState(false);
-  const imgRef = useRef(null);
 
   const set = (k) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
@@ -103,27 +102,31 @@ export function CreateListing() {
     if (!file) return;
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
-    setDetectState('');
+    setDetect({ status: 'idle', result: null, error: '' });
+  }
+
+  /** Apply one enriched prediction (primary or alternative) to the form. */
+  function applySuggestion(name, description, category, categoryNote) {
+    setForm((f) => ({
+      ...f,
+      foodName: name,
+      foodDetails: description ?? f.foodDetails,
+      category: category ?? f.category,
+      categoryNote: categoryNote ?? f.categoryNote,
+    }));
   }
 
   async function runDetect() {
-    if (!imgRef.current) return;
-    setDetectState('loading');
+    if (!photoFile) return;
+    setDetect({ status: 'loading', result: null, error: '' });
     try {
-      const result = await detectFood(imgRef.current);
-      if (!result) {
-        setDetectState('failed');
-        return;
+      const result = await recognizeFood(photoFile);
+      if (result.food_name) {
+        applySuggestion(result.food_name, result.description, result.category, result.categoryNote);
       }
-      setForm((f) => ({
-        ...f,
-        foodName: result.name,
-        foodDetails: `${t('detectedAs')}: ${result.name} (${Math.round(result.confidence * 100)}%). ${f.foodDetails}`.trim(),
-        category: result.category,
-      }));
-      setDetectState(`ok:${result.name}:${Math.round(result.confidence * 100)}`);
-    } catch {
-      setDetectState('failed');
+      setDetect({ status: 'done', result, error: '' });
+    } catch (err) {
+      setDetect({ status: 'error', result: null, error: err.message });
     }
   }
 
@@ -219,18 +222,60 @@ export function CreateListing() {
           </label>
           {photoPreview && (
             <div className="row" style={{ alignItems: 'flex-start' }}>
-              <img ref={imgRef} src={photoPreview} alt="" style={{ maxWidth: 240, borderRadius: 10 }} />
+              <img src={photoPreview} alt="" style={{ maxWidth: 240, borderRadius: 10 }} />
               <div>
-                <button type="button" className="secondary" onClick={runDetect} disabled={detectState === 'loading'}>
+                <button type="button" className="secondary" onClick={runDetect} disabled={detect.status === 'loading'}>
                   🤖 {t('detect')}
                 </button>
-                {detectState === 'loading' && <p className="muted">{t('detecting')}</p>}
-                {detectState.startsWith('ok:') && (
-                  <p className="success" style={{ marginTop: 8 }}>
-                    ✓ {t('detectedAs')}: {detectState.split(':')[1]} ({detectState.split(':')[2]}%)
+                {detect.status === 'loading' && <p className="muted">{t('detectWarming')}</p>}
+                {detect.status === 'done' && detect.result?.food_name && (
+                  <div style={{ marginTop: 8 }}>
+                    <p className="success" style={{ margin: '0 0 4px' }}>
+                      ✓ {t('detectedAs')}: {detect.result.food_name} ({Math.round(detect.result.confidence * 100)}%)
+                    </p>
+                    {detect.result.uncertain && <p className="error" style={{ margin: '0 0 4px' }}>{t('detectUncertain')}</p>}
+                    {detect.result.alternatives?.length > 0 && (
+                      <p className="muted" style={{ margin: '4px 0' }}>
+                        {t('detectAlternatives')}:{' '}
+                        {detect.result.alternatives.map((a) => (
+                          <button
+                            key={a.label}
+                            type="button"
+                            className="secondary"
+                            style={{ marginRight: 6, padding: '2px 8px' }}
+                            onClick={() => applySuggestion(a.name, a.description, a.category, a.categoryNote)}
+                          >
+                            {a.name} ({Math.round(a.score * 100)}%)
+                          </button>
+                        ))}
+                      </p>
+                    )}
+                    {detect.result.specialist?.top?.length > 0 && (
+                      <p className="muted" style={{ margin: '4px 0' }}>
+                        {t('detectSpecialist')}:{' '}
+                        {detect.result.specialist.top.slice(0, 2).map((a) => (
+                          <button
+                            key={a.label}
+                            type="button"
+                            className="secondary"
+                            style={{ marginRight: 6, padding: '2px 8px' }}
+                            onClick={() => applySuggestion(a.name, a.description, a.category, a.categoryNote)}
+                          >
+                            {a.name} ({Math.round(a.score * 100)}%)
+                          </button>
+                        ))}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {detect.status === 'error' && (
+                  <p className="error" style={{ marginTop: 8 }}>
+                    {detect.error || t('detectionFailed')}{' '}
+                    <button type="button" className="secondary" style={{ padding: '2px 8px' }} onClick={runDetect}>
+                      {t('detectTryAgain')}
+                    </button>
                   </p>
                 )}
-                {detectState === 'failed' && <p className="error" style={{ marginTop: 8 }}>{t('detectionFailed')}</p>}
               </div>
             </div>
           )}

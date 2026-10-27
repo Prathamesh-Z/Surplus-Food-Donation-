@@ -11,5 +11,11 @@ server/node_modules/
 client/node_modules/
 client/dist/
 
-# Binary model weights are fetched via `npm run fetch-model`
+# Legacy on-device model dir (feature removed in v3.3)
 client/public/models/
+
+# Recognition models are downloaded once into the HF cache (PRD v3.3)
+inference/.venv/
+inference/.hf-cache/
+inference/eval/images/
+__pycache__/

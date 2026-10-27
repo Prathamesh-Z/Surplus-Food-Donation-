@@ -1,0 +1,3114 @@
+{
+  "summary": {
+    "images": 55,
+    "primary_temperature_fitted": 0.25,
+    "primary_on_its_dishes_raw": {
+      "n": 27,
+      "top1": 13,
+      "top3": 18,
+      "top1_pct": 48.1,
+      "top3_pct": 66.7
+    },
+    "primary_on_its_dishes_scaled": {
+      "n": 27,
+      "top1": 13,
+      "top3": 18,
+      "top1_pct": 48.1,
+      "top3_pct": 66.7
+    },
+    "specialist_on_its_dishes": {
+      "n": 20,
+      "top1": 15,
+      "top3": 17,
+      "top1_pct": 75.0,
+      "top3_pct": 85.0
+    },
+    "featured_rule": {
+      "on_supported_dishes": {
+        "n": 41,
+        "correct": 21,
+        "pct": 51.2
+      },
+      "on_all_food": {
+        "n": 49,
+        "correct": 21,
+        "pct": 42.9
+      }
+    },
+    "uncertainty_calibration_scaled": {
+      "0.3": {
+        "kept": 14,
+        "kept_correct": 9,
+        "wrong_flagged_uncertain": 9,
+        "of_wrong": 14
+      },
+      "0.4": {
+        "kept": 12,
+        "kept_correct": 9,
+        "wrong_flagged_uncertain": 11,
+        "of_wrong": 14
+      },
+      "0.5": {
+        "kept": 11,
+        "kept_correct": 9,
+        "wrong_flagged_uncertain": 12,
+        "of_wrong": 14
+      },
+      "0.6": {
+        "kept": 6,
+        "kept_correct": 4,
+        "wrong_flagged_uncertain": 12,
+        "of_wrong": 14
+      },
+      "0.7": {
+        "kept": 4,
+        "kept_correct": 3,
+        "wrong_flagged_uncertain": 13,
+        "of_wrong": 14
+      }
+    },
+    "unsupported_dishes": [
+      {
+        "expected": "unsupported_idli",
+        "featured": {
+          "source": "specialist",
+          "label": "panipuri",
+          "score": 0.9973
+        },
+        "primary_top1": {
+          "label": "rasgulla",
+          "score": 0.5046
+        },
+        "specialist_top1": {
+          "label": "panipuri",
+          "score": 0.9973
+        }
+      },
+      {
+        "expected": "unsupported_idli",
+        "featured": {
+          "source": "specialist",
+          "label": "vadapav",
+          "score": 0.9165
+        },
+        "primary_top1": {
+          "label": "palak_paneer",
+          "score": 0.1237
+        },
+        "specialist_top1": {
+          "label": "vadapav",
+          "score": 0.9165
+        }
+      },
+      {
+        "expected": "unsupported_misal",
+        "featured": {
+          "source": "specialist",
+          "label": "pavbhaji",
+          "score": 0.9733
+        },
+        "primary_top1": {
+          "label": "dal_tadka",
+          "score": 0.1295
+        },
+        "specialist_top1": {
+          "label": "pavbhaji",
+          "score": 0.9733
+        }
+      },
+      {
+        "expected": "unsupported_misal",
+        "featured": {
+          "source": "specialist",
+          "label": "pavbhaji",
+          "score": 0.9708
+        },
+        "primary_top1": {
+          "label": "daal_baati_churma",
+          "score": 0.0627
+        },
+        "specialist_top1": {
+          "label": "pavbhaji",
+          "score": 0.9708
+        }
+      },
+      {
+        "expected": "unsupported_samosa",
+        "featured": {
+          "source": "specialist",
+          "label": "pakora",
+          "score": 0.9998
+        },
+        "primary_top1": {
+          "label": "shankarpali",
+          "score": 0.3354
+        },
+        "specialist_top1": {
+          "label": "pakora",
+          "score": 0.9998
+        }
+      },
+      {
+        "expected": "unsupported_samosa",
+        "featured": {
+          "source": "primary",
+          "label": "chapati",
+          "score": 0.1086
+        },
+        "primary_top1": {
+          "label": "chapati",
+          "score": 0.1086
+        },
+        "specialist_top1": {
+          "label": "dosa",
+          "score": 0.7741
+        }
+      },
+      {
+        "expected": "unsupported_upma",
+        "featured": {
+          "source": "primary",
+          "label": "basundi",
+          "score": 0.1221
+        },
+        "primary_top1": {
+          "label": "basundi",
+          "score": 0.1221
+        },
+        "specialist_top1": {
+          "label": "biryani",
+          "score": 0.7083
+        }
+      },
+      {
+        "expected": "unsupported_upma",
+        "featured": {
+          "source": "specialist",
+          "label": "biryani",
+          "score": 0.9905
+        },
+        "primary_top1": {
+          "label": "aloo_gobi",
+          "score": 0.344
+        },
+        "specialist_top1": {
+          "label": "biryani",
+          "score": 0.9905
+        }
+      }
+    ],
+    "nonfood": [
+      {
+        "expected": "nonfood_car",
+        "featured": {
+          "source": "primary",
+          "label": "gulab_jamun",
+          "score": 0.0399
+        },
+        "primary_top1": {
+          "label": "gulab_jamun",
+          "score": 0.0399
+        },
+        "specialist_top1": {
+          "label": "kathiroll",
+          "score": 0.6027
+        }
+      },
+      {
+        "expected": "nonfood_car",
+        "featured": {
+          "source": "primary",
+          "label": "pootharekulu",
+          "score": 0.0346
+        },
+        "primary_top1": {
+          "label": "pootharekulu",
+          "score": 0.0346
+        },
+        "specialist_top1": {
+          "label": "jalebi",
+          "score": 0.3699
+        }
+      },
+      {
+        "expected": "nonfood_desk",
+        "featured": {
+          "source": "primary",
+          "label": "phirni",
+          "score": 0.0346
+        },
+        "primary_top1": {
+          "label": "phirni",
+          "score": 0.0346
+        },
+        "specialist_top1": {
+          "label": "pavbhaji",
+          "score": 0.206
+        }
+      },
+      {
+        "expected": "nonfood_desk",
+        "featured": {
+          "source": "primary",
+          "label": "chapati",
+          "score": 0.0372
+        },
+        "primary_top1": {
+          "label": "chapati",
+          "score": 0.0372
+        },
+        "specialist_top1": {
+          "label": "panipuri",
+          "score": 0.2187
+        }
+      },
+      {
+        "expected": "nonfood_dog",
+        "featured": {
+          "source": "primary",
+          "label": "modak",
+          "score": 0.047
+        },
+        "primary_top1": {
+          "label": "modak",
+          "score": 0.047
+        },
+        "specialist_top1": {
+          "label": "pakora",
+          "score": 0.8514
+        }
+      },
+      {
+        "expected": "nonfood_dog",
+        "featured": {
+          "source": "primary",
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.0317
+        },
+        "primary_top1": {
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.0317
+        },
+        "specialist_top1": {
+          "label": "vadapav",
+          "score": 0.3645
+        }
+      }
+    ],
+    "latency_ms_both_models": {
+      "mean": 1437.5,
+      "p50": 1379.0,
+      "p95": 1767.6,
+      "max": 2439.6
+    },
+    "model_load_seconds_both": 13.5,
+    "peak_rss_mb": 1024
+  },
+  "rows": [
+    {
+      "file": "aloo_tikki_1.jpg",
+      "expected": "aloo_tikki",
+      "primary_top": [
+        {
+          "label": "palak_paneer",
+          "score": 0.0276
+        },
+        {
+          "label": "karela_bharta",
+          "score": 0.0214
+        },
+        {
+          "label": "navrattan_korma",
+          "score": 0.0206
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.716
+        },
+        {
+          "label": "panipuri",
+          "score": 0.1158
+        },
+        {
+          "label": "dabeli",
+          "score": 0.1106
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "palak_paneer",
+          "score": 0.1809
+        },
+        {
+          "label": "karela_bharta",
+          "score": 0.0658
+        },
+        {
+          "label": "navrattan_korma",
+          "score": 0.0563
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "palak_paneer",
+        "score": 0.1809
+      }
+    },
+    {
+      "file": "aloo_tikki_2.jpg",
+      "expected": "aloo_tikki",
+      "primary_top": [
+        {
+          "label": "palak_paneer",
+          "score": 0.0274
+        },
+        {
+          "label": "karela_bharta",
+          "score": 0.0215
+        },
+        {
+          "label": "navrattan_korma",
+          "score": 0.0205
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.718
+        },
+        {
+          "label": "dabeli",
+          "score": 0.1186
+        },
+        {
+          "label": "panipuri",
+          "score": 0.1084
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "palak_paneer",
+          "score": 0.1765
+        },
+        {
+          "label": "karela_bharta",
+          "score": 0.0665
+        },
+        {
+          "label": "navrattan_korma",
+          "score": 0.0555
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "palak_paneer",
+        "score": 0.1765
+      }
+    },
+    {
+      "file": "biryani_1.jpg",
+      "expected": "biryani",
+      "primary_top": [
+        {
+          "label": "biryani",
+          "score": 0.0522
+        },
+        {
+          "label": "poha",
+          "score": 0.0326
+        },
+        {
+          "label": "sutar_feni",
+          "score": 0.021
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.9997
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0001
+        },
+        {
+          "label": "dhokla",
+          "score": 0.0001
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "biryani",
+          "score": 0.7132
+        },
+        {
+          "label": "poha",
+          "score": 0.1084
+        },
+        {
+          "label": "sutar_feni",
+          "score": 0.0189
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "biryani",
+        "score": 0.7132
+      }
+    },
+    {
+      "file": "biryani_2.jpg",
+      "expected": "biryani",
+      "primary_top": [
+        {
+          "label": "biryani",
+          "score": 0.0459
+        },
+        {
+          "label": "poha",
+          "score": 0.0322
+        },
+        {
+          "label": "kalakand",
+          "score": 0.0205
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.9969
+        },
+        {
+          "label": "dal",
+          "score": 0.0007
+        },
+        {
+          "label": "dhokla",
+          "score": 0.0006
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "biryani",
+          "score": 0.5846
+        },
+        {
+          "label": "poha",
+          "score": 0.1424
+        },
+        {
+          "label": "kalakand",
+          "score": 0.0233
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "biryani",
+        "score": 0.9969
+      }
+    },
+    {
+      "file": "butter_chicken_1.jpg",
+      "expected": "butter_chicken",
+      "primary_top": [
+        {
+          "label": "dal_makhani",
+          "score": 0.0542
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.0306
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.0282
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "paneer",
+          "score": 0.997
+        },
+        {
+          "label": "kofta",
+          "score": 0.0017
+        },
+        {
+          "label": "biryani",
+          "score": 0.0004
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "dal_makhani",
+          "score": 0.7042
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.072
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.0521
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "dal_makhani",
+        "score": 0.7042
+      }
+    },
+    {
+      "file": "butter_chicken_2.jpg",
+      "expected": "butter_chicken",
+      "primary_top": [
+        {
+          "label": "dal_tadka",
+          "score": 0.0368
+        },
+        {
+          "label": "navrattan_korma",
+          "score": 0.0261
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.0259
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dal",
+          "score": 0.997
+        },
+        {
+          "label": "paneer",
+          "score": 0.0018
+        },
+        {
+          "label": "jalebi",
+          "score": 0.0003
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "dal_tadka",
+          "score": 0.3478
+        },
+        {
+          "label": "navrattan_korma",
+          "score": 0.0875
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.0851
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "dal",
+        "score": 0.997
+      }
+    },
+    {
+      "file": "chana_masala_1.jpg",
+      "expected": "chana_masala",
+      "primary_top": [
+        {
+          "label": "gavvalu",
+          "score": 0.0303
+        },
+        {
+          "label": "chana_masala",
+          "score": 0.0292
+        },
+        {
+          "label": "shankarpali",
+          "score": 0.0242
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pakora",
+          "score": 0.9999
+        },
+        {
+          "label": "jalebi",
+          "score": 0.0
+        },
+        {
+          "label": "biryani",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "gavvalu",
+          "score": 0.2111
+        },
+        {
+          "label": "chana_masala",
+          "score": 0.1814
+        },
+        {
+          "label": "shankarpali",
+          "score": 0.0865
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "pakora",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "chana_masala_2.jpg",
+      "expected": "chana_masala",
+      "primary_top": [
+        {
+          "label": "chapati",
+          "score": 0.0361
+        },
+        {
+          "label": "bhatura",
+          "score": 0.031
+        },
+        {
+          "label": "daal_puri",
+          "score": 0.0271
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "cholebhature",
+          "score": 0.6905
+        },
+        {
+          "label": "naan",
+          "score": 0.2553
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0201
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "chapati",
+          "score": 0.3051
+        },
+        {
+          "label": "bhatura",
+          "score": 0.1661
+        },
+        {
+          "label": "daal_puri",
+          "score": 0.0968
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "chapati",
+        "score": 0.3051
+      }
+    },
+    {
+      "file": "chapati_1.jpg",
+      "expected": "chapati",
+      "primary_top": [
+        {
+          "label": "misti_doi",
+          "score": 0.0174
+        },
+        {
+          "label": "pootharekulu",
+          "score": 0.0167
+        },
+        {
+          "label": "doodhpak",
+          "score": 0.0166
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dal",
+          "score": 0.3995
+        },
+        {
+          "label": "cholebhature",
+          "score": 0.1652
+        },
+        {
+          "label": "panipuri",
+          "score": 0.0972
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "misti_doi",
+          "score": 0.0404
+        },
+        {
+          "label": "pootharekulu",
+          "score": 0.0345
+        },
+        {
+          "label": "doodhpak",
+          "score": 0.0336
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "misti_doi",
+        "score": 0.0404
+      }
+    },
+    {
+      "file": "chapati_2.jpg",
+      "expected": "chapati",
+      "primary_top": [
+        {
+          "label": "chapati",
+          "score": 0.0594
+        },
+        {
+          "label": "naan",
+          "score": 0.0394
+        },
+        {
+          "label": "misi_roti",
+          "score": 0.0333
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "naan",
+          "score": 0.9999
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0
+        },
+        {
+          "label": "paneer",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "chapati",
+          "score": 0.699
+        },
+        {
+          "label": "naan",
+          "score": 0.1356
+        },
+        {
+          "label": "misi_roti",
+          "score": 0.0695
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "chapati",
+        "score": 0.699
+      }
+    },
+    {
+      "file": "cholebhature_1.jpg",
+      "expected": "cholebhature",
+      "primary_top": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0202
+        },
+        {
+          "label": "daal_puri",
+          "score": 0.0196
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.0187
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "cholebhature",
+          "score": 0.9999
+        },
+        {
+          "label": "dal",
+          "score": 0.0
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0659
+        },
+        {
+          "label": "daal_puri",
+          "score": 0.0584
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.048
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "cholebhature",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "cholebhature_2.jpg",
+      "expected": "cholebhature",
+      "primary_top": [
+        {
+          "label": "kachori",
+          "score": 0.0311
+        },
+        {
+          "label": "bhatura",
+          "score": 0.0264
+        },
+        {
+          "label": "kuzhi_paniyaram",
+          "score": 0.0243
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "cholebhature",
+          "score": 0.9999
+        },
+        {
+          "label": "panipuri",
+          "score": 0.0001
+        },
+        {
+          "label": "naan",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "kachori",
+          "score": 0.204
+        },
+        {
+          "label": "bhatura",
+          "score": 0.1076
+        },
+        {
+          "label": "kuzhi_paniyaram",
+          "score": 0.0766
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "cholebhature",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "dabeli_1.jpg",
+      "expected": "dabeli",
+      "primary_top": [
+        {
+          "label": "litti_chokha",
+          "score": 0.0262
+        },
+        {
+          "label": "kachori",
+          "score": 0.0238
+        },
+        {
+          "label": "kakinada_khaja",
+          "score": 0.0186
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dabeli",
+          "score": 0.999
+        },
+        {
+          "label": "panipuri",
+          "score": 0.0004
+        },
+        {
+          "label": "vadapav",
+          "score": 0.0001
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "litti_chokha",
+          "score": 0.1547
+        },
+        {
+          "label": "kachori",
+          "score": 0.1049
+        },
+        {
+          "label": "kakinada_khaja",
+          "score": 0.0394
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "dabeli",
+        "score": 0.999
+      }
+    },
+    {
+      "file": "dabeli_2.jpg",
+      "expected": "dabeli",
+      "primary_top": [
+        {
+          "label": "sutar_feni",
+          "score": 0.0236
+        },
+        {
+          "label": "chapati",
+          "score": 0.0214
+        },
+        {
+          "label": "ghevar",
+          "score": 0.0205
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "naan",
+          "score": 0.9812
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0164
+        },
+        {
+          "label": "paneer",
+          "score": 0.0009
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "sutar_feni",
+          "score": 0.1051
+        },
+        {
+          "label": "chapati",
+          "score": 0.0708
+        },
+        {
+          "label": "ghevar",
+          "score": 0.0601
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "naan",
+        "score": 0.9812
+      }
+    },
+    {
+      "file": "dal_makhani_1.jpg",
+      "expected": "dal_makhani",
+      "primary_top": [
+        {
+          "label": "misi_roti",
+          "score": 0.0447
+        },
+        {
+          "label": "chapati",
+          "score": 0.0425
+        },
+        {
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.0308
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "naan",
+          "score": 0.9999
+        },
+        {
+          "label": "paneer",
+          "score": 0.0
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "misi_roti",
+          "score": 0.4001
+        },
+        {
+          "label": "chapati",
+          "score": 0.3275
+        },
+        {
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.09
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "naan",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "dhokla_1.jpg",
+      "expected": "dhokla",
+      "primary_top": [
+        {
+          "label": "mysore_pak",
+          "score": 0.0394
+        },
+        {
+          "label": "sohan_papdi",
+          "score": 0.037
+        },
+        {
+          "label": "kalakand",
+          "score": 0.0245
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dhokla",
+          "score": 0.9999
+        },
+        {
+          "label": "paneer",
+          "score": 0.0
+        },
+        {
+          "label": "biryani",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "mysore_pak",
+          "score": 0.3632
+        },
+        {
+          "label": "sohan_papdi",
+          "score": 0.2845
+        },
+        {
+          "label": "kalakand",
+          "score": 0.0548
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "dhokla",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "dhokla_2.jpg",
+      "expected": "dhokla",
+      "primary_top": [
+        {
+          "label": "aloo_methi",
+          "score": 0.0203
+        },
+        {
+          "label": "aloo_shimla_mirch",
+          "score": 0.0199
+        },
+        {
+          "label": "aloo_gobi",
+          "score": 0.0196
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "panipuri",
+          "score": 0.8189
+        },
+        {
+          "label": "kofta",
+          "score": 0.1368
+        },
+        {
+          "label": "pakora",
+          "score": 0.0192
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "aloo_methi",
+          "score": 0.0605
+        },
+        {
+          "label": "aloo_shimla_mirch",
+          "score": 0.0561
+        },
+        {
+          "label": "aloo_gobi",
+          "score": 0.053
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "aloo_methi",
+        "score": 0.0605
+      }
+    },
+    {
+      "file": "dosa_1.jpg",
+      "expected": "dosa",
+      "primary_top": [
+        {
+          "label": "pootharekulu",
+          "score": 0.0222
+        },
+        {
+          "label": "pithe",
+          "score": 0.0221
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.0195
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dosa",
+          "score": 0.9667
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0325
+        },
+        {
+          "label": "vadapav",
+          "score": 0.0002
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "pootharekulu",
+          "score": 0.0799
+        },
+        {
+          "label": "pithe",
+          "score": 0.079
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.0481
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "dosa",
+        "score": 0.9667
+      }
+    },
+    {
+      "file": "dosa_2.jpg",
+      "expected": "dosa",
+      "primary_top": [
+        {
+          "label": "kalakand",
+          "score": 0.0275
+        },
+        {
+          "label": "chapati",
+          "score": 0.0246
+        },
+        {
+          "label": "sohan_papdi",
+          "score": 0.0241
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dosa",
+          "score": 0.9997
+        },
+        {
+          "label": "paneer",
+          "score": 0.0001
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0001
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "kalakand",
+          "score": 0.1498
+        },
+        {
+          "label": "chapati",
+          "score": 0.0961
+        },
+        {
+          "label": "sohan_papdi",
+          "score": 0.0887
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "dosa",
+        "score": 0.9997
+      }
+    },
+    {
+      "file": "gulab_jamun_1.jpg",
+      "expected": "gulab_jamun",
+      "primary_top": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0234
+        },
+        {
+          "label": "qubani_ka_meetha",
+          "score": 0.0187
+        },
+        {
+          "label": "biryani",
+          "score": 0.0187
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.9951
+        },
+        {
+          "label": "jalebi",
+          "score": 0.0013
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0012
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.1109
+        },
+        {
+          "label": "qubani_ka_meetha",
+          "score": 0.0455
+        },
+        {
+          "label": "biryani",
+          "score": 0.0449
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "biryani",
+        "score": 0.9951
+      }
+    },
+    {
+      "file": "gulab_jamun_2.jpg",
+      "expected": "gulab_jamun",
+      "primary_top": [
+        {
+          "label": "gulab_jamun",
+          "score": 0.0385
+        },
+        {
+          "label": "ledikeni",
+          "score": 0.0371
+        },
+        {
+          "label": "unni_appam",
+          "score": 0.0338
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "jalebi",
+          "score": 0.4536
+        },
+        {
+          "label": "panipuri",
+          "score": 0.3671
+        },
+        {
+          "label": "pakora",
+          "score": 0.0641
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "gulab_jamun",
+          "score": 0.2682
+        },
+        {
+          "label": "ledikeni",
+          "score": 0.2304
+        },
+        {
+          "label": "unni_appam",
+          "score": 0.1588
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "gulab_jamun",
+        "score": 0.2682
+      }
+    },
+    {
+      "file": "jalebi_1.jpg",
+      "expected": "jalebi",
+      "primary_top": [
+        {
+          "label": "jalebi",
+          "score": 0.0605
+        },
+        {
+          "label": "imarti",
+          "score": 0.0523
+        },
+        {
+          "label": "kakinada_khaja",
+          "score": 0.0234
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "jalebi",
+          "score": 0.9999
+        },
+        {
+          "label": "pavbhaji",
+          "score": 0.0
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "jalebi",
+          "score": 0.5922
+        },
+        {
+          "label": "imarti",
+          "score": 0.3316
+        },
+        {
+          "label": "kakinada_khaja",
+          "score": 0.0134
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "jalebi",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "jalebi_2.jpg",
+      "expected": "jalebi",
+      "primary_top": [
+        {
+          "label": "imarti",
+          "score": 0.0341
+        },
+        {
+          "label": "jalebi",
+          "score": 0.0305
+        },
+        {
+          "label": "butter_chicken",
+          "score": 0.0245
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "jalebi",
+          "score": 0.9997
+        },
+        {
+          "label": "pakora",
+          "score": 0.0001
+        },
+        {
+          "label": "paneer",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "imarti",
+          "score": 0.2868
+        },
+        {
+          "label": "jalebi",
+          "score": 0.1847
+        },
+        {
+          "label": "butter_chicken",
+          "score": 0.0772
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "jalebi",
+        "score": 0.9997
+      }
+    },
+    {
+      "file": "kachori_1.jpg",
+      "expected": "kachori",
+      "primary_top": [
+        {
+          "label": "kachori",
+          "score": 0.0223
+        },
+        {
+          "label": "rasgulla",
+          "score": 0.0216
+        },
+        {
+          "label": "ariselu",
+          "score": 0.0193
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "panipuri",
+          "score": 0.9996
+        },
+        {
+          "label": "pavbhaji",
+          "score": 0.0002
+        },
+        {
+          "label": "cholebhature",
+          "score": 0.0001
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "kachori",
+          "score": 0.0883
+        },
+        {
+          "label": "rasgulla",
+          "score": 0.0777
+        },
+        {
+          "label": "ariselu",
+          "score": 0.049
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "panipuri",
+        "score": 0.9996
+      }
+    },
+    {
+      "file": "kachori_2.jpg",
+      "expected": "kachori",
+      "primary_top": [
+        {
+          "label": "kachori",
+          "score": 0.0289
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.0243
+        },
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0239
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pakora",
+          "score": 0.9457
+        },
+        {
+          "label": "panipuri",
+          "score": 0.0499
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0022
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "kachori",
+          "score": 0.1757
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.088
+        },
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0828
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "pakora",
+        "score": 0.9457
+      }
+    },
+    {
+      "file": "lassi_1.jpg",
+      "expected": "lassi",
+      "primary_top": [
+        {
+          "label": "lassi",
+          "score": 0.0275
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.025
+        },
+        {
+          "label": "bandar_laddu",
+          "score": 0.0201
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dosa",
+          "score": 0.4345
+        },
+        {
+          "label": "dal",
+          "score": 0.2455
+        },
+        {
+          "label": "vadapav",
+          "score": 0.1066
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "lassi",
+          "score": 0.18
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.1226
+        },
+        {
+          "label": "bandar_laddu",
+          "score": 0.0513
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "lassi",
+        "score": 0.18
+      }
+    },
+    {
+      "file": "lassi_2.jpg",
+      "expected": "lassi",
+      "primary_top": [
+        {
+          "label": "rasgulla",
+          "score": 0.0329
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.0304
+        },
+        {
+          "label": "lassi",
+          "score": 0.0265
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "kofta",
+          "score": 0.9626
+        },
+        {
+          "label": "dal",
+          "score": 0.0133
+        },
+        {
+          "label": "panipuri",
+          "score": 0.0092
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "rasgulla",
+          "score": 0.2568
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.1864
+        },
+        {
+          "label": "lassi",
+          "score": 0.1074
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "kofta",
+        "score": 0.9626
+      }
+    },
+    {
+      "file": "modak_1.jpg",
+      "expected": "modak",
+      "primary_top": [
+        {
+          "label": "modak",
+          "score": 0.0415
+        },
+        {
+          "label": "rasgulla",
+          "score": 0.0261
+        },
+        {
+          "label": "pithe",
+          "score": 0.0205
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "panipuri",
+          "score": 0.9992
+        },
+        {
+          "label": "kofta",
+          "score": 0.0006
+        },
+        {
+          "label": "pakora",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "modak",
+          "score": 0.5296
+        },
+        {
+          "label": "rasgulla",
+          "score": 0.0824
+        },
+        {
+          "label": "pithe",
+          "score": 0.0316
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "panipuri",
+        "score": 0.9992
+      }
+    },
+    {
+      "file": "modak_2.jpg",
+      "expected": "modak",
+      "primary_top": [
+        {
+          "label": "modak",
+          "score": 0.0402
+        },
+        {
+          "label": "rasgulla",
+          "score": 0.0256
+        },
+        {
+          "label": "dharwad_pedha",
+          "score": 0.0203
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "panipuri",
+          "score": 0.8706
+        },
+        {
+          "label": "pakora",
+          "score": 0.118
+        },
+        {
+          "label": "dhokla",
+          "score": 0.0024
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "modak",
+          "score": 0.5017
+        },
+        {
+          "label": "rasgulla",
+          "score": 0.0823
+        },
+        {
+          "label": "dharwad_pedha",
+          "score": 0.033
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "modak",
+        "score": 0.5017
+      }
+    },
+    {
+      "file": "naan_1.jpg",
+      "expected": "naan",
+      "primary_top": [
+        {
+          "label": "naan",
+          "score": 0.0527
+        },
+        {
+          "label": "chapati",
+          "score": 0.0418
+        },
+        {
+          "label": "misi_roti",
+          "score": 0.0246
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "naan",
+          "score": 0.9999
+        },
+        {
+          "label": "paneer",
+          "score": 0.0
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "naan",
+          "score": 0.595
+        },
+        {
+          "label": "chapati",
+          "score": 0.2352
+        },
+        {
+          "label": "misi_roti",
+          "score": 0.0282
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "naan",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "naan_2.jpg",
+      "expected": "naan",
+      "primary_top": [
+        {
+          "label": "shankarpali",
+          "score": 0.0456
+        },
+        {
+          "label": "chikki",
+          "score": 0.0223
+        },
+        {
+          "label": "gavvalu",
+          "score": 0.022
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pakora",
+          "score": 0.9991
+        },
+        {
+          "label": "jalebi",
+          "score": 0.0004
+        },
+        {
+          "label": "biryani",
+          "score": 0.0001
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "shankarpali",
+          "score": 0.6173
+        },
+        {
+          "label": "chikki",
+          "score": 0.0354
+        },
+        {
+          "label": "gavvalu",
+          "score": 0.0334
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "shankarpali",
+        "score": 0.6173
+      }
+    },
+    {
+      "file": "nonfood_car_1.jpg",
+      "expected": "nonfood_car",
+      "primary_top": [
+        {
+          "label": "gulab_jamun",
+          "score": 0.0171
+        },
+        {
+          "label": "unni_appam",
+          "score": 0.0165
+        },
+        {
+          "label": "lyangcha",
+          "score": 0.0162
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "kathiroll",
+          "score": 0.6027
+        },
+        {
+          "label": "jalebi",
+          "score": 0.1063
+        },
+        {
+          "label": "pakora",
+          "score": 0.0441
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "gulab_jamun",
+          "score": 0.0399
+        },
+        {
+          "label": "unni_appam",
+          "score": 0.0347
+        },
+        {
+          "label": "lyangcha",
+          "score": 0.0315
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "gulab_jamun",
+        "score": 0.0399
+      }
+    },
+    {
+      "file": "nonfood_car_2.jpg",
+      "expected": "nonfood_car",
+      "primary_top": [
+        {
+          "label": "pootharekulu",
+          "score": 0.0165
+        },
+        {
+          "label": "sandesh",
+          "score": 0.0164
+        },
+        {
+          "label": "double_ka_meetha",
+          "score": 0.0156
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "jalebi",
+          "score": 0.3699
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.1701
+        },
+        {
+          "label": "dal",
+          "score": 0.0651
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "pootharekulu",
+          "score": 0.0346
+        },
+        {
+          "label": "sandesh",
+          "score": 0.0339
+        },
+        {
+          "label": "double_ka_meetha",
+          "score": 0.0279
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "pootharekulu",
+        "score": 0.0346
+      }
+    },
+    {
+      "file": "nonfood_desk_1.jpg",
+      "expected": "nonfood_desk",
+      "primary_top": [
+        {
+          "label": "phirni",
+          "score": 0.0165
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.0159
+        },
+        {
+          "label": "gajar_ka_halwa",
+          "score": 0.0157
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pavbhaji",
+          "score": 0.206
+        },
+        {
+          "label": "pakora",
+          "score": 0.1286
+        },
+        {
+          "label": "vadapav",
+          "score": 0.0936
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "phirni",
+          "score": 0.0346
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.0295
+        },
+        {
+          "label": "gajar_ka_halwa",
+          "score": 0.0283
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "phirni",
+        "score": 0.0346
+      }
+    },
+    {
+      "file": "nonfood_desk_2.jpg",
+      "expected": "nonfood_desk",
+      "primary_top": [
+        {
+          "label": "chapati",
+          "score": 0.0168
+        },
+        {
+          "label": "kadai_paneer",
+          "score": 0.0161
+        },
+        {
+          "label": "aloo_shimla_mirch",
+          "score": 0.0156
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "panipuri",
+          "score": 0.2187
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.1685
+        },
+        {
+          "label": "naan",
+          "score": 0.1109
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "chapati",
+          "score": 0.0372
+        },
+        {
+          "label": "kadai_paneer",
+          "score": 0.0313
+        },
+        {
+          "label": "aloo_shimla_mirch",
+          "score": 0.0283
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "chapati",
+        "score": 0.0372
+      }
+    },
+    {
+      "file": "nonfood_dog_1.jpg",
+      "expected": "nonfood_dog",
+      "primary_top": [
+        {
+          "label": "modak",
+          "score": 0.0181
+        },
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0177
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.0169
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pakora",
+          "score": 0.8514
+        },
+        {
+          "label": "vadapav",
+          "score": 0.0711
+        },
+        {
+          "label": "jalebi",
+          "score": 0.0392
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "modak",
+          "score": 0.047
+        },
+        {
+          "label": "daal_baati_churma",
+          "score": 0.043
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.0352
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "modak",
+        "score": 0.047
+      }
+    },
+    {
+      "file": "nonfood_dog_2.jpg",
+      "expected": "nonfood_dog",
+      "primary_top": [
+        {
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.0162
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.0161
+        },
+        {
+          "label": "shrikhand",
+          "score": 0.0159
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "vadapav",
+          "score": 0.3645
+        },
+        {
+          "label": "pakora",
+          "score": 0.2621
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.1768
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.0317
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.0309
+        },
+        {
+          "label": "shrikhand",
+          "score": 0.0296
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "makki_di_roti_sarson_da_saag",
+        "score": 0.0317
+      }
+    },
+    {
+      "file": "paneer_butter_masala_1.jpg",
+      "expected": "paneer_butter_masala",
+      "primary_top": [
+        {
+          "label": "qubani_ka_meetha",
+          "score": 0.0242
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.0233
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.0232
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pavbhaji",
+          "score": 0.792
+        },
+        {
+          "label": "dal",
+          "score": 0.1562
+        },
+        {
+          "label": "paneer",
+          "score": 0.0322
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "qubani_ka_meetha",
+          "score": 0.1002
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.0857
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.084
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "qubani_ka_meetha",
+        "score": 0.1002
+      }
+    },
+    {
+      "file": "paneer_butter_masala_2.jpg",
+      "expected": "paneer_butter_masala",
+      "primary_top": [
+        {
+          "label": "butter_chicken",
+          "score": 0.0282
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.0249
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.023
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pavbhaji",
+          "score": 0.8153
+        },
+        {
+          "label": "dal",
+          "score": 0.1634
+        },
+        {
+          "label": "cholebhature",
+          "score": 0.0067
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "butter_chicken",
+          "score": 0.1606
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.0974
+        },
+        {
+          "label": "paneer_butter_masala",
+          "score": 0.0713
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "butter_chicken",
+        "score": 0.1606
+      }
+    },
+    {
+      "file": "panipuri_1.jpg",
+      "expected": "panipuri",
+      "primary_top": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0295
+        },
+        {
+          "label": "kachori",
+          "score": 0.0246
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.0202
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "panipuri",
+          "score": 0.9999
+        },
+        {
+          "label": "dhokla",
+          "score": 0.0
+        },
+        {
+          "label": "kofta",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.2215
+        },
+        {
+          "label": "kachori",
+          "score": 0.1078
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.0486
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "panipuri",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "panipuri_2.jpg",
+      "expected": "panipuri",
+      "primary_top": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0233
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.0181
+        },
+        {
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.0175
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "vadapav",
+          "score": 0.4616
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.1694
+        },
+        {
+          "label": "panipuri",
+          "score": 0.1328
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.1163
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.0421
+        },
+        {
+          "label": "makki_di_roti_sarson_da_saag",
+          "score": 0.0366
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "daal_baati_churma",
+        "score": 0.1163
+      }
+    },
+    {
+      "file": "pavbhaji_1.jpg",
+      "expected": "pavbhaji",
+      "primary_top": [
+        {
+          "label": "kuzhi_paniyaram",
+          "score": 0.0341
+        },
+        {
+          "label": "unni_appam",
+          "score": 0.0318
+        },
+        {
+          "label": "kachori",
+          "score": 0.0287
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pavbhaji",
+          "score": 0.9974
+        },
+        {
+          "label": "panipuri",
+          "score": 0.0014
+        },
+        {
+          "label": "kofta",
+          "score": 0.0006
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "kuzhi_paniyaram",
+          "score": 0.2338
+        },
+        {
+          "label": "unni_appam",
+          "score": 0.1767
+        },
+        {
+          "label": "kachori",
+          "score": 0.117
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "pavbhaji",
+        "score": 0.9974
+      }
+    },
+    {
+      "file": "pavbhaji_2.jpg",
+      "expected": "pavbhaji",
+      "primary_top": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.025
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.02
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.0194
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pavbhaji",
+          "score": 0.9999
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0
+        },
+        {
+          "label": "vadapav",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.1369
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.0565
+        },
+        {
+          "label": "dal_makhani",
+          "score": 0.0497
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "pavbhaji",
+        "score": 0.9999
+      }
+    },
+    {
+      "file": "poha_1.jpg",
+      "expected": "poha",
+      "primary_top": [
+        {
+          "label": "poha",
+          "score": 0.0861
+        },
+        {
+          "label": "biryani",
+          "score": 0.03
+        },
+        {
+          "label": "boondi",
+          "score": 0.0257
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.9705
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0192
+        },
+        {
+          "label": "panipuri",
+          "score": 0.0031
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "poha",
+          "score": 0.9522
+        },
+        {
+          "label": "biryani",
+          "score": 0.0141
+        },
+        {
+          "label": "boondi",
+          "score": 0.0075
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "poha",
+        "score": 0.9522
+      }
+    },
+    {
+      "file": "poha_2.jpg",
+      "expected": "poha",
+      "primary_top": [
+        {
+          "label": "poha",
+          "score": 0.0726
+        },
+        {
+          "label": "biryani",
+          "score": 0.0262
+        },
+        {
+          "label": "boondi",
+          "score": 0.0228
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.9996
+        },
+        {
+          "label": "dal",
+          "score": 0.0002
+        },
+        {
+          "label": "dhokla",
+          "score": 0.0001
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "poha",
+          "score": 0.9201
+        },
+        {
+          "label": "biryani",
+          "score": 0.0156
+        },
+        {
+          "label": "boondi",
+          "score": 0.009
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "poha",
+        "score": 0.9201
+      }
+    },
+    {
+      "file": "unsupported_idli_1.jpg",
+      "expected": "unsupported_idli",
+      "primary_top": [
+        {
+          "label": "rasgulla",
+          "score": 0.0416
+        },
+        {
+          "label": "bandar_laddu",
+          "score": 0.0264
+        },
+        {
+          "label": "dharwad_pedha",
+          "score": 0.022
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "panipuri",
+          "score": 0.9973
+        },
+        {
+          "label": "dal",
+          "score": 0.002
+        },
+        {
+          "label": "kofta",
+          "score": 0.0002
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "rasgulla",
+          "score": 0.5046
+        },
+        {
+          "label": "bandar_laddu",
+          "score": 0.0814
+        },
+        {
+          "label": "dharwad_pedha",
+          "score": 0.0395
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "panipuri",
+        "score": 0.9973
+      }
+    },
+    {
+      "file": "unsupported_idli_2.jpg",
+      "expected": "unsupported_idli",
+      "primary_top": [
+        {
+          "label": "palak_paneer",
+          "score": 0.0249
+        },
+        {
+          "label": "qubani_ka_meetha",
+          "score": 0.0226
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.022
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "vadapav",
+          "score": 0.9165
+        },
+        {
+          "label": "kofta",
+          "score": 0.0464
+        },
+        {
+          "label": "dosa",
+          "score": 0.0174
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "palak_paneer",
+          "score": 0.1237
+        },
+        {
+          "label": "qubani_ka_meetha",
+          "score": 0.0833
+        },
+        {
+          "label": "dal_tadka",
+          "score": 0.0751
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "vadapav",
+        "score": 0.9165
+      }
+    },
+    {
+      "file": "unsupported_misal_1.jpg",
+      "expected": "unsupported_misal",
+      "primary_top": [
+        {
+          "label": "dal_tadka",
+          "score": 0.0248
+        },
+        {
+          "label": "bhatura",
+          "score": 0.0214
+        },
+        {
+          "label": "chana_masala",
+          "score": 0.0199
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pavbhaji",
+          "score": 0.9733
+        },
+        {
+          "label": "cholebhature",
+          "score": 0.0261
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0002
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "dal_tadka",
+          "score": 0.1295
+        },
+        {
+          "label": "bhatura",
+          "score": 0.0722
+        },
+        {
+          "label": "chana_masala",
+          "score": 0.0539
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "pavbhaji",
+        "score": 0.9733
+      }
+    },
+    {
+      "file": "unsupported_misal_2.jpg",
+      "expected": "unsupported_misal",
+      "primary_top": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0199
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.0194
+        },
+        {
+          "label": "lassi",
+          "score": 0.0189
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pavbhaji",
+          "score": 0.9708
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0111
+        },
+        {
+          "label": "cholebhature",
+          "score": 0.0068
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0627
+        },
+        {
+          "label": "misti_doi",
+          "score": 0.0567
+        },
+        {
+          "label": "lassi",
+          "score": 0.0513
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "pavbhaji",
+        "score": 0.9708
+      }
+    },
+    {
+      "file": "unsupported_samosa_1.jpg",
+      "expected": "unsupported_samosa",
+      "primary_top": [
+        {
+          "label": "shankarpali",
+          "score": 0.0363
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.0306
+        },
+        {
+          "label": "kalakand",
+          "score": 0.0244
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pakora",
+          "score": 0.9998
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0001
+        },
+        {
+          "label": "jalebi",
+          "score": 0.0
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "shankarpali",
+          "score": 0.3354
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.1679
+        },
+        {
+          "label": "kalakand",
+          "score": 0.068
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "pakora",
+        "score": 0.9998
+      }
+    },
+    {
+      "file": "unsupported_samosa_2.jpg",
+      "expected": "unsupported_samosa",
+      "primary_top": [
+        {
+          "label": "chapati",
+          "score": 0.0248
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.0246
+        },
+        {
+          "label": "kalakand",
+          "score": 0.0245
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "dosa",
+          "score": 0.7741
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.2091
+        },
+        {
+          "label": "dal",
+          "score": 0.0068
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "chapati",
+          "score": 0.1086
+        },
+        {
+          "label": "kajjikaya",
+          "score": 0.1044
+        },
+        {
+          "label": "kalakand",
+          "score": 0.1027
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "chapati",
+        "score": 0.1086
+      }
+    },
+    {
+      "file": "unsupported_upma_1.jpg",
+      "expected": "unsupported_upma",
+      "primary_top": [
+        {
+          "label": "basundi",
+          "score": 0.0251
+        },
+        {
+          "label": "chak_hao_kheer",
+          "score": 0.0238
+        },
+        {
+          "label": "rabri",
+          "score": 0.0207
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.7083
+        },
+        {
+          "label": "panipuri",
+          "score": 0.1121
+        },
+        {
+          "label": "dhokla",
+          "score": 0.0687
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "basundi",
+          "score": 0.1221
+        },
+        {
+          "label": "chak_hao_kheer",
+          "score": 0.0983
+        },
+        {
+          "label": "rabri",
+          "score": 0.056
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "basundi",
+        "score": 0.1221
+      }
+    },
+    {
+      "file": "unsupported_upma_2.jpg",
+      "expected": "unsupported_upma",
+      "primary_top": [
+        {
+          "label": "aloo_gobi",
+          "score": 0.0361
+        },
+        {
+          "label": "poha",
+          "score": 0.0267
+        },
+        {
+          "label": "aloo_matar",
+          "score": 0.0246
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "biryani",
+          "score": 0.9905
+        },
+        {
+          "label": "dhokla",
+          "score": 0.0064
+        },
+        {
+          "label": "pakora",
+          "score": 0.0017
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "aloo_gobi",
+          "score": 0.344
+        },
+        {
+          "label": "poha",
+          "score": 0.1036
+        },
+        {
+          "label": "aloo_matar",
+          "score": 0.0743
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "biryani",
+        "score": 0.9905
+      }
+    },
+    {
+      "file": "vadapav_1.jpg",
+      "expected": "vadapav",
+      "primary_top": [
+        {
+          "label": "kalakand",
+          "score": 0.0211
+        },
+        {
+          "label": "kachori",
+          "score": 0.0194
+        },
+        {
+          "label": "daal_puri",
+          "score": 0.0192
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "vadapav",
+          "score": 0.9996
+        },
+        {
+          "label": "kathiroll",
+          "score": 0.0002
+        },
+        {
+          "label": "dabeli",
+          "score": 0.0001
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "kalakand",
+          "score": 0.0762
+        },
+        {
+          "label": "kachori",
+          "score": 0.054
+        },
+        {
+          "label": "daal_puri",
+          "score": 0.0519
+        }
+      ],
+      "featured": {
+        "source": "specialist",
+        "label": "vadapav",
+        "score": 0.9996
+      }
+    },
+    {
+      "file": "vadapav_2.jpg",
+      "expected": "vadapav",
+      "primary_top": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.0271
+        },
+        {
+          "label": "kachori",
+          "score": 0.0234
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.022
+        }
+      ],
+      "specialist_top": [
+        {
+          "label": "pakora",
+          "score": 0.4503
+        },
+        {
+          "label": "vadapav",
+          "score": 0.3758
+        },
+        {
+          "label": "pavbhaji",
+          "score": 0.1016
+        }
+      ],
+      "primary_top_scaled": [
+        {
+          "label": "daal_baati_churma",
+          "score": 0.166
+        },
+        {
+          "label": "kachori",
+          "score": 0.0922
+        },
+        {
+          "label": "litti_chokha",
+          "score": 0.0725
+        }
+      ],
+      "featured": {
+        "source": "primary",
+        "label": "daal_baati_churma",
+        "score": 0.166
+      }
+    }
+  ]
+}

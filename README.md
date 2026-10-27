@@ -23,7 +23,8 @@ Full specification: [`docs/PRD.md`](docs/PRD.md) (PRD v3.2, HA040).
 | Database | PostgreSQL + Prisma (row-locked claim transactions) |
 | Pickup codes | Salted SHA-256 verification hash + AES-256-GCM encrypted re-view copy + HMAC uniqueness |
 | Jobs | Scheduled expiry / notification job in the server process (`node-cron`) |
-| Demo posture | **Single server on localhost — no cloud dependency** |
+| Food recognition | Local Python inference service (`inference/`, port 8001): two Apache-2.0 Indian-food ViT classifiers (80 + 15 dishes), curated description map — see `inference/README.md` and `docs/RECOGNITION_EVAL.md` |
+| Demo posture | **Single machine on localhost — no cloud dependency** (app :4000 + recognition :8001) |
 
 ## Quick start (local, one machine)
 
@@ -67,8 +68,9 @@ npm run dev --workspace=server     # http://localhost:4000
 | 8–11 | Admin + audit log, NGO verification, NGO redistribution log, recurring donations, Marathi UI | FR-16–21 |
 | 12 | Impact CSV export, optional email mirror (SMTP) | FR-23–24 |
 
-Explicitly out of scope (per PRD): payments, delivery/transport, ML, maps/GPS,
+Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.
+(ML is in scope only as the v3.3 recognition feature above.)
 
 ## Tests
 

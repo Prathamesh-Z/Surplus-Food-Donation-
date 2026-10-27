@@ -1,0 +1,267 @@
+[
+  {
+    "file": "biryani_1.jpg",
+    "expected": "biryani",
+    "source": "https://commons.wikimedia.org/wiki/File%3ABiryani%202.jpg"
+  },
+  {
+    "file": "biryani_2.jpg",
+    "expected": "biryani",
+    "source": "https://commons.wikimedia.org/wiki/File%3ABiryani%203.jpg"
+  },
+  {
+    "file": "gulab_jamun_1.jpg",
+    "expected": "gulab_jamun",
+    "source": "https://commons.wikimedia.org/wiki/File%3ADiwali%20greetings%20shot%20with%20Gulab%20Jamun%20and%20Milk%20Cake.jpg"
+  },
+  {
+    "file": "gulab_jamun_2.jpg",
+    "expected": "gulab_jamun",
+    "source": "https://commons.wikimedia.org/wiki/File%3AGulab%20Jamun%201.jpg"
+  },
+  {
+    "file": "jalebi_1.jpg",
+    "expected": "jalebi",
+    "source": "https://commons.wikimedia.org/wiki/File%3AHot%20Jalebi-MA10.jpg"
+  },
+  {
+    "file": "jalebi_2.jpg",
+    "expected": "jalebi",
+    "source": "https://commons.wikimedia.org/wiki/File%3AJalebi-%20Kolkata%20-%20West%20Bengal%20-%20DSC%200011.jpg"
+  },
+  {
+    "file": "kachori_1.jpg",
+    "expected": "kachori",
+    "source": "https://commons.wikimedia.org/wiki/File%3AKachori-sabzi.jpg"
+  },
+  {
+    "file": "kachori_2.jpg",
+    "expected": "kachori",
+    "source": "https://commons.wikimedia.org/wiki/File%3AKachori%20Ludhiana.JPG"
+  },
+  {
+    "file": "butter_chicken_1.jpg",
+    "expected": "butter_chicken",
+    "source": "https://commons.wikimedia.org/wiki/File%3AButter%20Chicken%2C%20City%20Grill%20Kottayam.jpg"
+  },
+  {
+    "file": "butter_chicken_2.jpg",
+    "expected": "butter_chicken",
+    "source": "https://commons.wikimedia.org/wiki/File%3AButter%20Chicken%20%282446546141%29.jpg"
+  },
+  {
+    "file": "chana_masala_1.jpg",
+    "expected": "chana_masala",
+    "source": "https://commons.wikimedia.org/wiki/File%3AChana%20Ko%20Tarkari.jpg"
+  },
+  {
+    "file": "chana_masala_2.jpg",
+    "expected": "chana_masala",
+    "source": "https://commons.wikimedia.org/wiki/File%3AChana%20Masala%2C%20P%C3%A3o%20S%C3%ADrio%20e%20prato%20com%20Batata%20e%20Br%C3%B3colis%2C%202023-10-18.jpg"
+  },
+  {
+    "file": "paneer_butter_masala_1.jpg",
+    "expected": "paneer_butter_masala",
+    "source": "https://commons.wikimedia.org/wiki/File%3APaneer%20Butter%20Masala%202.jpg"
+  },
+  {
+    "file": "paneer_butter_masala_2.jpg",
+    "expected": "paneer_butter_masala",
+    "source": "https://commons.wikimedia.org/wiki/File%3APaneer%20Butter%20Masala%203.jpg"
+  },
+  {
+    "file": "lassi_1.jpg",
+    "expected": "lassi",
+    "source": "https://commons.wikimedia.org/wiki/File%3ACostco%20treats%20-%20Lassi.jpg"
+  },
+  {
+    "file": "lassi_2.jpg",
+    "expected": "lassi",
+    "source": "https://commons.wikimedia.org/wiki/File%3ALassi-MB53.jpg"
+  },
+  {
+    "file": "chapati_1.jpg",
+    "expected": "chapati",
+    "source": "https://commons.wikimedia.org/wiki/File%3A0118%20Chapati%20backen.jpg"
+  },
+  {
+    "file": "chapati_2.jpg",
+    "expected": "chapati",
+    "source": "https://commons.wikimedia.org/wiki/File%3AChapati-1.jpg"
+  },
+  {
+    "file": "naan_1.jpg",
+    "expected": "naan",
+    "source": "https://commons.wikimedia.org/wiki/File%3AButter%20Naan%202.jpg"
+  },
+  {
+    "file": "naan_2.jpg",
+    "expected": "naan",
+    "source": "https://commons.wikimedia.org/wiki/File%3ACumin%20spicy%20naan%20crumble.jpg"
+  },
+  {
+    "file": "dosa_1.jpg",
+    "expected": "dosa",
+    "source": "https://commons.wikimedia.org/wiki/File%3AMasala%20Dosa%20and%20Vada.jpg"
+  },
+  {
+    "file": "dosa_2.jpg",
+    "expected": "dosa",
+    "source": "https://commons.wikimedia.org/wiki/File%3AMasala%20Dosa%20from%20Kerala%202.jpg"
+  },
+  {
+    "file": "vadapav_1.jpg",
+    "expected": "vadapav",
+    "source": "https://commons.wikimedia.org/wiki/File%3AAran%20Vada%20Pav%20Mumbai.jpg"
+  },
+  {
+    "file": "vadapav_2.jpg",
+    "expected": "vadapav",
+    "source": "https://commons.wikimedia.org/wiki/File%3ACrunchy%20Crispy%20Vada%20pav.jpg"
+  },
+  {
+    "file": "dhokla_1.jpg",
+    "expected": "dhokla",
+    "source": "https://commons.wikimedia.org/wiki/File%3ABesan%20Dhokla%20-%20Howrah%202015-04-26%208478.JPG"
+  },
+  {
+    "file": "dhokla_2.jpg",
+    "expected": "dhokla",
+    "source": "https://commons.wikimedia.org/wiki/File%3ADhokla-Odisha.jpg"
+  },
+  {
+    "file": "cholebhature_1.jpg",
+    "expected": "cholebhature",
+    "source": "https://commons.wikimedia.org/wiki/File%3ABikaner%20chole%20bhature.jpg"
+  },
+  {
+    "file": "cholebhature_2.jpg",
+    "expected": "cholebhature",
+    "source": "https://commons.wikimedia.org/wiki/File%3AChole%20Bhature%2C%20a%20popular%20North%20Indian%20dish.jpg"
+  },
+  {
+    "file": "panipuri_1.jpg",
+    "expected": "panipuri",
+    "source": "https://commons.wikimedia.org/wiki/File%3ACrispy%20Pani%20Puri.jpg"
+  },
+  {
+    "file": "panipuri_2.jpg",
+    "expected": "panipuri",
+    "source": "https://commons.wikimedia.org/wiki/File%3ADahi%20Puri%20and%20Pani%20Puri%20from%20Bombay.jpg"
+  },
+  {
+    "file": "dabeli_1.jpg",
+    "expected": "dabeli",
+    "source": "https://commons.wikimedia.org/wiki/File%3ADaabeli.JPG"
+  },
+  {
+    "file": "dabeli_2.jpg",
+    "expected": "dabeli",
+    "source": "https://commons.wikimedia.org/wiki/File%3ADabeli-rajasthan-1.jpg"
+  },
+  {
+    "file": "unsupported_idli_1.jpg",
+    "expected": "UNSUPPORTED_idli",
+    "source": "https://commons.wikimedia.org/wiki/File%3AIdli%20Sambar-Noida-UP-SP004.jpg"
+  },
+  {
+    "file": "unsupported_idli_2.jpg",
+    "expected": "UNSUPPORTED_idli",
+    "source": "https://commons.wikimedia.org/wiki/File%3AIdli%20Sambar%20Chutney%20in%20Madras.JPG"
+  },
+  {
+    "file": "unsupported_samosa_1.jpg",
+    "expected": "UNSUPPORTED_samosa",
+    "source": "https://commons.wikimedia.org/wiki/File%3ASamosa%2013.jpg"
+  },
+  {
+    "file": "unsupported_samosa_2.jpg",
+    "expected": "UNSUPPORTED_samosa",
+    "source": "https://commons.wikimedia.org/wiki/File%3ASamosa%204.jpg"
+  },
+  {
+    "file": "unsupported_upma_1.jpg",
+    "expected": "UNSUPPORTED_upma",
+    "source": "https://commons.wikimedia.org/wiki/File%3ABroken%20rice%20upma%20%26%20coconut%20chutney.jpg"
+  },
+  {
+    "file": "unsupported_upma_2.jpg",
+    "expected": "UNSUPPORTED_upma",
+    "source": "https://commons.wikimedia.org/wiki/File%3AChhole%20Upma%20-%20Homemade%2C%20Jabalpur%20-%20Madhya%20Pradesh%20-%20IMG001.jpg"
+  },
+  {
+    "file": "unsupported_misal_1.jpg",
+    "expected": "UNSUPPORTED_misal",
+    "source": "https://commons.wikimedia.org/wiki/File%3A%2AMisal%20Pav%2A.jpg"
+  },
+  {
+    "file": "unsupported_misal_2.jpg",
+    "expected": "UNSUPPORTED_misal",
+    "source": "https://commons.wikimedia.org/wiki/File%3AKolhapuri%20Misal%20Pav.jpg"
+  },
+  {
+    "file": "nonfood_desk_1.jpg",
+    "expected": "NONFOOD_desk",
+    "source": "https://commons.wikimedia.org/wiki/File%3AAbbotsford%20House%20Study%20Room.jpg"
+  },
+  {
+    "file": "nonfood_desk_2.jpg",
+    "expected": "NONFOOD_desk",
+    "source": "https://commons.wikimedia.org/wiki/File%3AGeorge-peabody-library.jpg"
+  },
+  {
+    "file": "nonfood_car_1.jpg",
+    "expected": "NONFOOD_car",
+    "source": "https://commons.wikimedia.org/wiki/File%3AGoogle-street-view-car%20hg.jpg"
+  },
+  {
+    "file": "nonfood_car_2.jpg",
+    "expected": "NONFOOD_car",
+    "source": "https://commons.wikimedia.org/wiki/File%3AGoogleStreetViewCar%20Subaru%20Impreza%20at%20Google%20Campus.JPG"
+  },
+  {
+    "file": "nonfood_dog_1.jpg",
+    "expected": "NONFOOD_dog",
+    "source": "https://commons.wikimedia.org/wiki/File%3A%22Man%20with%20Dog%22%2C%201923%20self-portrait%20by%20Otis%20Oldfield.jpg"
+  },
+  {
+    "file": "nonfood_dog_2.jpg",
+    "expected": "NONFOOD_dog",
+    "source": "https://commons.wikimedia.org/wiki/File%3ABartolomeo%20Passerotti%20-%20Portrait%20of%20a%20Man%20with%20a%20Dog%20%28detail%29%20-%20WGA17076.jpg"
+  },
+  {
+    "file": "poha_1.jpg",
+    "expected": "poha",
+    "source": "https://commons.wikimedia.org/wiki/File%3AKanda%20Poha-Diu-DSC003.jpg"
+  },
+  {
+    "file": "poha_2.jpg",
+    "expected": "poha",
+    "source": "https://commons.wikimedia.org/wiki/File%3AKanda%20Pohe.jpg"
+  },
+  {
+    "file": "modak_1.jpg",
+    "expected": "modak",
+    "source": "https://commons.wikimedia.org/wiki/File%3AModak%20%28Steamed%29.jpg"
+  },
+  {
+    "file": "modak_2.jpg",
+    "expected": "modak",
+    "source": "https://commons.wikimedia.org/wiki/File%3AUkdiche%20Modak.jpg"
+  },
+  {
+    "file": "dal_makhani_1.jpg",
+    "expected": "dal_makhani",
+    "source": "https://commons.wikimedia.org/wiki/File%3AUrad%20daal%20with%20assorted%20indian%20bread%20and%20salad.jpg"
+  },
+  {
+    "file": "aloo_tikki_1.jpg",
+    "expected": "aloo_tikki",
+    "source": "https://commons.wikimedia.org/wiki/File%3AAloo%20Mutter%20tikki%20chaat.jpg"
+  },
+  {
+    "file": "aloo_tikki_2.jpg",
+    "expected": "aloo_tikki",
+    "source": "https://commons.wikimedia.org/wiki/File%3AAloo%20Mutter%20tikki%20chaat%20%281%29.JPG"
+  }
+]
