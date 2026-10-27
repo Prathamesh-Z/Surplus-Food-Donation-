@@ -66,7 +66,9 @@ export function ListingDetail() {
         </p>
         <p>📍 {t('pickup')}: {listing.pickupLocationText}</p>
         <p className="muted">
-          {listing.category} · {listing.dietaryType} · {listing.portionType} · {t('byProvider')} {listing.providerName}
+          {listing.category}
+          {listing.categoryNote ? ` (${listing.categoryNote})` : ''} · {listing.dietaryType} · {listing.portionType}
+          {listing.bulkUnit ? ` · ${listing.bulkUnit}` : ''} · {t('byProvider')} {listing.providerName}
           {listing.ngoSuitable ? ' · NGO-suitable' : ''}
         </p>
         <p className="muted">{t('safetyConfirmed')}</p>

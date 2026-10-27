@@ -12,7 +12,7 @@ automatically; messes can set up recurring donations; NGOs log where collected
 food went onward, credited to them; and the impact dashboard is computed only
 from real system records.
 
-Full specification: [`docs/PRD.md`](docs/PRD.md) (PRD v3.1, HA040).
+Full specification: [`docs/PRD.md`](docs/PRD.md) (PRD v3.2, HA040).
 
 ## Stack
 

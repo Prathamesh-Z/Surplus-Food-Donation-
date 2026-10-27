@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 
 export const usersRouter = Router();
 
-const languageSchema = z.object({ language: z.enum(['EN', 'MR']) });
+const languageSchema = z.object({ language: z.enum(['EN', 'MR', 'HI']) });
 
 // PRD FR-19: the language toggle persists per account (users.languagePref).
 usersRouter.patch('/me/language', requireAuth, async (req, res, next) => {

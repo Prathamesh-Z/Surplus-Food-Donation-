@@ -17,6 +17,11 @@ echo Preparing database (tables + synthetic demo data)...
 call npm run db:push --workspace=server
 call npm run db:seed --workspace=server
 
+if not exist client\public\models\mobilenet\model.json (
+  echo Downloading on-device AI model weights ^(one time^)...
+  call npm run fetch-model
+)
+
 echo Building the web app...
 call npm run build
 

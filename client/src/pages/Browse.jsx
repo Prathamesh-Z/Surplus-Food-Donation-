@@ -92,7 +92,8 @@ export function Browse() {
             </div>
             <p>{l.foodDetails}</p>
             <p className="muted">
-              {l.portionsRemaining} of {l.totalPortions} portions remaining · ⏰ {timeRemaining(l.collectionDeadline)}
+              {l.portionsRemaining} of {l.totalPortions} {l.bulkUnit ? `${l.bulkUnit.toLowerCase()} (bulk)` : 'portions'} remaining · ⏰ {timeRemaining(l.collectionDeadline)}
+              {l.categoryNote ? <><br />Other: {l.categoryNote}</> : ''}
               <br />📍 {l.pickupLocationText}
               <br />By {l.providerName}
             </p>

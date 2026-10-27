@@ -40,10 +40,10 @@ export function Nav() {
         )}
         <button
           className="secondary"
-          title="Switch language / भाषा बदला"
-          onClick={() => setLang(lang === 'en' ? 'mr' : 'en')}
+          title="Switch language / भाषा बदला / भाषा बदलें"
+          onClick={() => setLang(lang === 'en' ? 'mr' : lang === 'mr' ? 'hi' : 'en')}
         >
-          {lang === 'en' ? 'मराठी' : 'English'}
+          {lang === 'en' ? 'मराठी' : lang === 'mr' ? 'हिन्दी' : 'English'}
         </button>
       </nav>
     </header>

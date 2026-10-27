@@ -23,6 +23,7 @@ enum Role {
 enum LanguagePref {
   EN
   MR
+  HI
 }
 
 enum VerificationStatus {
@@ -166,6 +167,8 @@ model Listing {
   totalPortions           Int
   portionsRemaining       Int
   ngoSuitable             Boolean       @default(false)
+  categoryNote            String?       // when category = OTHER: what it refers to (v3.2)
+  bulkUnit                String?       // when portionType = BULK_SERVINGS: sub-unit label, e.g. KILOGRAMS (v3.2)
   photoPath               String?
   pickupLocationText      String
   cookedAt                DateTime

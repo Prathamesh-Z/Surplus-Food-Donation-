@@ -382,3 +382,34 @@ Scored against the four published judging criteria, equally weighted (25 points 
 - +Presentation: two full rehearsals completed before freeze, the freeze actually held, and every number in the PPT traceable to a test-log entry (§11).
 
 End of PRD v3.1.
+
+---
+
+## Amendment — PRD v3.2 (27 October 2026, team-directed)
+
+The following changes were directed by the team after v3.1 and supersede the
+named v3.1 decisions where they conflict. Everything else in v3.1 stands.
+
+1. **AI-assisted listing (client-side only).** The create-listing form offers
+   on-device food classification (TensorFlow.js + MobileNet, weights served
+   by the app itself) from a photo. It only *suggests* the food name, details
+   and category; the provider reviews and edits before publishing. No photo
+   leaves the device for detection, and no server-side ML is claimed.
+2. **Category "Other" note.** When category = OTHER, a free-text note states
+   what it refers to (`Listing.categoryNote`), shown on cards and detail.
+3. **Bulk sub-unit.** When portion type = BULK_SERVINGS, a sub-unit is
+   recorded (`Listing.bulkUnit`: KILOGRAMS, LITRES, SERVINGS, TRAYS, BOXES)
+   and the quantity label reflects it. Portion accounting is unchanged.
+4. **Hindi added.** UI languages are now English (default), Marathi and
+   Hindi (`LanguagePref` gains HI), with the same per-account persistence.
+5. **"Use current location" assist.** The create form may fill the pickup
+   location *text* from the browser's geolocation + reverse geocoding. Only
+   the resulting text is stored — the v3.1 rule stands: no coordinates are
+   stored, no distances are computed, ordering remains deadline-first.
+6. **Checklist presentation.** The form presents one agreement checkbox with
+   the full 8-item terms in a popup ("I Agree" confirms). The stored record
+   remains the full per-item confirmation (`checklistConfirmedItems`), and
+   the publish gate is unchanged: no agreement → DRAFT, never LIVE.
+7. **12-hour split date/time entry** for cooked-at and deadline on the
+   create form (separate date field + hour/minute/AM-PM). Validation rules
+   are unchanged.

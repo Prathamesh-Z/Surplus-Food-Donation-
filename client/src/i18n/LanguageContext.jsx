@@ -12,7 +12,7 @@ export function LanguageProvider({ children }) {
     localStorage.setItem('fws_lang', next);
     // Persist server-side too when signed in (users.languagePref), PRD FR-19.
     if (getAccessToken()) {
-      api('/api/users/me/language', { method: 'PATCH', body: { language: next === 'mr' ? 'MR' : 'EN' } }).catch(() => {});
+      api('/api/users/me/language', { method: 'PATCH', body: { language: next.toUpperCase() } }).catch(() => {});
     }
   }
 
@@ -20,7 +20,7 @@ export function LanguageProvider({ children }) {
     if (getAccessToken()) {
       api('/api/auth/me')
         .then((d) => {
-          const pref = d.user.languagePref === 'MR' ? 'mr' : 'en';
+          const pref = ['MR', 'HI'].includes(d.user.languagePref) ? d.user.languagePref.toLowerCase() : 'en';
           setLangState(pref);
           localStorage.setItem('fws_lang', pref);
         })

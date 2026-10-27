@@ -10,3 +10,6 @@ coverage/
 server/node_modules/
 client/node_modules/
 client/dist/
+
+# Binary model weights are fetched via `npm run fetch-model`
+client/public/models/

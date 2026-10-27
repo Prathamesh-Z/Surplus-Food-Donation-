@@ -145,3 +145,37 @@ describe('Module 3 — Listings (FR-04, FR-05, FR-06)', () => {
     expect(tooBig.status).toBe(413);
   });
 });
+
+describe('v3.2 amendments — category note & bulk unit', () => {
+  let provider;
+  beforeEach(async () => {
+    await cleanDb();
+    provider = await authedUser(app, request, { role: 'PROVIDER' });
+  });
+
+  it('category OTHER stores the free-text note; non-OTHER clears it', async () => {
+    const res = await createListing(app, request, provider.token, {
+      category: 'OTHER',
+      categoryNote: 'Sweets & snacks',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.listing.categoryNote).toBe('Sweets & snacks');
+    const res2 = await createListing(app, request, provider.token, {
+      category: 'BAKERY',
+      categoryNote: 'should be ignored',
+    });
+    expect(res2.body.listing.categoryNote).toBeNull();
+  });
+
+  it('BULK_SERVINGS stores the sub-unit; other portion types clear it', async () => {
+    const res = await createListing(app, request, provider.token, {
+      portionType: 'BULK_SERVINGS',
+      bulkUnit: 'KILOGRAMS',
+      totalPortions: 40,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.listing.bulkUnit).toBe('KILOGRAMS');
+    const res2 = await createListing(app, request, provider.token, { bulkUnit: 'LITRES' });
+    expect(res2.body.listing.bulkUnit).toBeNull();
+  });
+});

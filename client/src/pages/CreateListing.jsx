@@ -1,58 +1,202 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getAccessToken } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { detectFood } from '../lib/foodDetect.js';
 
-function toLocalInput(d) {
+const ALL_IDS = CHECKLIST.map(([id]) => id);
+
+function todayStr(d = new Date()) {
   const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Split 12-hour date/time entry (feature request): separate date field and
+// hour/minute/AM-PM selects — no 24-hour clock anywhere on this form.
+function SplitDateTime({ label, date, setDate, time, setTime }) {
+  const set = (k) => (e) => setTime({ ...time, [k]: e.target.value });
+  return (
+    <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 12px', padding: '10px 12px' }}>
+      <legend style={{ fontWeight: 600, fontSize: 14 }}>{label}</legend>
+      <div className="row">
+        <label style={{ flex: '1 1 160px' }}>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        </label>
+        <label>
+          <select value={time.hh} onChange={set('hh')} style={{ width: 76 }}>
+            {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+              <option key={h} value={h}>{h}</option>
+            ))}
+          </select>
+        </label>
+        <span>:</span>
+        <label>
+          <select value={time.mm} onChange={set('mm')} style={{ width: 76 }}>
+            {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <select value={time.ap} onChange={set('ap')} style={{ width: 82 }}>
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  );
+}
+
+function toISO(dateStr, { hh, mm, ap }) {
+  let h = Number(hh) % 12;
+  if (ap === 'PM') h += 12;
+  const d = new Date(`${dateStr}T${String(h).padStart(2, '0')}:${mm}:00`);
+  return d.toISOString();
+}
+
+function nowParts(offsetMinutes = 0) {
+  const d = new Date(Date.now() + offsetMinutes * 60000);
+  let h = d.getHours();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  const mm = String(Math.floor(d.getMinutes() / 5) * 5).padStart(2, '0');
+  return { date: todayStr(d), time: { hh: String(h), mm, ap } };
 }
 
 export function CreateListing() {
-  const { t } = useLang();
   const navigate = useNavigate();
-  const now = new Date();
+  const { t } = useLang();
+  const cookedInit = nowParts(-60);
+  const deadlineInit = nowParts(180);
   const [form, setForm] = useState({
     foodName: '',
     foodDetails: '',
     category: 'COOKED_MEALS',
+    categoryNote: '',
     dietaryType: 'VEG',
     portionType: 'INDIVIDUAL_MEALS',
+    bulkUnit: 'KILOGRAMS',
     totalPortions: 50,
     ngoSuitable: false,
     pickupLocationText: '',
-    cookedAt: toLocalInput(new Date(now.getTime() - 3600e3)),
-    collectionDeadline: toLocalInput(new Date(now.getTime() + 3 * 3600e3)),
   });
-  const [checked, setChecked] = useState([]);
+  const [cookedDate, setCookedDate] = useState(cookedInit.date);
+  const [cookedTime, setCookedTime] = useState(cookedInit.time);
+  const [deadlineDate, setDeadlineDate] = useState(deadlineInit.date);
+  const [deadlineTime, setDeadlineTime] = useState(deadlineInit.time);
+  const [agreed, setAgreed] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [error, setError] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [detectState, setDetectState] = useState('');
+  const [locating, setLocating] = useState(false);
+  const imgRef = useRef(null);
+
   const set = (k) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
+
+  function onPhoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setDetectState('');
+  }
+
+  async function runDetect() {
+    if (!imgRef.current) return;
+    setDetectState('loading');
+    try {
+      const result = await detectFood(imgRef.current);
+      if (!result) {
+        setDetectState('failed');
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        foodName: result.name,
+        foodDetails: `${t('detectedAs')}: ${result.name} (${Math.round(result.confidence * 100)}%). ${f.foodDetails}`.trim(),
+        category: result.category,
+      }));
+      setDetectState(`ok:${result.name}:${Math.round(result.confidence * 100)}`);
+    } catch {
+      setDetectState('failed');
+    }
+  }
+
+  async function useCurrentLocation() {
+    setError('');
+    if (!navigator.geolocation) {
+      setError(t('locationFailed'));
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          const data = await res.json();
+          const text = [data.locality, data.city, data.principalSubdivision]
+            .filter(Boolean)
+            .filter((v, i, a) => a.indexOf(v) === i)
+            .join(', ');
+          setForm((f) => ({ ...f, pickupLocationText: text || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` }));
+        } catch {
+          setForm((f) => ({ ...f, pickupLocationText: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` }));
+        }
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        setError(t('locationFailed'));
+      },
+      { timeout: 10000 }
+    );
+  }
 
   async function submit(e) {
     e.preventDefault();
     setError('');
     try {
       const body = {
-        ...form,
+        foodName: form.foodName,
+        foodDetails: form.foodDetails,
+        category: form.category,
+        categoryNote: form.category === 'OTHER' ? form.categoryNote : undefined,
+        dietaryType: form.dietaryType,
+        portionType: form.portionType,
+        bulkUnit: form.portionType === 'BULK_SERVINGS' ? form.bulkUnit : undefined,
         totalPortions: Number(form.totalPortions),
-        cookedAt: new Date(form.cookedAt).toISOString(),
-        collectionDeadline: new Date(form.collectionDeadline).toISOString(),
-        checklistItems: checked,
+        ngoSuitable: form.ngoSuitable,
+        pickupLocationText: form.pickupLocationText,
+        cookedAt: toISO(cookedDate, cookedTime),
+        collectionDeadline: toISO(deadlineDate, deadlineTime),
+        checklistItems: agreed ? ALL_IDS : [],
       };
       const res = await fetch('/api/listings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAccessToken()}` },
         body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create listing');
+      if (photoFile) {
+        const fd = new FormData();
+        fd.append('photo', photoFile);
+        await fetch(`/api/listings/${data.listing.id}/photo`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAccessToken()}` },
+          body: fd,
+        }).catch(() => {});
+      }
       if (data.listing.status === 'DRAFT') {
-        setError('Saved as DRAFT — all 8 safety items must be confirmed before the listing can go live.');
+        setError(t('draftWarning'));
         return;
       }
       navigate('/my-listings');
@@ -66,6 +210,32 @@ export function CreateListing() {
       <h1>{t('createListingTitle')}</h1>
       {error && <div className="error">{error}</div>}
       <form onSubmit={submit}>
+        {/* ── Photo + AI detection ─────────────────────────────── */}
+        <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
+          <legend style={{ fontWeight: 600, fontSize: 14 }}>{t('photoDetect')}</legend>
+          <label>
+            {t('takePhoto')}
+            <input type="file" accept="image/*" capture="environment" onChange={onPhoto} />
+          </label>
+          {photoPreview && (
+            <div className="row" style={{ alignItems: 'flex-start' }}>
+              <img ref={imgRef} src={photoPreview} alt="" style={{ maxWidth: 240, borderRadius: 10 }} />
+              <div>
+                <button type="button" className="secondary" onClick={runDetect} disabled={detectState === 'loading'}>
+                  🤖 {t('detect')}
+                </button>
+                {detectState === 'loading' && <p className="muted">{t('detecting')}</p>}
+                {detectState.startsWith('ok:') && (
+                  <p className="success" style={{ marginTop: 8 }}>
+                    ✓ {t('detectedAs')}: {detectState.split(':')[1]} ({detectState.split(':')[2]}%)
+                  </p>
+                )}
+                {detectState === 'failed' && <p className="error" style={{ marginTop: 8 }}>{t('detectionFailed')}</p>}
+              </div>
+            </div>
+          )}
+        </fieldset>
+
         <label>{t('foodName')}<input value={form.foodName} onChange={set('foodName')} required /></label>
         <label>{t('details')}<textarea value={form.foodDetails} onChange={set('foodDetails')} required /></label>
         <label>
@@ -80,6 +250,17 @@ export function CreateListing() {
             <option value="OTHER">Other</option>
           </select>
         </label>
+        {form.category === 'OTHER' && (
+          <label>
+            Other — {t('category')}
+            <input
+              value={form.categoryNote}
+              onChange={set('categoryNote')}
+              placeholder={t('categoryOtherPlaceholder')}
+              required
+            />
+          </label>
+        )}
         <label>
           {t('dietaryType')}
           <select value={form.dietaryType} onChange={set('dietaryType')}>
@@ -98,33 +279,96 @@ export function CreateListing() {
             <option value="PACKETS">Packets</option>
           </select>
         </label>
-        <label>{t('totalPortions')}<input type="number" min="1" value={form.totalPortions} onChange={set('totalPortions')} required /></label>
+        {form.portionType === 'BULK_SERVINGS' && (
+          <label>
+            {t('bulkUnit')}
+            <select value={form.bulkUnit} onChange={set('bulkUnit')}>
+              <option value="KILOGRAMS">Kilograms (kg)</option>
+              <option value="LITRES">Litres (L)</option>
+              <option value="SERVINGS">Servings</option>
+              <option value="TRAYS">Trays</option>
+              <option value="BOXES">Boxes</option>
+            </select>
+          </label>
+        )}
+        <label>
+          {form.portionType === 'BULK_SERVINGS' ? t('totalQuantity') : t('totalPortions')}
+          <input type="number" min="1" value={form.totalPortions} onChange={set('totalPortions')} required />
+        </label>
         <label>
           <input type="checkbox" checked={form.ngoSuitable} onChange={set('ngoSuitable')} style={{ width: 'auto' }} />{' '}
           {t('ngoSuitableLabel')}
         </label>
-        <label>{t('pickupLocation')} (text)<input value={form.pickupLocationText} onChange={set('pickupLocationText')} required /></label>
-        <label>{t('cookedAt')}<input type="datetime-local" value={form.cookedAt} onChange={set('cookedAt')} required /></label>
-        <label>{t('deadline')}<input type="datetime-local" value={form.collectionDeadline} onChange={set('collectionDeadline')} required /></label>
+        <label>
+          {t('pickupLocation')}
+          <input value={form.pickupLocationText} onChange={set('pickupLocationText')} required />
+        </label>
+        <button type="button" className="secondary" onClick={useCurrentLocation} disabled={locating} style={{ marginBottom: 12 }}>
+          📍 {locating ? t('locating') : t('useCurrentLocation')}
+        </button>
 
-        <fieldset>
-          <legend><strong>{t('checklistTitle')}</strong></legend>
-          {CHECKLIST.map(([id, text]) => (
-            <label key={id} style={{ display: 'block', fontWeight: 400 }}>
-              <input
-                type="checkbox"
-                style={{ width: 'auto' }}
-                checked={checked.includes(id)}
-                onChange={(e) =>
-                  setChecked(e.target.checked ? [...checked, id] : checked.filter((c) => c !== id))
-                }
-              />{' '}
-              {text}
-            </label>
-          ))}
-        </fieldset>
+        <SplitDateTime label={t('cookedAt')} date={cookedDate} setDate={setCookedDate} time={cookedTime} setTime={setCookedTime} />
+        <SplitDateTime label={t('deadline')} date={deadlineDate} setDate={setDeadlineDate} time={deadlineTime} setTime={setDeadlineTime} />
+
+        {/* ── Safety checklist as a single agreement + terms popup ── */}
+        <div className="card" style={{ marginTop: 6 }}>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              style={{ width: 'auto' }}
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+            />
+            <span>
+              {t('agreeTerms')}{' '}
+              <a
+                href="#terms"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setTermsOpen(true);
+                }}
+              >
+                {t('termsLink')}
+              </a>
+            </span>
+          </label>
+        </div>
         <button type="submit">{t('publish')}</button>
       </form>
+
+      {termsOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(20,40,20,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16,
+          }}
+          onClick={() => setTermsOpen(false)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 560, maxHeight: '82vh', overflowY: 'auto', margin: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0 }}>{t('termsTitle')}</h2>
+            <ol>
+              {CHECKLIST.map(([id, text]) => (
+                <li key={id} style={{ marginBottom: 8 }}>{text}</li>
+              ))}
+            </ol>
+            <div className="row">
+              <button
+                onClick={() => {
+                  setAgreed(true);
+                  setTermsOpen(false);
+                }}
+              >
+                {t('iAgree')}
+              </button>
+              <button className="secondary" onClick={() => setTermsOpen(false)}>{t('close')}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

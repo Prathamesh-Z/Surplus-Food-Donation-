@@ -229,6 +229,13 @@ describe('Modules 8-11 — Admin, NGO log, Recurring, Language (FR-16..21)', () 
     expect(patch.status).toBe(200);
     const me = await request(app).get('/api/auth/me').set(auth(claimer.token));
     expect(me.body.user.languagePref).toBe('MR');
+    const hi = await request(app)
+      .patch('/api/users/me/language')
+      .set(auth(claimer.token))
+      .send({ language: 'HI' });
+    expect(hi.status).toBe(200);
+    const me2 = await request(app).get('/api/auth/me').set(auth(claimer.token));
+    expect(me2.body.user.languagePref).toBe('HI');
   });
 
   it('recurring generation function respects day-of-week', async () => {
