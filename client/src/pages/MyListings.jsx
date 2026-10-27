@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
+import { VerifyPickup } from '../components/Pickup.jsx';
 
 export function timeRemaining(deadline) {
   const ms = new Date(deadline).getTime() - Date.now();
@@ -50,21 +51,6 @@ export function MyListings() {
     }
   }
 
-  async function verify(claimId) {
-    const code = window.prompt('Enter the pickup code the claimer shows you:');
-    if (!code) return;
-    try {
-      const res = await api(`/api/claims/${claimId}/verify`, {
-        method: 'POST',
-        body: { code: code.trim().toUpperCase() },
-      });
-      window.alert(res.alreadyCollected ? 'Already collected earlier.' : 'Collected ✓');
-      load();
-    } catch (err) {
-      window.alert(err.data?.error || err.message);
-    }
-  }
-
   return (
     <section>
       <h1>My listings</h1>
@@ -86,9 +72,7 @@ export function MyListings() {
               {(claims[l.id] ?? []).map((c) => (
                 <div className="row" key={c.id} style={{ marginTop: 6 }}>
                   <span>{c.claimerName} — {c.portionsClaimed} portions — {c.status}</span>
-                  {c.status === 'CONFIRMED' && (
-                    <button className="secondary" onClick={() => verify(c.id)}>Verify pickup code</button>
-                  )}
+                  {c.status === 'CONFIRMED' && <VerifyPickup claimId={c.id} onDone={load} />}
                 </div>
               ))}
             </div>

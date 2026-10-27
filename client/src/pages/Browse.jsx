@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
+import { useLang } from '../i18n/LanguageContext.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
 export function Browse() {
+  const { t } = useLang();
   const [listings, setListings] = useState([]);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
@@ -44,14 +46,14 @@ export function Browse() {
 
   return (
     <section>
-      <h1>Available surplus food</h1>
-      <p className="muted">Ordered by soonest collection deadline first. Pickup location is shown as text on each listing.</p>
+      <h1>{t('availableFood')}</h1>
+      <p className="muted">{t('orderedByDeadline')}</p>
       {error && <div className="error">{error}</div>}
       <div className="card">
         <div className="row">
-          <input placeholder="Search food…" value={filters.q} onChange={set('q')} style={{ maxWidth: 220 }} />
+          <input placeholder={t('searchFood')} value={filters.q} onChange={set('q')} style={{ maxWidth: 220 }} />
           <select value={filters.category} onChange={set('category')}>
-            <option value="">All categories</option>
+            <option value="">{t('allCategories')}</option>
             <option value="COOKED_MEALS">Cooked meals</option>
             <option value="RAW_PRODUCE">Raw produce</option>
             <option value="BAKERY">Bakery</option>
@@ -67,13 +69,13 @@ export function Browse() {
             <option value="VEGAN">Vegan</option>
           </select>
           <label style={{ fontWeight: 400 }}>
-            <input type="checkbox" checked={filters.ngoSuitable} onChange={set('ngoSuitable')} style={{ width: 'auto' }} /> NGO-suitable
+            <input type="checkbox" checked={filters.ngoSuitable} onChange={set('ngoSuitable')} style={{ width: 'auto' }} / > {t('ngoSuitable')}
           </label>
           <label style={{ fontWeight: 400 }}>
-            <input type="checkbox" checked={filters.endingSoon} onChange={set('endingSoon')} style={{ width: 'auto' }} /> Ending within 1 hour
+            <input type="checkbox" checked={filters.endingSoon} onChange={set('endingSoon')} style={{ width: 'auto' }} / > {t('endingSoon')}
           </label>
           <label style={{ fontWeight: 400 }}>
-            <input type="checkbox" checked={filters.availableOnly} onChange={set('availableOnly')} style={{ width: 'auto' }} /> Available only
+            <input type="checkbox" checked={filters.availableOnly} onChange={set('availableOnly')} style={{ width: 'auto' }} / > {t('availableOnly')}
           </label>
         </div>
       </div>
@@ -94,7 +96,7 @@ export function Browse() {
               <br />📍 {l.pickupLocationText}
               <br />By {l.providerName}
             </p>
-            <Link className="btn" to={`/listings/${l.id}`}>View &amp; claim</Link>
+            <Link className="btn" to={`/listings/${l.id}`}>{t('viewClaim')}</Link>
           </div>
         ))}
       </div>

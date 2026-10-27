@@ -35,7 +35,7 @@ export function Dashboard() {
         Every number below is computed from the records stored in this system — listings, claims
         and collections that actually happened here. No estimates, no external figures.
       </p>
-      <h2>Platform impact</h2>
+      <h2>{t('platformImpact')}</h2>
       <div className="grid">
         <Stat label="Listings created" value={p.listingsCreated} />
         <Stat label="Portions listed" value={p.portionsListed} />
@@ -45,7 +45,7 @@ export function Dashboard() {
         <Stat label="Expired listings" value={p.expiredListings} />
         <Stat label="Portions redistributed by NGOs" value={p.ngoPortionsRedistributed} />
       </div>
-      <h2>Your contribution{user ? ` — ${user.name} (${user.role})` : ''}</h2>
+      <h2>{t('yourContribution')}{user ? ` — ${user.name} (${user.role})` : ''}</h2>
       <div className="grid">
         {m.listingsCreated !== undefined && <Stat label="Your listings" value={m.listingsCreated} />}
         {m.portionsListed !== undefined && <Stat label="Portions you listed" value={m.portionsListed} />}

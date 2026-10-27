@@ -15,6 +15,7 @@ import { LanguageProvider } from './i18n/LanguageContext.jsx';
 import { Admin } from './pages/Admin.jsx';
 import { NgoPanel } from './pages/NgoPanel.jsx';
 import { Recurring } from './pages/Recurring.jsx';
+import { ImpactWall } from './pages/ImpactWall.jsx';
 
 export function App() {
   return (
@@ -33,6 +34,7 @@ export function App() {
           <Route path="/my-claims" element={<MyClaims />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/impact" element={<ImpactWall />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/ngo" element={<NgoPanel />} />
           <Route path="/recurring" element={<Recurring />} />

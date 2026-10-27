@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
+import { useLang } from '../i18n/LanguageContext.jsx';
 import { timeRemaining } from './MyListings.jsx';
+import { PickupCodeDisplay } from '../components/Pickup.jsx';
 
 export function MyClaims() {
+  const { t } = useLang();
   const [claims, setClaims] = useState([]);
   const [codes, setCodes] = useState({});
   const [error, setError] = useState('');
@@ -42,7 +45,7 @@ export function MyClaims() {
 
   return (
     <section>
-      <h1>My claims</h1>
+      <h1>{t('myClaims')}</h1>
       {error && <div className="error">{error}</div>}
       {claims.length === 0 && <p className="muted">No claims yet — browse available food to make your first claim.</p>}
       {claims.map((c) => (
@@ -60,13 +63,11 @@ export function MyClaims() {
           {c.status === 'CONFIRMED' && (
             <div className="row">
               {codes[c.id] ? (
-                <span>
-                  Pickup code: <span className="code">{codes[c.id]}</span>
-                </span>
+                <PickupCodeDisplay code={codes[c.id]} />
               ) : (
-                <button className="secondary" onClick={() => showCode(c.id)}>Show pickup code</button>
+                <button className="secondary" onClick={() => showCode(c.id)}>{t('showCode')}</button>
               )}
-              <button className="danger" onClick={() => cancel(c.id)}>Cancel claim</button>
+              <button className="danger" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>
             </div>
           )}
           {c.status === 'COLLECTED' && (

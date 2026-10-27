@@ -8,6 +8,25 @@ import { platformImpact, userImpact } from '../services/impactService.js';
 // /claims/mine, which include cancelled and expired records.
 export const dashboardRouter = Router();
 
+// Public impact wall: platform aggregates ONLY (no user data, no listings
+// detail) — designed for a venue screen / projected display during the demo.
+dashboardRouter.get('/public', async (req, res) => {
+  const platform = await platformImpact();
+  const activeListings = await prisma.listing.count({
+    where: { status: { in: ['LIVE', 'PARTIALLY_CLAIMED'] } },
+  });
+  const portionsAvailable = await prisma.listing.aggregate({
+    where: { status: { in: ['LIVE', 'PARTIALLY_CLAIMED'] } },
+    _sum: { portionsRemaining: true },
+  });
+  return res.json({
+    platform,
+    activeListings,
+    portionsAvailableNow: portionsAvailable._sum.portionsRemaining ?? 0,
+    generatedAt: new Date().toISOString(),
+  });
+});
+
 dashboardRouter.get('/', requireAuth, async (req, res) => {
   const [platform, mine] = await Promise.all([platformImpact(), userImpact(req.user)]);
   return res.json({ platform, mine, role: req.user.role });

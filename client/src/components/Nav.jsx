@@ -12,6 +12,7 @@ export function Nav() {
       <Link to="/" className="brand">🥗 {t('appName')}</Link>
       <nav>
         <Link to="/browse">{t('browse')}</Link>
+        <Link to="/impact">Live impact</Link>
         {loggedIn ? (
           <>
             <Link to="/dashboard">{t('dashboard')}</Link>

@@ -80,3 +80,18 @@ describe('Module 7 — Impact dashboard (FR-15) & history (FR-22)', () => {
     expect(providerListings.body.listings).toHaveLength(1);
   });
 });
+
+describe('Impact wall public endpoint', () => {
+  it('GET /api/dashboard/public returns aggregates without auth and no user data', async () => {
+    await cleanDb();
+    const p = await authedUser(app, request, { role: 'PROVIDER' });
+    await createListing(app, request, p.token, { totalPortions: 25 });
+    const res = await request(app).get('/api/dashboard/public');
+    expect(res.status).toBe(200);
+    expect(res.body.platform.portionsListed).toBe(25);
+    expect(res.body.activeListings).toBe(1);
+    expect(res.body.portionsAvailableNow).toBe(25);
+    expect(JSON.stringify(res.body)).not.toContain('demo.local');
+    expect(JSON.stringify(res.body)).not.toContain('password');
+  });
+});
