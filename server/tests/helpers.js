@@ -59,6 +59,8 @@ export async function createListing(app, request, token, overrides = {}) {
     ngoSuitable: overrides.ngoSuitable ?? false,
     categoryNote: overrides.categoryNote,
     bulkUnit: overrides.bulkUnit,
+    contactPhone: overrides.contactPhone,
+    showContact: overrides.showContact,
     pickupLocationText: overrides.pickupLocationText ?? 'Hostel Mess Gate, Karad',
     cookedAt: overrides.cookedAt ?? new Date(now - 60 * 60 * 1000).toISOString(),
     collectionDeadline:

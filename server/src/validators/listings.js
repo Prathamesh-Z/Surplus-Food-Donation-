@@ -25,6 +25,11 @@ export const createListingSchema = z
     ngoSuitable: z.boolean().optional().default(false),
     categoryNote: z.string().trim().max(120).optional(),
     bulkUnit: z.enum(['KILOGRAMS', 'LITRES', 'SERVINGS', 'TRAYS', 'BOXES']).optional(),
+    contactPhone: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
+      .optional(),
+    showContact: z.boolean().optional().default(false),
     pickupLocationText: z.string().trim().min(1),
     cookedAt: z.string().datetime(),
     collectionDeadline: z.string().datetime(),
@@ -54,6 +59,11 @@ export const editListingSchema = z.object({
   ngoSuitable: z.boolean().optional(),
   categoryNote: z.string().trim().max(120).optional(),
   bulkUnit: z.enum(['KILOGRAMS', 'LITRES', 'SERVINGS', 'TRAYS', 'BOXES']).optional(),
+  contactPhone: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
+    .optional(),
+  showContact: z.boolean().optional(),
   pickupLocationText: z.string().trim().min(1).optional(),
   cookedAt: z.string().datetime().optional(),
   collectionDeadline: z.string().datetime().optional(),

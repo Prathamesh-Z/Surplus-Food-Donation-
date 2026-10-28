@@ -12,6 +12,8 @@ import { MyClaims } from './pages/MyClaims.jsx';
 import { Notifications } from './pages/Notifications.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
+import { LocationProvider } from './location/LocationContext.jsx';
+import { Profile } from './pages/Profile.jsx';
 import { Admin } from './pages/Admin.jsx';
 import { NgoPanel } from './pages/NgoPanel.jsx';
 import { Recurring } from './pages/Recurring.jsx';
@@ -20,6 +22,7 @@ import { ImpactWall } from './pages/ImpactWall.jsx';
 export function App() {
   return (
     <LanguageProvider>
+    <LocationProvider>
     <BrowserRouter>
       <Nav />
       <main className="container">
@@ -38,10 +41,12 @@ export function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/ngo" element={<NgoPanel />} />
           <Route path="/recurring" element={<Recurring />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<p>Page coming in a later module.</p>} />
         </Routes>
       </main>
     </BrowserRouter>
+    </LocationProvider>
     </LanguageProvider>
   );
 }

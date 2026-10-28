@@ -2,14 +2,25 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { getAccessToken, clearTokens } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { useLocation } from '../location/LocationContext.jsx';
 
 export function Nav() {
   const loggedIn = Boolean(getAccessToken());
   const user = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
   const { lang, setLang, t } = useLang();
+  const { location, openPrompt } = useLocation();
   return (
     <header className="nav">
       <Link to="/" className="brand">🥗 {t('appName')}</Link>
+      <button
+        type="button"
+        className="secondary"
+        onClick={openPrompt}
+        title={t('yourLocation')}
+        style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+      >
+        📍 {location?.label ?? t('locPromptTitle')} ✎
+      </button>
       <nav>
         <Link to="/browse">{t('browse')}</Link>
         <Link to="/impact">Live impact</Link>
@@ -22,6 +33,7 @@ export function Nav() {
             {user?.role === 'NGO' && <Link to="/ngo">NGO panel</Link>}
             {user?.role === 'ADMIN' && <Link to="/admin">{t('admin')}</Link>}
             <Link to="/notifications">{t('notifications')}</Link>
+            <Link to="/profile">{t('profile')}</Link>
             <button
               onClick={() => {
                 clearTokens();

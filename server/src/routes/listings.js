@@ -92,6 +92,8 @@ listingsRouter.post('/', requireAuth, requireRole('PROVIDER'), async (req, res, 
         ngoSuitable: data.ngoSuitable ?? false,
         categoryNote: data.category === 'OTHER' ? (data.categoryNote ?? null) : null,
         bulkUnit: data.portionType === 'BULK_SERVINGS' ? (data.bulkUnit ?? null) : null,
+        contactPhone: data.contactPhone ?? req.user.mobile,
+        showContact: data.showContact ?? false,
         pickupLocationText: data.pickupLocationText,
         cookedAt: new Date(data.cookedAt),
         collectionDeadline: new Date(data.collectionDeadline),
@@ -109,7 +111,7 @@ listingsRouter.post('/', requireAuth, requireRole('PROVIDER'), async (req, res, 
         relatedListingId: listing.id,
       });
     }
-    return res.status(201).json({ listing: listingView(listing) });
+    return res.status(201).json({ listing: listingView(listing, req.user.id) });
   } catch (err) {
     return next(err);
   }
@@ -149,7 +151,7 @@ listingsRouter.post('/:id/publish', requireAuth, requireRole('PROVIDER'), async 
       body: `${updated.totalPortions} portions — collect by ${updated.collectionDeadline.toISOString()}`,
       relatedListingId: updated.id,
     });
-    return res.json({ listing: listingView(updated) });
+    return res.json({ listing: listingView(updated, req.user.id) });
   } catch (err) {
     return next(err);
   }
@@ -173,7 +175,7 @@ listingsRouter.post(
         where: { id: listing.id },
         data: { photoPath },
       });
-      return res.json({ listing: listingView(updated), photoPath });
+      return res.json({ listing: listingView(updated, req.user.id), photoPath });
     } catch (err) {
       return next(err);
     }
@@ -186,7 +188,7 @@ listingsRouter.get('/mine', requireAuth, requireRole('PROVIDER'), async (req, re
     where: { providerId: req.user.id },
     orderBy: { createdAt: 'desc' },
   });
-  return res.json({ listings: listings.map(listingView) });
+  return res.json({ listings: listings.map((l) => listingView(l, req.user.id)) });
 });
 
 // ── Browse / search / filters (FR-07, FR-08) ───────────────────────────────
@@ -232,7 +234,7 @@ listingsRouter.get('/', requireAuth, async (req, res) => {
   const now = Date.now();
   return res.json({
     listings: listings.map((l) => ({
-      ...listingView(l),
+      ...listingView(l, req.user.id),
       timeRemainingMinutes: Math.max(
         0,
         Math.round((new Date(l.collectionDeadline).getTime() - now) / 60000)
@@ -248,7 +250,7 @@ listingsRouter.get('/:id', requireAuth, async (req, res) => {
     include: { provider: { select: { name: true } } },
   });
   if (!listing) return res.status(404).json({ error: 'Listing not found' });
-  return res.json({ listing: listingView(listing) });
+  return res.json({ listing: listingView(listing, req.user.id, { detail: true }) });
 });
 
 // ── Edit (FR-06) ───────────────────────────────────────────────────────────
@@ -285,7 +287,7 @@ listingsRouter.patch('/:id', requireAuth, requireRole('PROVIDER'), async (req, r
     }
     const updated = await prisma.listing.update({ where: { id: listing.id }, data: update });
     const refreshed = await refreshListingStatus(updated.id);
-    return res.json({ listing: listingView(refreshed ?? updated) });
+    return res.json({ listing: listingView(refreshed ?? updated, req.user.id) });
   } catch (err) {
     return next(err);
   }
@@ -328,7 +330,7 @@ listingsRouter.post('/:id/cancel', requireAuth, requireRole('PROVIDER'), async (
         data: { status: 'CANCELLED', cancelReason: reason },
       });
     });
-    return res.json({ listing: listingView(updated), cancelledClaims: openClaims.length });
+    return res.json({ listing: listingView(updated, req.user.id), cancelledClaims: openClaims.length });
   } catch (err) {
     return next(err);
   }

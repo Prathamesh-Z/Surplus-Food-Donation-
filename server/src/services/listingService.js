@@ -62,12 +62,22 @@ export async function refreshListingStatus(listingId, client = prisma) {
   return listing;
 }
 
-export function listingView(listing) {
+/**
+ * Public listing shape. `contactPhone` is NEVER spread into responses.
+ * `donorContact` is added only when the viewer is the listing's provider,
+ * or — on the detail view only — when the donor opted in via showContact.
+ * Browse/list responses therefore never expose a phone number (v3.4).
+ */
+export function listingView(listing, viewerId = null, { detail = false } = {}) {
   if (!listing) return listing;
-  const { provider, ...rest } = listing;
-  return {
+  const { provider, contactPhone, ...rest } = listing;
+  const view = {
     ...rest,
     providerName: provider?.name ?? undefined,
     providerId: listing.providerId,
   };
+  if (contactPhone && viewerId && (viewerId === listing.providerId || (detail && listing.showContact))) {
+    view.donorContact = contactPhone;
+  }
+  return view;
 }

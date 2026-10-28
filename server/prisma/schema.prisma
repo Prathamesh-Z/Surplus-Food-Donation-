@@ -169,6 +169,8 @@ model Listing {
   ngoSuitable             Boolean       @default(false)
   categoryNote            String?       // when category = OTHER: what it refers to (v3.2)
   bulkUnit                String?       // when portionType = BULK_SERVINGS: sub-unit label, e.g. KILOGRAMS (v3.2)
+  contactPhone            String?       // donor contact for THIS listing, prefilled from User.mobile (v3.4)
+  showContact             Boolean       @default(false) // donor opted to reveal contactPhone on the listing detail (v3.4)
   photoPath               String?
   pickupLocationText      String
   cookedAt                DateTime

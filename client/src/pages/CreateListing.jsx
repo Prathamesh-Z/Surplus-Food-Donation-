@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getAccessToken, recognizeFood } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { CameraCapture } from '../components/CameraCapture.jsx';
 
 const ALL_IDS = CHECKLIST.map(([id]) => id);
 
@@ -69,6 +70,11 @@ export function CreateListing() {
   const { t } = useLang();
   const cookedInit = nowParts(-60);
   const deadlineInit = nowParts(180);
+  const savedUser = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
+  const savedLocation = (() => {
+    try { return JSON.parse(localStorage.getItem('fws_location') ?? 'null')?.label ?? ''; }
+    catch { return ''; }
+  })();
   const [form, setForm] = useState({
     foodName: '',
     foodDetails: '',
@@ -79,7 +85,9 @@ export function CreateListing() {
     bulkUnit: 'KILOGRAMS',
     totalPortions: 50,
     ngoSuitable: false,
-    pickupLocationText: '',
+    pickupLocationText: savedLocation,
+    contactPhone: savedUser?.mobile ?? '',
+    showContact: false,
   });
   const [cookedDate, setCookedDate] = useState(cookedInit.date);
   const [cookedTime, setCookedTime] = useState(cookedInit.time);
@@ -93,6 +101,8 @@ export function CreateListing() {
   /** Recognition (PRD v3.3): { status: idle|loading|done|error, result, error } */
   const [detect, setDetect] = useState({ status: 'idle', result: null, error: '' });
   const [locating, setLocating] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const detectSeq = useRef(0);
 
   const set = (k) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
@@ -102,8 +112,24 @@ export function CreateListing() {
     if (!file) return;
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
-    setDetect({ status: 'idle', result: null, error: '' });
   }
+
+  function onCameraCapture(file) {
+    setCameraOpen(false);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  // v3.4: recognition starts AUTOMATICALLY when an image is chosen or
+  // captured — there is no Detect button. The sequence token drops stale
+  // results when the image changes quickly, so no duplicate/out-of-order
+  // applications can occur.
+  useEffect(() => {
+    if (!photoFile) return;
+    const seq = ++detectSeq.current;
+    runDetect(photoFile, seq);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoFile]);
 
   /** Apply one enriched prediction (primary or alternative) to the form. */
   function applySuggestion(name, description, category, categoryNote) {
@@ -116,16 +142,17 @@ export function CreateListing() {
     }));
   }
 
-  async function runDetect() {
-    if (!photoFile) return;
+  async function runDetect(file, seq) {
     setDetect({ status: 'loading', result: null, error: '' });
     try {
-      const result = await recognizeFood(photoFile);
+      const result = await recognizeFood(file);
+      if (detectSeq.current !== seq) return; // a newer image superseded this
       if (result.food_name) {
         applySuggestion(result.food_name, result.description, result.category, result.categoryNote);
       }
       setDetect({ status: 'done', result, error: '' });
     } catch (err) {
+      if (detectSeq.current !== seq) return;
       setDetect({ status: 'error', result: null, error: err.message });
     }
   }
@@ -177,6 +204,8 @@ export function CreateListing() {
         bulkUnit: form.portionType === 'BULK_SERVINGS' ? form.bulkUnit : undefined,
         totalPortions: Number(form.totalPortions),
         ngoSuitable: form.ngoSuitable,
+        contactPhone: /^[6-9]\d{9}$/.test(form.contactPhone.trim()) ? form.contactPhone.trim() : undefined,
+        showContact: form.showContact,
         pickupLocationText: form.pickupLocationText,
         cookedAt: toISO(cookedDate, cookedTime),
         collectionDeadline: toISO(deadlineDate, deadlineTime),
@@ -213,21 +242,26 @@ export function CreateListing() {
       <h1>{t('createListingTitle')}</h1>
       {error && <div className="error">{error}</div>}
       <form onSubmit={submit}>
-        {/* ── Photo + AI detection ─────────────────────────────── */}
+        {/* ── Photo + AI detection (v3.4: upload or camera, auto-detect) ── */}
         <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
           <legend style={{ fontWeight: 600, fontSize: 14 }}>{t('photoDetect')}</legend>
-          <label>
-            {t('takePhoto')}
-            <input type="file" accept="image/*" capture="environment" onChange={onPhoto} />
-          </label>
+          <div className="row">
+            <label className="secondary" style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}>
+              📁 {t('uploadImage')}
+              <input type="file" accept="image/*" onChange={onPhoto} style={{ display: 'none' }} />
+            </label>
+            <button type="button" className="secondary" onClick={() => setCameraOpen(true)}>
+              📷 {t('scanCamera')}
+            </button>
+          </div>
+          {cameraOpen && (
+            <CameraCapture onCapture={onCameraCapture} onClose={() => setCameraOpen(false)} />
+          )}
           {photoPreview && (
-            <div className="row" style={{ alignItems: 'flex-start' }}>
+            <div className="row" style={{ alignItems: 'flex-start', marginTop: 10 }}>
               <img src={photoPreview} alt="" style={{ maxWidth: 240, borderRadius: 10 }} />
               <div>
-                <button type="button" className="secondary" onClick={runDetect} disabled={detect.status === 'loading'}>
-                  🤖 {t('detect')}
-                </button>
-                {detect.status === 'loading' && <p className="muted">{t('detectWarming')}</p>}
+                {detect.status === 'loading' && <p className="muted">🤖 {t('detectWarming')}</p>}
                 {detect.status === 'done' && detect.result?.food_name && (
                   <div style={{ marginTop: 8 }}>
                     <p className="success" style={{ margin: '0 0 4px' }}>
@@ -271,7 +305,12 @@ export function CreateListing() {
                 {detect.status === 'error' && (
                   <p className="error" style={{ marginTop: 8 }}>
                     {detect.error || t('detectionFailed')}{' '}
-                    <button type="button" className="secondary" style={{ padding: '2px 8px' }} onClick={runDetect}>
+                    <button
+                      type="button"
+                      className="secondary"
+                      style={{ padding: '2px 8px' }}
+                      onClick={() => runDetect(photoFile, ++detectSeq.current)}
+                    >
                       {t('detectTryAgain')}
                     </button>
                   </p>
@@ -351,6 +390,30 @@ export function CreateListing() {
         <button type="button" className="secondary" onClick={useCurrentLocation} disabled={locating} style={{ marginBottom: 12 }}>
           📍 {locating ? t('locating') : t('useCurrentLocation')}
         </button>
+
+        {/* ── Donor contact (v3.4): prefilled from the profile ── */}
+        <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
+          <legend style={{ fontWeight: 600, fontSize: 14 }}>{t('donorContactTitle')}</legend>
+          <label>
+            {t('contactNumber')}
+            <input
+              value={form.contactPhone}
+              onChange={set('contactPhone')}
+              inputMode="numeric"
+              placeholder="9812345678"
+            />
+          </label>
+          <p className="muted" style={{ margin: '4px 0' }}>{t('donorContactHint')}</p>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              type="checkbox"
+              style={{ width: 'auto' }}
+              checked={form.showContact}
+              onChange={set('showContact')}
+            />
+            {t('showContactLabel')}
+          </label>
+        </fieldset>
 
         <SplitDateTime label={t('cookedAt')} date={cookedDate} setDate={setCookedDate} time={cookedTime} setTime={setCookedTime} />
         <SplitDateTime label={t('deadline')} date={deadlineDate} setDate={setDeadlineDate} time={deadlineTime} setTime={setDeadlineTime} />

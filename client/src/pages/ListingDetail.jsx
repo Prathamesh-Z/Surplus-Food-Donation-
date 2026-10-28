@@ -72,6 +72,12 @@ export function ListingDetail() {
           {listing.ngoSuitable ? ' · NGO-suitable' : ''}
         </p>
         <p className="muted">{t('safetyConfirmed')}</p>
+        {listing.donorContact && (
+          <p>
+            📞 {t('donorContactTitle')}:{' '}
+            <a href={`tel:+91${listing.donorContact}`}>{listing.donorContact}</a>
+          </p>
+        )}
       </div>
       {message && (
         <div className="success">
