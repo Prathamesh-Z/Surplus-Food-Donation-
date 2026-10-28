@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, getAccessToken, recognizeFood } from '../lib/api.js';
+import { authedFetch, recognizeFood } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { CameraCapture } from '../components/CameraCapture.jsx';
@@ -211,20 +211,18 @@ export function CreateListing() {
         collectionDeadline: toISO(deadlineDate, deadlineTime),
         checklistItems: agreed ? ALL_IDS : [],
       };
-      const res = await fetch('/api/listings', {
+      const res = await authedFetch('/api/listings', () => ({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAccessToken()}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      });
+      }));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create listing');
       if (photoFile) {
-        const fd = new FormData();
-        fd.append('photo', photoFile);
-        await fetch(`/api/listings/${data.listing.id}/photo`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${getAccessToken()}` },
-          body: fd,
+        await authedFetch(`/api/listings/${data.listing.id}/photo`, () => {
+          const f = new FormData();
+          f.append('photo', photoFile);
+          return { method: 'POST', body: f };
         }).catch(() => {});
       }
       if (data.listing.status === 'DRAFT') {

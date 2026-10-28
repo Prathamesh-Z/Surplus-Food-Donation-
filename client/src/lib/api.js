@@ -1,10 +1,16 @@
-// Tiny API helper — stores the access token in localStorage and attaches it.
-// Module 2 (auth) builds the login/register pages on top of this.
+// Tiny API helper — stores tokens in localStorage and attaches the access
+// token. Access tokens live 15 minutes (PRD FR-02); when one expires, the
+// helper silently exchanges the 7-day refresh token for a new access token
+// and retries the request once, so a long-open page never surfaces a raw
+// "Invalid or expired token" error mid-task (fixed in v3.4.1).
 const TOKEN_KEY = 'fws_access_token';
 const REFRESH_KEY = 'fws_refresh_token';
 
 export function getAccessToken() {
   return localStorage.getItem(TOKEN_KEY);
+}
+export function getRefreshToken() {
+  return localStorage.getItem(REFRESH_KEY);
 }
 export function setTokens(access, refresh) {
   if (access) localStorage.setItem(TOKEN_KEY, access);
@@ -15,15 +21,74 @@ export function clearTokens() {
   localStorage.removeItem(REFRESH_KEY);
 }
 
+let refreshInFlight = null;
+
+/** Exchange the stored refresh token for a new access token (single-flight). */
+export async function refreshAccessToken() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json().catch(() => ({}));
+        if (!data.accessToken) return null;
+        setTokens(data.accessToken);
+        return data.accessToken;
+      } catch {
+        return null;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
+
+/**
+ * fetch() with the access token attached; on a 401 it refreshes the token
+ * once and retries. `makeInit` is a factory so bodies like FormData are
+ * rebuilt fresh for the retry.
+ */
+export async function authedFetch(path, makeInit) {
+  const build = (token) => {
+    const init = typeof makeInit === 'function' ? makeInit() : { ...makeInit };
+    init.headers = { ...(init.headers ?? {}), Authorization: `Bearer ${token}` };
+    return init;
+  };
+  let res = await fetch(path, build(getAccessToken()));
+  if (res.status === 401) {
+    const fresh = await refreshAccessToken();
+    if (fresh) {
+      res = await fetch(path, build(fresh));
+    } else {
+      clearTokens();
+    }
+  }
+  return res;
+}
+
 export async function api(path, { method = 'GET', body, token } = {}) {
-  const res = await fetch(path, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ?? getAccessToken() ? { Authorization: `Bearer ${token ?? getAccessToken()}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const doCall = (tok) =>
+    fetch(path, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  let res = await doCall(token ?? getAccessToken());
+  if (res.status === 401 && !token) {
+    const fresh = await refreshAccessToken();
+    if (fresh) res = await doCall(fresh);
+    else clearTokens();
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || `Request failed (${res.status})`);
@@ -36,12 +101,10 @@ export async function api(path, { method = 'GET', body, token } = {}) {
 
 /** Food recognition (PRD v3.3): multipart upload to the backend proxy. */
 export async function recognizeFood(file) {
-  const fd = new FormData();
-  fd.append('photo', file);
-  const res = await fetch('/api/listings/recognize', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${getAccessToken()}` },
-    body: fd,
+  const res = await authedFetch('/api/listings/recognize', () => {
+    const fd = new FormData();
+    fd.append('photo', file);
+    return { method: 'POST', body: fd };
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
