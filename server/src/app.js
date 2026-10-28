@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { apiRouter } from './routes/index.js';
+import { UPLOADS_DIR } from './lib/uploads.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,10 +18,9 @@ export function createApp() {
     res.json({ ok: true, service: 'food-waste-saver', time: new Date().toISOString() });
   });
 
-  // Uploaded photos (local disk, PRD FR-04)
-  const uploadsDir = path.join(__dirname, '../../uploads');
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  app.use('/uploads', express.static(uploadsDir));
+  // Uploaded photos (local disk, PRD FR-04) — served from the same
+  // directory multer writes to (lib/uploads.js is the single source).
+  app.use('/uploads', express.static(UPLOADS_DIR));
 
   // All module routes (auth, listings, claims, notifications, …)
   app.use('/api', apiRouter);

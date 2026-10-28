@@ -171,6 +171,8 @@ model Listing {
   bulkUnit                String?       // when portionType = BULK_SERVINGS: sub-unit label, e.g. KILOGRAMS (v3.2)
   contactPhone            String?       // donor contact for THIS listing, prefilled from User.mobile (v3.4)
   showContact             Boolean       @default(false) // donor opted to reveal contactPhone on the listing detail (v3.4)
+  pickupLat               Float?        // pickup point coordinates (v3.5); the readable address stays in pickupLocationText
+  pickupLng               Float?        // both null = location text only, distance unavailable (never treated as 0)
   photoPath               String?
   pickupLocationText      String
   cookedAt                DateTime

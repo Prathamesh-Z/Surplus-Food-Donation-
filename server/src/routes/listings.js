@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import {
@@ -19,19 +17,16 @@ import {
 } from '../services/listingService.js';
 import { createNotification, notifyAllClaimersAndNgos } from '../services/notificationService.js';
 import { recognizeFood } from '../services/recognitionService.js';
+import { UPLOADS_DIR } from '../lib/uploads.js';
 
 const memoryUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // same 5 MB cap as listing photos
 });
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, '../../uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
-
 const upload = multer({
   storage: multer.diskStorage({
-    destination: uploadsDir,
+    destination: UPLOADS_DIR,
     filename: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
       cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`);
@@ -95,6 +90,8 @@ listingsRouter.post('/', requireAuth, requireRole('PROVIDER'), async (req, res, 
         contactPhone: data.contactPhone ?? req.user.mobile,
         showContact: data.showContact ?? false,
         pickupLocationText: data.pickupLocationText,
+        pickupLat: data.pickupLat ?? null,
+        pickupLng: data.pickupLng ?? null,
         cookedAt: new Date(data.cookedAt),
         collectionDeadline: new Date(data.collectionDeadline),
         checklistConfirmedItems: confirmedItems,

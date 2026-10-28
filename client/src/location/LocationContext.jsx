@@ -5,10 +5,12 @@ import { useLang } from '../i18n/LanguageContext.jsx';
  * App-level location (v3.4), Zepto/Blinkit-style: a place NAME the user
  * picks once, shown in the header, editable any time.
  *
- * Deliberate scope (consistent with PRD discovery rules): only the label
- * text is stored — never coordinates — in localStorage on this device.
- * It does NOT filter, rank or distance-sort listings; it prefills the
- * pickup-location text on the posting form and labels the header.
+ * Scope: the label text is what other people see; coordinates (v3.5) are
+ * captured only when the user explicitly picks "Use current location",
+ * stored only in localStorage on this device, and used solely to compute
+ * distances on-device for sorting — they are never sent to the server and
+ * never shown to other users. Manual entries carry no coordinates, and
+ * distance is then simply unavailable (never faked).
  */
 const LocContext = createContext({
   location: null,
@@ -34,8 +36,13 @@ export function LocationProvider({ children }) {
     () => !readSaved() && !localStorage.getItem(DISMISSED)
   );
 
-  function setLocation(label) {
-    const value = { label, savedAt: new Date().toISOString() };
+  function setLocation(label, coords = null) {
+    const value = {
+      label,
+      lat: typeof coords?.lat === 'number' ? coords.lat : null,
+      lng: typeof coords?.lng === 'number' ? coords.lng : null,
+      savedAt: new Date().toISOString(),
+    };
     localStorage.setItem(KEY, JSON.stringify(value));
     setLoc(value);
     setPromptOpen(false);
@@ -97,7 +104,7 @@ function LocationPrompt({ onClose }) {
             .filter(Boolean)
             .filter((v, i, a) => a.indexOf(v) === i)
             .join(', ');
-          if (text) setLocation(text);
+          if (text) setLocation(text, { lat: latitude, lng: longitude });
           else setError(t('locationFailed'));
         } catch {
           setError(t('locationFailed'));

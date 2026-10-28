@@ -137,6 +137,13 @@ describe('Module 3 — Listings (FR-04, FR-05, FR-06)', () => {
     expect(ok.status).toBe(200);
     expect(ok.body.photoPath).toMatch(/^\/uploads\/.+\.png$/);
 
+    // Regression (v3.5): the uploaded file must actually be SERVED at its
+    // URL — multer's write directory and the static /uploads mount once
+    // resolved to different folders, so every photo 404'd in the browser.
+    const served = await request(app).get(ok.body.photoPath);
+    expect(served.status).toBe(200);
+    expect(served.headers['content-type']).toMatch(/image\/png/);
+
     const big = Buffer.alloc(6 * 1024 * 1024, 1);
     const tooBig = await request(app)
       .post(`/api/listings/${id}/photo`)

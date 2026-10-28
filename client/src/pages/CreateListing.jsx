@@ -71,10 +71,11 @@ export function CreateListing() {
   const cookedInit = nowParts(-60);
   const deadlineInit = nowParts(180);
   const savedUser = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
-  const savedLocation = (() => {
-    try { return JSON.parse(localStorage.getItem('fws_location') ?? 'null')?.label ?? ''; }
-    catch { return ''; }
+  const savedLocObj = (() => {
+    try { return JSON.parse(localStorage.getItem('fws_location') ?? 'null'); }
+    catch { return null; }
   })();
+  const savedLocation = savedLocObj?.label ?? '';
   const [form, setForm] = useState({
     foodName: '',
     foodDetails: '',
@@ -101,6 +102,15 @@ export function CreateListing() {
   /** Recognition (PRD v3.3): { status: idle|loading|done|error, result, error } */
   const [detect, setDetect] = useState({ status: 'idle', result: null, error: '' });
   const [locating, setLocating] = useState(false);
+  // v3.5: exact pickup point for THIS listing (nullable). Seeded from the
+  // app-level saved location when it carries coordinates; the form's own
+  // "Use current location" can set it precisely. Editing the address text
+  // by hand clears it, because the text may no longer match the point.
+  const [pickupCoords, setPickupCoords] = useState(
+    typeof savedLocObj?.lat === 'number' && typeof savedLocObj?.lng === 'number'
+      ? { lat: savedLocObj.lat, lng: savedLocObj.lng }
+      : null
+  );
   const [cameraOpen, setCameraOpen] = useState(false);
   const detectSeq = useRef(0);
 
@@ -167,6 +177,9 @@ export function CreateListing() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
+        // The point is captured even if the readable label lookup fails —
+        // coordinates are never written into the address text (v3.5).
+        setPickupCoords({ lat: latitude, lng: longitude });
         try {
           const res = await fetch(
             `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
@@ -176,9 +189,10 @@ export function CreateListing() {
             .filter(Boolean)
             .filter((v, i, a) => a.indexOf(v) === i)
             .join(', ');
-          setForm((f) => ({ ...f, pickupLocationText: text || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` }));
+          if (text) setForm((f) => ({ ...f, pickupLocationText: text }));
+          else setError(t('locationFailed'));
         } catch {
-          setForm((f) => ({ ...f, pickupLocationText: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` }));
+          setError(t('locationFailed'));
         }
         setLocating(false);
       },
@@ -207,6 +221,8 @@ export function CreateListing() {
         contactPhone: /^[6-9]\d{9}$/.test(form.contactPhone.trim()) ? form.contactPhone.trim() : undefined,
         showContact: form.showContact,
         pickupLocationText: form.pickupLocationText,
+        pickupLat: pickupCoords?.lat,
+        pickupLng: pickupCoords?.lng,
         cookedAt: toISO(cookedDate, cookedTime),
         collectionDeadline: toISO(deadlineDate, deadlineTime),
         checklistItems: agreed ? ALL_IDS : [],
@@ -383,11 +399,19 @@ export function CreateListing() {
         </label>
         <label>
           {t('pickupLocation')}
-          <input value={form.pickupLocationText} onChange={set('pickupLocationText')} required />
+          <input
+            value={form.pickupLocationText}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, pickupLocationText: e.target.value }));
+              setPickupCoords(null);
+            }}
+            required
+          />
         </label>
         <button type="button" className="secondary" onClick={useCurrentLocation} disabled={locating} style={{ marginBottom: 12 }}>
           📍 {locating ? t('locating') : t('useCurrentLocation')}
         </button>
+        {pickupCoords && <p className="success" style={{ marginTop: -6 }}>📍 {t('pickupPointSet')}</p>}
 
         {/* ── Donor contact (v3.4): prefilled from the profile ── */}
         <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>

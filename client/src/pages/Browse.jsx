@@ -1,13 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { useLocation } from '../location/LocationContext.jsx';
+import { listingDistanceKm, formatDistance } from '../lib/distance.js';
 import { timeRemaining } from './MyListings.jsx';
+
+/** Classic Indian veg/non-veg mark + label. Vegan counts as vegetarian. */
+function DietMark({ type }) {
+  const veg = type === 'VEG' || type === 'VEGAN';
+  const color = type === 'NON_VEG' ? '#b3261e' : '#1e7d32';
+  const label = type === 'VEGAN' ? 'Vegan' : veg ? 'Veg' : 'Non-veg';
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color }}>
+      <span
+        style={{
+          width: 14, height: 14, border: `2px solid ${color}`, borderRadius: 3,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
+      </span>
+      {label}
+    </span>
+  );
+}
+
+const SORTS = ['urgent', 'timeHigh', 'vegFirst', 'nonvegFirst', 'nearest', 'farthest'];
 
 export function Browse() {
   const { t } = useLang();
+  const { location } = useLocation();
   const [listings, setListings] = useState([]);
   const [error, setError] = useState('');
+  const [sortBy, setSortBy] = useState('urgent');
+  const [imgFailed, setImgFailed] = useState(() => new Set());
   const [filters, setFilters] = useState({
     q: '',
     category: '',
@@ -36,18 +63,66 @@ export function Browse() {
   }
   useEffect(() => {
     load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+    const timer = setInterval(load, 30000);
+    return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(filters)]);
 
   const set = (k) => (e) =>
     setFilters({ ...filters, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
 
+  const userCoords =
+    typeof location?.lat === 'number' && typeof location?.lng === 'number'
+      ? { lat: location.lat, lng: location.lng }
+      : null;
+  const distanceSort = sortBy === 'nearest' || sortBy === 'farthest';
+  const effectiveSort = distanceSort && !userCoords ? 'urgent' : sortBy;
+
+  // Sorting runs over the FULL filtered result set returned by the API
+  // (there is no pagination), so the global order is correct. Listings
+  // without coordinates always go last in distance sorts — an unknown
+  // distance is never treated as nearest or farthest.
+  const sorted = useMemo(() => {
+    const withDist = listings.map((l) => ({ ...l, distanceKm: listingDistanceKm(userCoords, l) }));
+    const byDeadline = (a, b) => new Date(a.collectionDeadline) - new Date(b.collectionDeadline);
+    const vegRank = (l) => (l.dietaryType === 'NON_VEG' ? 1 : 0);
+    const arr = [...withDist];
+    switch (effectiveSort) {
+      case 'timeHigh':
+        arr.sort((a, b) => byDeadline(b, a));
+        break;
+      case 'vegFirst':
+        arr.sort((a, b) => vegRank(a) - vegRank(b) || byDeadline(a, b));
+        break;
+      case 'nonvegFirst':
+        arr.sort((a, b) => vegRank(b) - vegRank(a) || byDeadline(a, b));
+        break;
+      case 'nearest':
+        arr.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity) || byDeadline(a, b));
+        break;
+      case 'farthest':
+        arr.sort((a, b) => (b.distanceKm ?? -Infinity) - (a.distanceKm ?? -Infinity) || byDeadline(a, b));
+        break;
+      default:
+        arr.sort(byDeadline);
+    }
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listings, effectiveSort, location?.lat, location?.lng]);
+
+  const sortLabels = {
+    urgent: t('sortUrgent'),
+    timeHigh: t('sortTimeHigh'),
+    vegFirst: t('sortVegFirst'),
+    nonvegFirst: t('sortNonvegFirst'),
+    nearest: t('sortNearest'),
+    farthest: t('sortFarthest'),
+  };
+
   return (
     <section>
       <h1>{t('availableFood')}</h1>
-      <p className="muted">{t('orderedByDeadline')}</p>
+      <p className="muted">{sortLabels[effectiveSort]}</p>
       {error && <div className="error">{error}</div>}
       <div className="card">
         <div className="row">
@@ -68,25 +143,52 @@ export function Browse() {
             <option value="NON_VEG">Non-veg</option>
             <option value="VEGAN">Vegan</option>
           </select>
-          <label style={{ fontWeight: 400 }}>
-            <input type="checkbox" checked={filters.ngoSuitable} onChange={set('ngoSuitable')} style={{ width: 'auto' }} / > {t('ngoSuitable')}
+          <label style={{ fontWeight: 600 }}>
+            {t('sortBy')}
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              {SORTS.map((s) => (
+                <option key={s} value={s}>{sortLabels[s]}</option>
+              ))}
+            </select>
           </label>
           <label style={{ fontWeight: 400 }}>
-            <input type="checkbox" checked={filters.endingSoon} onChange={set('endingSoon')} style={{ width: 'auto' }} / > {t('endingSoon')}
+            <input type="checkbox" checked={filters.ngoSuitable} onChange={set('ngoSuitable')} style={{ width: 'auto' }} /> {t('ngoSuitable')}
           </label>
           <label style={{ fontWeight: 400 }}>
-            <input type="checkbox" checked={filters.availableOnly} onChange={set('availableOnly')} style={{ width: 'auto' }} / > {t('availableOnly')}
+            <input type="checkbox" checked={filters.endingSoon} onChange={set('endingSoon')} style={{ width: 'auto' }} /> {t('endingSoon')}
+          </label>
+          <label style={{ fontWeight: 400 }}>
+            <input type="checkbox" checked={filters.availableOnly} onChange={set('availableOnly')} style={{ width: 'auto' }} /> {t('availableOnly')}
           </label>
         </div>
+        {distanceSort && !userCoords && <p className="muted" style={{ marginBottom: 0 }}>{t('distanceNeedsLocation')}</p>}
       </div>
-      {listings.length === 0 && <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>}
+      {sorted.length === 0 && <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>}
       <div className="grid">
-        {listings.map((l) => (
+        {sorted.map((l) => (
           <div className="card" key={l.id}>
-            {l.photoPath && <img src={l.photoPath} alt="" style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'cover' }} />}
+            {l.photoPath && !imgFailed.has(l.id) ? (
+              <img
+                src={l.photoPath}
+                alt={l.foodName}
+                onError={() => setImgFailed((prev) => new Set(prev).add(l.id))}
+                style={{ width: '100%', height: 160, borderRadius: 8, objectFit: 'cover' }}
+              />
+            ) : (
+              <div
+                style={{
+                  height: 160, borderRadius: 8, background: '#eef4ea',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 40, color: '#7a8a72',
+                }}
+                aria-label={t('noPhoto')}
+              >
+                🍲
+              </div>
+            )}
             <div className="row">
               <strong>{l.foodName}</strong>
-              <span className="badge">{l.dietaryType}</span>
+              <DietMark type={l.dietaryType} />
               {l.ngoSuitable && <span className="badge warn">NGO-suitable</span>}
               {l.status === 'FULLY_CLAIMED' && <span className="badge danger">Fully claimed</span>}
             </div>
@@ -95,6 +197,9 @@ export function Browse() {
               {l.portionsRemaining} of {l.totalPortions} {l.bulkUnit ? `${l.bulkUnit.toLowerCase()} (bulk)` : 'portions'} remaining · ⏰ {timeRemaining(l.collectionDeadline)}
               {l.categoryNote ? <><br />Other: {l.categoryNote}</> : ''}
               <br />📍 {l.pickupLocationText}
+              {l.distanceKm !== null && l.distanceKm !== undefined && (
+                <> · 🚶 {formatDistance(l.distanceKm)} {t('awayFromYou')}</>
+              )}
               <br />By {l.providerName}
             </p>
             <Link className="btn" to={`/listings/${l.id}`}>{t('viewClaim')}</Link>

@@ -30,11 +30,17 @@ export const createListingSchema = z
       .regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
       .optional(),
     showContact: z.boolean().optional().default(false),
+    pickupLat: z.number().min(-90).max(90).optional(),
+    pickupLng: z.number().min(-180).max(180).optional(),
     pickupLocationText: z.string().trim().min(1),
     cookedAt: z.string().datetime(),
     collectionDeadline: z.string().datetime(),
     checklistItems: z.array(z.string()).optional().default([]),
     recurringScheduleId: z.string().uuid().optional(),
+  })
+  .refine((d) => (d.pickupLat === undefined) === (d.pickupLng === undefined), {
+    message: 'pickupLat and pickupLng must be provided together',
+    path: ['pickupLat'],
   })
   .refine((d) => new Date(d.cookedAt) <= new Date(), {
     message: 'cookedAt cannot be in the future',
@@ -64,6 +70,8 @@ export const editListingSchema = z.object({
     .regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
     .optional(),
   showContact: z.boolean().optional(),
+  pickupLat: z.number().min(-90).max(90).nullable().optional(),
+  pickupLng: z.number().min(-180).max(180).nullable().optional(),
   pickupLocationText: z.string().trim().min(1).optional(),
   cookedAt: z.string().datetime().optional(),
   collectionDeadline: z.string().datetime().optional(),

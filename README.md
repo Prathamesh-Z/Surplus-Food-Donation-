@@ -68,6 +68,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | 8–11 | Admin + audit log, NGO verification, NGO redistribution log, recurring donations, Marathi UI | FR-16–21 |
 | 12 | Impact CSV export, optional email mirror (SMTP) | FR-23–24 |
 | v3.4 | Camera scanning with automatic detection, app-level location prompt (place name only, header display), donor contact profile + per-listing opt-in visibility | PRD v3.4 |
+| v3.5 | Photos on listing cards (incl. fixing the /uploads static-dir mismatch that 404'd every photo), sort by time/dietary/distance, listing pickup coordinates + on-device Haversine distance | PRD v3.5 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.

@@ -82,6 +82,10 @@ async function main() {
       dietaryType: 'VEG',
       portionType: 'INDIVIDUAL_MEALS',
       pickupLocationText: 'Demo College Mess, Main Gate (synthetic)',
+      // Approximate Karad town coordinates so distance sorting is demoable;
+      // these demo listings are synthetic, like everything in this seed.
+      pickupLat: 17.276,
+      pickupLng: 74.184,
       cookedAt: new Date(now - 60 * 60000),
       checklistConfirmedItems: CHECKLIST_IDS,
       checklistConfirmedAt: new Date(),

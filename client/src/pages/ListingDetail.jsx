@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { useLocation } from '../location/LocationContext.jsx';
+import { listingDistanceKm, formatDistance } from '../lib/distance.js';
 import { PickupCodeDisplay } from '../components/Pickup.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
 export function ListingDetail() {
   const { t } = useLang();
+  const { location } = useLocation();
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const [portions, setPortions] = useState(1);
@@ -55,7 +58,12 @@ export function ListingDetail() {
     <section>
       <h1>{listing.foodName}</h1>
       {listing.photoPath && (
-        <img src={listing.photoPath} alt="" style={{ maxWidth: '100%', borderRadius: 12 }} />
+        <img
+          src={listing.photoPath}
+          alt={listing.foodName}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          style={{ width: '100%', maxHeight: 320, objectFit: 'cover', borderRadius: 12 }}
+        />
       )}
       <p>{listing.foodDetails}</p>
       <div className="card">
@@ -64,7 +72,16 @@ export function ListingDetail() {
           {' · '}⏰ {timeRemaining(listing.collectionDeadline)}
           {' · '}Deadline: {new Date(listing.collectionDeadline).toLocaleString()}
         </p>
-        <p>📍 {t('pickup')}: {listing.pickupLocationText}</p>
+        <p>
+          📍 {t('pickup')}: {listing.pickupLocationText}
+          {(() => {
+            const d = listingDistanceKm(
+              typeof location?.lat === 'number' ? { lat: location.lat, lng: location.lng } : null,
+              listing
+            );
+            return d !== null ? <> · 🚶 {formatDistance(d)} {t('awayFromYou')}</> : null;
+          })()}
+        </p>
         <p className="muted">
           {listing.category}
           {listing.categoryNote ? ` (${listing.categoryNote})` : ''} · {listing.dietaryType} · {listing.portionType}

@@ -61,6 +61,14 @@ export function MyListings() {
       {listings.length === 0 && <p className="muted">{t('noListingsYet')}</p>}
       {listings.map((l) => (
         <div className="card" key={l.id}>
+          {l.photoPath && (
+            <img
+              src={l.photoPath}
+              alt=""
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              style={{ width: '100%', height: 140, borderRadius: 8, objectFit: 'cover' }}
+            />
+          )}
           <div className="row">
             <strong>{l.foodName}</strong>
             <span className="badge">{l.status}</span>
