@@ -5,6 +5,7 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { listingDistanceKm, formatDistance } from '../lib/distance.js';
 import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
+import { VoiceSearchButton } from '../components/VoiceSearchButton.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
 /** Classic Indian veg/non-veg mark + label. Vegan counts as vegetarian. */
@@ -36,6 +37,10 @@ export function Browse() {
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('urgent');
   const [imgFailed, setImgFailed] = useState(() => new Set());
+  const [myClaims, setMyClaims] = useState([]);
+  const [voiceMsg, setVoiceMsg] = useState('');
+  const browseUser = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
+  const canClaimRole = browseUser && (browseUser.role === 'CLAIMER' || browseUser.role === 'NGO');
   const [filters, setFilters] = useState({
     q: '',
     category: '',
@@ -71,6 +76,29 @@ export function Browse() {
 
   const set = (k) => (e) =>
     setFilters({ ...filters, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
+
+  async function loadMine() {
+    if (!canClaimRole) return;
+    try {
+      const data = await api('/api/claims/mine');
+      setMyClaims(data.claims ?? []);
+    } catch { /* the claim row is a convenience; browsing must not break */ }
+  }
+  useEffect(() => { loadMine(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  const myClaimFor = (listingId) =>
+    myClaims.find((c) => c.status === 'CONFIRMED' && c.listingId === listingId);
+
+  async function cancelMyClaim(claimId) {
+    if (!window.confirm('Cancel this claim? (Cancelling less than 30 minutes before the deadline does not return the portions.)')) return;
+    try {
+      await api(`/api/claims/${claimId}/cancel`, { method: 'POST', body: {} });
+      loadMine();
+      load();
+    } catch (err) {
+      setError(err.data?.error || err.message);
+    }
+  }
 
   const userCoords =
     typeof location?.lat === 'number' && typeof location?.lng === 'number'
@@ -128,6 +156,10 @@ export function Browse() {
       <div className="card">
         <div className="row">
           <input placeholder={t('searchFood')} value={filters.q} onChange={set('q')} style={{ maxWidth: 220 }} />
+          <VoiceSearchButton
+            onTranscript={(text) => { setVoiceMsg(''); setFilters({ ...filters, q: text }); }}
+            onError={(msg) => setVoiceMsg(msg)}
+          />
           <select value={filters.category} onChange={set('category')}>
             <option value="">{t('allCategories')}</option>
             <option value="COOKED_MEALS">Cooked meals</option>
@@ -162,6 +194,7 @@ export function Browse() {
             <input type="checkbox" checked={filters.availableOnly} onChange={set('availableOnly')} style={{ width: 'auto' }} /> {t('availableOnly')}
           </label>
         </div>
+        {voiceMsg && <p className="muted" style={{ marginBottom: 0 }}>{voiceMsg}</p>}
         {distanceSort && !userCoords && <p className="muted" style={{ marginBottom: 0 }}>{t('distanceNeedsLocation')}</p>}
       </div>
       {sorted.length === 0 && <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>}
@@ -205,6 +238,16 @@ export function Browse() {
               <br />By {l.providerName}
             </p>
             <Link className="btn" to={`/listings/${l.id}`}>{t('viewClaim')}</Link>
+            {(() => {
+              const mine = myClaimFor(l.id);
+              if (!mine) return null;
+              return (
+                <div className="row" style={{ marginTop: 8 }}>
+                  <span className="badge">{t('yourClaim')}: {mine.portionsClaimed} {t('portions')}</span>
+                  <button className="danger" onClick={() => cancelMyClaim(mine.id)}>{t('cancelClaim')}</button>
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>

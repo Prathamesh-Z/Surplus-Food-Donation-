@@ -581,3 +581,46 @@ enables `DEV_RESET_LINK` for local testing only; the tracked
 `.env.example` documents it as a placeholder that stays empty.
 
 **End of PRD v3.6 amendment.**
+
+---
+
+# Amendment — PRD v3.7 (decided and BUILT 29 October 2026)
+
+*Scope: two user-requested additions — voice search on Browse Food, and
+Cancel Claim surfaced where claimers actually look for it. Client-only
+changes; no schema, API, or rule changes. Client build verified.*
+
+## R. Voice search on Browse Food
+
+- A **🎤 Voice search** button sits beside the Browse search box
+  (`client/src/components/VoiceSearchButton.jsx`), built on the Web
+  Speech API (`SpeechRecognition` / `webkitSpeechRecognition`). It
+  renders **only when the browser supports it** — no dead controls.
+- The recognition language follows the app's UI language
+  (English → `en-IN`, Marathi → `mr-IN`, Hindi → `hi-IN`), so food names
+  can be spoken in the language the app is being used in.
+- The transcript fills the normal search box and runs the **same**
+  server-side `q` search as typing — voice is an input method, not a
+  separate search path. Listening state is shown on the button;
+  failures show a short "please type instead" note; toggling the button
+  or unmounting stops recognition. Requires a secure context like the
+  camera does (localhost, HTTPS, or the Chrome flag from the
+  two-device testing note).
+
+## S. Cancel Claim — now in Browse and on the listing page
+
+- Cancellation already existed in **My Claims** (verified live in v3.6)
+  but claimers looked for it where they claimed. It is now also on:
+  - **Browse Food cards** — a card for a listing the signed-in
+    claimer/NGO has an active claim on shows "Your claim: N portions"
+    with a **Cancel claim** button.
+  - **The listing detail page** — an equivalent "Your claim" section
+    under the claim form.
+- All three places call the same existing endpoint
+  (`POST /api/claims/:id/cancel`) with the same confirmation dialog and
+  the same PRD rules (own claims only; ≥30 minutes before the deadline
+  returns portions, later is `CANCELLED_LATE`). No backend change was
+  needed or made; matching uses the `listingId` + `CONFIRMED` fields of
+  `GET /api/claims/mine`, re-verified live.
+
+**End of PRD v3.7 amendment.**

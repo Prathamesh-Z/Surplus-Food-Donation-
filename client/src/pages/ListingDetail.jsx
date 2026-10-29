@@ -16,6 +16,7 @@ export function ListingDetail() {
   const [portions, setPortions] = useState(1);
   const [message, setMessage] = useState('');
   const [issuedCode, setIssuedCode] = useState('');
+  const [myClaims, setMyClaims] = useState([]);
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
 
@@ -27,12 +28,30 @@ export function ListingDetail() {
       setError(err.message);
     }
   }
+  async function loadMine() {
+    try {
+      const data = await api('/api/claims/mine');
+      setMyClaims((data.claims ?? []).filter((c) => c.listingId === id && c.status === 'CONFIRMED'));
+    } catch { /* not a claimer, or not signed in — the section just stays hidden */ }
+  }
   useEffect(() => {
     load();
-    const t = setInterval(load, 15000);
+    loadMine();
+    const t = setInterval(() => { load(); loadMine(); }, 15000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  async function cancelMyClaim(claimId) {
+    if (!window.confirm('Cancel this claim? (Cancelling less than 30 minutes before the deadline does not return the portions.)')) return;
+    try {
+      await api(`/api/claims/${claimId}/cancel`, { method: 'POST', body: {} });
+      loadMine();
+      load();
+    } catch (err) {
+      setError(err.data?.error || err.message);
+    }
+  }
 
   async function claim(e) {
     e.preventDefault();
@@ -46,6 +65,7 @@ export function ListingDetail() {
       setMessage(t('claimSuccess'));
       setIssuedCode(data.pickupCode);
       load();
+      loadMine();
     } catch (err) {
       setError(err.data?.error || err.message);
     }
@@ -123,6 +143,17 @@ export function ListingDetail() {
           </label>
           <button type="submit">{t('claim')}</button>
         </form>
+      )}
+      {myClaims.length > 0 && (
+        <div className="card" style={{ marginTop: 12 }}>
+          {myClaims.map((c) => (
+            <div className="row" key={c.id}>
+              <span className="badge">{t('yourClaim')}: {c.portionsClaimed} {t('portions')}</span>
+              <span className="badge">{c.status}</span>
+              <button className="danger" onClick={() => cancelMyClaim(c.id)}>{t('cancelClaim')}</button>
+            </div>
+          ))}
+        </div>
       )}
       {!canClaim && <p className="muted">{t('loginToClaim')}</p>}
     </section>
