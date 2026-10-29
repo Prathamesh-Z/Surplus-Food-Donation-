@@ -122,6 +122,7 @@ model User {
 
   ngoProfile         NgoProfile?
   sessions           Session[]
+  passwordResets     PasswordResetToken[]
   listings           Listing[]           @relation("ProviderListings")
   claims             Claim[]             @relation("ClaimerClaims")
   recurringSchedules RecurringSchedule[]
@@ -141,6 +142,21 @@ model NgoProfile {
   verifiedAt         DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+}
+
+// Password reset (v3.6): only the SHA-256 hash of the token is stored.
+// Single-use (usedAt set on success), 30-minute expiry, and a successful
+// reset revokes every Session of the user.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Session {

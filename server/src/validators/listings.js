@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeMobile } from './auth.js';
 
 export const CATEGORIES = [
   'COOKED_MEALS',
@@ -25,10 +26,10 @@ export const createListingSchema = z
     ngoSuitable: z.boolean().optional().default(false),
     categoryNote: z.string().trim().max(120).optional(),
     bulkUnit: z.enum(['KILOGRAMS', 'LITRES', 'SERVINGS', 'TRAYS', 'BOXES']).optional(),
-    contactPhone: z
-      .string()
-      .regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
-      .optional(),
+    contactPhone: z.preprocess(
+      normalizeMobile,
+      z.string().regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
+    ).optional(),
     showContact: z.boolean().optional().default(false),
     pickupLat: z.number().min(-90).max(90).optional(),
     pickupLng: z.number().min(-180).max(180).optional(),
@@ -65,10 +66,10 @@ export const editListingSchema = z.object({
   ngoSuitable: z.boolean().optional(),
   categoryNote: z.string().trim().max(120).optional(),
   bulkUnit: z.enum(['KILOGRAMS', 'LITRES', 'SERVINGS', 'TRAYS', 'BOXES']).optional(),
-  contactPhone: z
-    .string()
-    .regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
-    .optional(),
+  contactPhone: z.preprocess(
+    normalizeMobile,
+    z.string().regex(/^[6-9]\d{9}$/, 'Contact must be a 10-digit Indian mobile number')
+  ).optional(),
   showContact: z.boolean().optional(),
   pickupLat: z.number().min(-90).max(90).nullable().optional(),
   pickupLng: z.number().min(-180).max(180).nullable().optional(),

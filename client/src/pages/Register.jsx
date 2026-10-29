@@ -22,10 +22,10 @@ export function Register() {
     setError('');
     try {
       const body = { ...form };
-      if (form.role !== 'NGO') {
-        delete body.organisationName;
-        delete body.registrationDetail;
-      }
+      // Send NGO fields only when they actually have content — an empty
+      // string is not the same as "not provided" to the API.
+      if (!body.organisationName?.trim()) delete body.organisationName;
+      if (!body.registrationDetail?.trim()) delete body.registrationDetail;
       await api('/api/auth/register', { method: 'POST', body });
       const login = await api('/api/auth/login', {
         method: 'POST',
@@ -35,7 +35,15 @@ export function Register() {
       localStorage.setItem('fws_user', JSON.stringify(login.user));
       navigate('/browse');
     } catch (err) {
-      setError(err.data?.error || err.message);
+      // Show the FIELD-SPECIFIC reasons (v3.6): the API returns them in
+      // details.fieldErrors; showing only the generic "Validation failed"
+      // left users with no idea which input was wrong.
+      const fields = err.data?.details?.fieldErrors;
+      if (fields && Object.keys(fields).length > 0) {
+        setError(Object.values(fields).flat().join(' '));
+      } else {
+        setError(err.data?.error || err.message);
+      }
     }
   }
 
@@ -46,7 +54,7 @@ export function Register() {
       <form onSubmit={submit}>
         <label>Full name<input value={form.name} onChange={set('name')} required /></label>
         <label>Email<input type="email" value={form.email} onChange={set('email')} required /></label>
-        <label>Mobile (10 digits)<input value={form.mobile} onChange={set('mobile')} required /></label>
+        <label>Mobile (10 digits, e.g. 9812345678)<input value={form.mobile} onChange={set('mobile')} inputMode="tel" placeholder="9812345678" required /></label>
         <label>Password (min 8 characters)<input type="password" value={form.password} onChange={set('password')} required /></label>
         <label>
           I am a

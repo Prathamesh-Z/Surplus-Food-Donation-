@@ -22,6 +22,14 @@ export const config = {
     'PICKUP_CODE_ENC_KEY',
     '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
   ),
+  /** Base URL used in password-reset links (v3.6). */
+  appBaseUrl: process.env.APP_BASE_URL ?? 'http://localhost:4000',
+  /**
+   * DEVELOPMENT ONLY: when true AND email is not configured, the
+   * forgot-password response includes the reset link so a local tester
+   * can complete the flow. Never enable in production.
+   */
+  devResetLink: process.env.DEV_RESET_LINK === 'true',
   smtp: process.env.SMTP_HOST
     ? {
         host: process.env.SMTP_HOST,

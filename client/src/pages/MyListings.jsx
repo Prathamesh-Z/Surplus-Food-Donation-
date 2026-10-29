@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { VerifyPickup } from '../components/Pickup.jsx';
+import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 
 export function timeRemaining(deadline) {
@@ -60,18 +61,25 @@ export function MyListings() {
       {error && <div className="error">{error}</div>}
       {listings.length === 0 && <p className="muted">{t('noListingsYet')}</p>}
       {listings.map((l) => (
-        <div className="card" key={l.id}>
+        <div className="card" key={l.id} style={priorityCardStyle(l.collectionDeadline)}>
           {l.photoPath && (
             <img
               src={l.photoPath}
-              alt=""
+              alt={l.foodName}
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              style={{ width: '100%', height: 140, borderRadius: 8, objectFit: 'cover' }}
+              style={{
+                width: '100%', height: 180, borderRadius: 8,
+                // contain + neutral backdrop: the WHOLE dish stays visible
+                // whatever the photo's shape (v3.6 — cover at this size was
+                // zooming/cropping portrait phone photos badly).
+                objectFit: 'contain', background: '#eef4ea',
+              }}
             />
           )}
           <div className="row">
             <strong>{l.foodName}</strong>
             <span className="badge">{l.status}</span>
+            <PriorityBadge deadline={l.collectionDeadline} />
             <span className="muted">{l.portionsRemaining}/{l.totalPortions} {t('portions')} {t('remaining')}</span>
             <span className="muted">{timeRemaining(l.collectionDeadline)}</span>
           </div>

@@ -69,6 +69,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | 12 | Impact CSV export, optional email mirror (SMTP) | FR-23–24 |
 | v3.4 | Camera scanning with automatic detection, app-level location prompt (place name only, header display), donor contact profile + per-listing opt-in visibility | PRD v3.4 |
 | v3.5 | Photos on listing cards (incl. fixing the /uploads static-dir mismatch that 404'd every photo), sort by time/dietary/distance, listing pickup coordinates + on-device Haversine distance | PRD v3.5 |
+| v3.6 | Registration field-error display + mobile normalization, notification dismiss/click-through/nav badge, separate Post Surplus Food nav item, My Listings contain-fit photos, password reset (hashed single-use tokens, session revocation), expiry-priority card badges | PRD v3.6 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.
@@ -87,6 +88,12 @@ concurrency gates (1 portion left / 2 simultaneous claims → exactly 1 success;
 50 parallel claims of 5 against 100 portions → exactly 20 succeed, remaining
 exactly 0) and the FR-15 worked example (180 listed / 50 claimed / 30
 collected / 60% completion).
+
+Password reset (v3.6): set `APP_BASE_URL` if the app is not on
+`http://localhost:4000`; reset links are emailed when SMTP is configured.
+For local testing without email, set `DEV_RESET_LINK=true` in
+`server/.env` — the forgot-password response then includes the link.
+Never enable that flag outside local development.
 
 Email (FR-24) is a mirror only: set `SMTP_HOST` etc. in `server/.env` and
 in-app notifications are also emailed. Without SMTP it is a safe no-op and

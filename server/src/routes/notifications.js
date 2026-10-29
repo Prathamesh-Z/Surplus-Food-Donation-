@@ -37,3 +37,12 @@ notificationsRouter.post('/read-all', requireAuth, async (req, res) => {
   });
   return res.json({ updated: result.count });
 });
+
+notificationsRouter.delete('/:id', requireAuth, async (req, res) => {
+  const note = await prisma.notification.findUnique({ where: { id: req.params.id } });
+  if (!note || note.userId !== req.user.id) {
+    return res.status(404).json({ error: 'Notification not found' });
+  }
+  await prisma.notification.delete({ where: { id: note.id } });
+  return res.json({ dismissed: true });
+});

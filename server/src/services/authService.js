@@ -121,3 +121,51 @@ export async function revokeSession(refreshToken) {
     return false;
   }
 }
+
+// ─── Password reset (v3.6) ────────────────────────────────────────────────
+const RESET_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Create a single-use reset token for the account with this email, if one
+ * exists. Returns the plaintext token (for the email/dev link) or null when
+ * no account matches — callers must respond identically either way so the
+ * endpoint never reveals whether an email is registered. Any earlier
+ * unused tokens for the user are invalidated first.
+ */
+export async function requestPasswordReset(email) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return null;
+  await prisma.passwordResetToken.updateMany({
+    where: { userId: user.id, usedAt: null },
+    data: { usedAt: new Date() },
+  });
+  const token = crypto.randomBytes(32).toString('hex');
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: hashToken(token),
+      expiresAt: new Date(Date.now() + RESET_TTL_MS),
+    },
+  });
+  return { token, user };
+}
+
+/**
+ * Consume a reset token: validates hash, single-use and expiry; sets the
+ * new password (bcrypt, same cost as registration); revokes ALL of the
+ * user's sessions so old refresh tokens stop working immediately.
+ * Returns true on success, false for any invalid/expired/used token.
+ */
+export async function resetPasswordWithToken(token, newPassword) {
+  const row = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash: hashToken(token) },
+  });
+  if (!row || row.usedAt || row.expiresAt < new Date()) return false;
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.$transaction([
+    prisma.passwordResetToken.update({ where: { id: row.id }, data: { usedAt: new Date() } }),
+    prisma.user.update({ where: { id: row.userId }, data: { passwordHash } }),
+    prisma.session.updateMany({ where: { userId: row.userId }, data: { revoked: true } }),
+  ]);
+  return true;
+}

@@ -14,6 +14,8 @@ import { Dashboard } from './pages/Dashboard.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
 import { LocationProvider } from './location/LocationContext.jsx';
 import { Profile } from './pages/Profile.jsx';
+import { ForgotPassword } from './pages/ForgotPassword.jsx';
+import { ResetPassword } from './pages/ResetPassword.jsx';
 import { Admin } from './pages/Admin.jsx';
 import { NgoPanel } from './pages/NgoPanel.jsx';
 import { Recurring } from './pages/Recurring.jsx';
@@ -29,6 +31,8 @@ export function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register" element={<Register />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/listings/new" element={<CreateListing />} />

@@ -2,14 +2,16 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
+import { normalizeMobile } from '../validators/auth.js';
 
 export const usersRouter = Router();
 
 const languageSchema = z.object({ language: z.enum(['EN', 'MR', 'HI']) });
 
 const contactSchema = z.object({
-  // Same rule as registration (validators/auth.js): 10-digit Indian mobile.
-  mobile: z.string().regex(/^[6-9]\d{9}$/, 'Mobile must be a 10-digit Indian number'),
+  // Same rule as registration (validators/auth.js): 10-digit Indian mobile,
+  // with the same input normalization (+91 / spaces / leading 0 tolerated).
+  mobile: z.preprocess(normalizeMobile, z.string().regex(/^[6-9]\d{9}$/, 'Mobile must be a 10-digit Indian number')),
 });
 
 // v3.4: view/update the signed-in user's own contact number. The user id

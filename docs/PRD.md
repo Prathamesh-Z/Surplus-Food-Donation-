@@ -470,3 +470,114 @@ User-directed; this amendment REVISES the v3.1/v3.4 discovery rule. Pickup locat
 3. **User location v2.** The app-level saved location (localStorage, this device only) additionally stores lat/lng when the user picks "Use current location"; manual entries have no coordinates. The user's own coordinates are never sent to the server and never exposed to other users — distances are computed on the claimer's device (Haversine). Only the listing's pickup point is public, as part of the listing itself.
 4. **Sorting (Browse).** A visible Sort control offers: Time remaining lowest first (default — the standing deadline-ascending rule), Time remaining highest first, Vegetarian first, Non-vegetarian first (VEG and VEGAN both rank as vegetarian; dietary type is the donor-declared field, never inferred from AI recognition), Distance nearest first, Distance farthest first. Sorting runs client-side over the full filtered result set (the API returns all matches; there is no pagination), composes with search/category/dietary/availability filters, and needs no page reload. Listings with unknown distance sort last in both distance directions — never as nearest/farthest. When distance sorting is chosen without a saved user location point, the UI explains what to do and falls back to the deadline order. Distances display as metres under 1 km, else kilometres with one decimal.
 5. **Schema change:** two nullable columns on `Listing` (`pickupLat`, `pickupLng`), applied with `npm run db:push --workspace=server`. Seed demo listings carry approximate Karad coordinates matching their synthetic labels. No new environment variables or dependencies.
+
+---
+
+# Amendment — PRD v3.6 (decided and BUILT 29 October 2026)
+
+*Scope: fixes and completions from field testing — registration failures,
+notification management, navigation separation, image framing, password
+reset, and expiry-priority card indicators. Where this amendment and the
+body or earlier amendments conflict, THIS amendment wins. Everything
+below is BUILT and verified: 75/75 server tests pass (7 new in
+`server/tests/v36.test.js`) and the client production build succeeds.*
+
+## K. Registration "Validation failed" — root cause and fix
+
+- **Root cause:** the API correctly returned field-specific errors
+  (`details.fieldErrors`), but the Register page displayed only the
+  generic top-level message — every slip looked identical and
+  undiagnosable. Two input habits made failures common: mobiles typed as
+  `+91 …`, with spaces, or with a leading 0; and NGO registrations
+  submitting blank organisation strings.
+- **Fixes:** the Register page now shows the field-specific reasons.
+  Mobile input is **normalized** (spaces/hyphens stripped, `+91`/`91`
+  prefix and leading `0` removed) by a shared `normalizeMobile` used by
+  registration, the Profile contact endpoint, and the listing contact
+  field; the stored value is always the clean 10 digits and the strict
+  `/^[6-9]\d{9}$/` rule still applies after normalization. Blank NGO
+  organisation strings are treated as "not provided", producing the
+  specific NGO-required error when they are genuinely missing.
+- Duplicate email/mobile still returns 409 with a clear message.
+
+## L. Pickup verification, donor cancel, claimer cancel — verified, no redesign
+
+- Live end-to-end re-verification (29 October) confirmed the existing
+  implementations meet §3/§4 of the field-test brief: wrong code → 401
+  "Incorrect pickup code" with no status change; five wrong attempts →
+  10-minute lock (423); claimer cannot verify (403); correct code →
+  COLLECTED; re-verification is idempotent (200 `alreadyCollected`).
+  Claimer cancellation exists in My Claims with a confirmation dialog
+  and the PRD's ≥30-minute portion-return rule; donor listing
+  cancellation cascades to open claims (`CANCELLED_BY_PROVIDER`) and
+  notifies claimers. These flows were working; the earlier reports are
+  attributed to testing against pre-fix laptop builds.
+
+## M. Notifications completed
+
+- Existing: `Notification` model with `relatedListingId`/`relatedClaimId`,
+  claim → exactly one `CLAIM_PLACED` notification to the listing owner,
+  15-second polling, mark-read and mark-all-read.
+- **Added:** `DELETE /api/notifications/:id` (owner-only, 404 otherwise)
+  with a **Dismiss** action in the UI; **click-through** — opening a
+  notification marks it read and navigates to the related listing (or My
+  Claims); an **unread-count badge** on the Nav Notifications item,
+  polled on the same 15-second cadence. Read/dismiss state persists in
+  the database. Cancellation events already append their own
+  notifications; history is never silently erased.
+
+## N. Navigation separation and My Listings image framing
+
+- Providers now have **two distinct Nav items**: "Post surplus food"
+  (→ `/listings/new`) and "My Listings" (→ `/my-listings`); visibility
+  remains role-gated to PROVIDER.
+- My Listings card photos now use `object-fit: contain` on a neutral
+  background at a fixed 180px height with the food name as alt text —
+  the whole dish stays visible for portrait/landscape/square photos.
+  Browse and Detail keep the intentional, consistent `cover` crop
+  decided in v3.5.
+
+## O. Password reset (new)
+
+- `PasswordResetToken` model: only the **SHA-256 hash** of the token is
+  stored; single-use (`usedAt`), **30-minute expiry**; a new request
+  invalidates earlier unused tokens.
+- `POST /api/auth/forgot-password` (rate-limited with the other auth
+  routes) always returns the same generic message whether or not the
+  email is registered. The reset link is delivered via the existing
+  email service when SMTP is configured. `POST /api/auth/reset-password`
+  validates the token, sets the new password with the same bcrypt cost
+  as registration, consumes the token, and **revokes all of the user's
+  sessions**.
+- UI: "Forgot password?" on the Login page → `/forgot-password`;
+  `/reset-password?token=…` page with new + confirm password (client
+  match check + the same server-side field-error display as Register).
+- **Env:** `APP_BASE_URL` (default `http://localhost:4000`) builds the
+  link; SMTP variables as before. **Development-only:** when email is
+  not configured and `DEV_RESET_LINK=true`, the forgot-password response
+  includes the reset link so the flow can be tested locally. This flag
+  defaults off and must never be enabled in production.
+
+## P. Expiry-priority card indicators
+
+- One central definition, `client/src/lib/priority.js`:
+  **high ≤ 6h** remaining, **medium ≤ 24h**, **low > 24h**,
+  **expired** (deadline passed), **unknown** (missing/invalid deadline —
+  never shown as low priority). Thresholds live in
+  `PRIORITY_THRESHOLDS` only.
+- Browse cards, My Listings cards, and the listing detail show a
+  text-labelled badge (🔴/🟡/🟢 + words — never colour alone) and a
+  matching left-border accent, computed from the stored
+  `collectionDeadline` at render, so a card's priority changes as time
+  passes on the app's normal re-renders/polling. (Because FR-04 caps
+  deadlines at 24 hours, "low" is rare in practice.)
+
+## Q. What v3.6 does NOT change
+
+Roles and permissions, pickup-code cryptography, claim transactions and
+cancellation rules, the recognition service and its contract, and all
+earlier acceptance gates stand unchanged. The sandbox `server/.env`
+enables `DEV_RESET_LINK` for local testing only; the tracked
+`.env.example` documents it as a placeholder that stays empty.
+
+**End of PRD v3.6 amendment.**

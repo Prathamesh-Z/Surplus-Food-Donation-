@@ -4,6 +4,7 @@ import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { listingDistanceKm, formatDistance } from '../lib/distance.js';
+import { PriorityBadge } from '../components/PriorityBadge.jsx';
 import { PickupCodeDisplay } from '../components/Pickup.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
@@ -69,7 +70,7 @@ export function ListingDetail() {
       <div className="card">
         <p>
           <strong>{listing.portionsRemaining}</strong> {t('ofTotal')} {listing.totalPortions} {t('portions')} {t('remaining')}
-          {' · '}⏰ {timeRemaining(listing.collectionDeadline)}
+          {' · '}⏰ {timeRemaining(listing.collectionDeadline)} <PriorityBadge deadline={listing.collectionDeadline} />
           {' · '}Deadline: {new Date(listing.collectionDeadline).toLocaleString()}
         </p>
         <p>

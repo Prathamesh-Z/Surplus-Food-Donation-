@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api, setTokens } from '../lib/api.js';
+import { useLang } from '../i18n/LanguageContext.jsx';
 
 export function Login() {
   const navigate = useNavigate();
+  const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -30,6 +32,7 @@ export function Login() {
         <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
         <button type="submit">Log in</button>
       </form>
+      <p><Link to="/forgot-password">{t('forgotPassword')}</Link></p>
       <p className="muted">
         Demo accounts (synthetic): provider@demo.local / claimer@demo.local /
         ngo@demo.local / admin@demo.local — password DemoPass1

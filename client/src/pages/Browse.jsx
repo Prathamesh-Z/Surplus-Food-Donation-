@@ -4,6 +4,7 @@ import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { listingDistanceKm, formatDistance } from '../lib/distance.js';
+import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
 /** Classic Indian veg/non-veg mark + label. Vegan counts as vegetarian. */
@@ -166,7 +167,7 @@ export function Browse() {
       {sorted.length === 0 && <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>}
       <div className="grid">
         {sorted.map((l) => (
-          <div className="card" key={l.id}>
+          <div className="card" key={l.id} style={priorityCardStyle(l.collectionDeadline)}>
             {l.photoPath && !imgFailed.has(l.id) ? (
               <img
                 src={l.photoPath}
@@ -189,6 +190,7 @@ export function Browse() {
             <div className="row">
               <strong>{l.foodName}</strong>
               <DietMark type={l.dietaryType} />
+              <PriorityBadge deadline={l.collectionDeadline} />
               {l.ngoSuitable && <span className="badge warn">NGO-suitable</span>}
               {l.status === 'FULLY_CLAIMED' && <span className="badge danger">Fully claimed</span>}
             </div>
