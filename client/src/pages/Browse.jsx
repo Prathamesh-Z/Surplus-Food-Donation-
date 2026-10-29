@@ -38,7 +38,6 @@ export function Browse() {
   const [sortBy, setSortBy] = useState('urgent');
   const [imgFailed, setImgFailed] = useState(() => new Set());
   const [myClaims, setMyClaims] = useState([]);
-  const [voiceMsg, setVoiceMsg] = useState('');
   const browseUser = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
   const canClaimRole = browseUser && (browseUser.role === 'CLAIMER' || browseUser.role === 'NGO');
   const [filters, setFilters] = useState({
@@ -157,8 +156,7 @@ export function Browse() {
         <div className="row">
           <input placeholder={t('searchFood')} value={filters.q} onChange={set('q')} style={{ maxWidth: 220 }} />
           <VoiceSearchButton
-            onTranscript={(text) => { setVoiceMsg(''); setFilters({ ...filters, q: text }); }}
-            onError={(msg) => setVoiceMsg(msg)}
+            onTranscript={(text) => setFilters({ ...filters, q: text })}
           />
           <select value={filters.category} onChange={set('category')}>
             <option value="">{t('allCategories')}</option>
@@ -194,7 +192,6 @@ export function Browse() {
             <input type="checkbox" checked={filters.availableOnly} onChange={set('availableOnly')} style={{ width: 'auto' }} /> {t('availableOnly')}
           </label>
         </div>
-        {voiceMsg && <p className="muted" style={{ marginBottom: 0 }}>{voiceMsg}</p>}
         {distanceSort && !userCoords && <p className="muted" style={{ marginBottom: 0 }}>{t('distanceNeedsLocation')}</p>}
       </div>
       {sorted.length === 0 && <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>}

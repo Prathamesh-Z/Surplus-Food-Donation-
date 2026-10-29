@@ -624,3 +624,27 @@ changes; no schema, API, or rule changes. Client build verified.*
   `GET /api/claims/mine`, re-verified live.
 
 **End of PRD v3.7 amendment.**
+
+## v3.7.1 fix (29 October 2026) — voice search rebuilt, YouTube-style
+
+Field report: "the voice search doesn't work." Diagnosis: the v3.7
+button gave almost no visible feedback — listening state was only a
+button-label change, and failures (mic blocked, insecure page) surfaced
+as one small muted line under the filters. On a non-secure address
+(second laptop via LAN IP without the Chrome flag) Chrome blocks the
+microphone, so the feature appeared simply dead.
+
+Rebuilt (`VoiceSearchButton.jsx`): the search bar now has a **round mic
+button**; tapping it opens a **full-screen listening overlay** in the
+style of YouTube's voice search — a large pulsing mic, "Listening…",
+and the **live transcript** (interim results) as you speak. A final
+result is shown briefly, then fills the search box and runs the normal
+search. Errors are specific and shown inside the overlay with a
+**Try again** button: microphone permission blocked (with the exact
+address-bar fix), page not a secure context (with the localhost /
+Chrome-flag fix), no speech heard, and no internet (Chrome's
+recognizer is a cloud service). Recognition still follows the UI
+language and still renders only where `SpeechRecognition` exists;
+no other behavior changed. i18n: +8 keys ×3 (168 total).
+
+**End of v3.7.1 fix note.**
