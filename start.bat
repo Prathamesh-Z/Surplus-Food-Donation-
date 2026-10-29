@@ -27,6 +27,18 @@ if not exist inference\.venv\Scripts\python.exe (
   inference\.venv\Scripts\python inference\download_models.py
 )
 
+REM ── Voice search (PRD v3.8): installs made before v3.8 lack the speech
+REM    package and model — fetch them once, the first time they are missing.
+inference\.venv\Scripts\python -c "import faster_whisper" 2>nul
+if errorlevel 1 (
+  echo Adding the voice-search speech package...
+  inference\.venv\Scripts\pip install -r inference\requirements.txt
+)
+if not exist "%USERPROFILE%\.cache\huggingface\hub\models--Systran--faster-whisper-small" (
+  echo Downloading the voice-search speech model ^(one time, about 250 MB^)...
+  inference\.venv\Scripts\python inference\download_models.py
+)
+
 echo Building the web app...
 call npm run build
 

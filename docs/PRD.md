@@ -648,3 +648,48 @@ language and still renders only where `SpeechRecognition` exists;
 no other behavior changed. i18n: +8 keys ×3 (168 total).
 
 **End of v3.7.1 fix note.**
+
+---
+
+# Amendment — PRD v3.8 (decided and BUILT 29 October 2026)
+
+*Scope: voice search was failing in the field with Chrome's "network"
+error despite a working internet connection. Root cause: the v3.7/v3.7.1
+implementation relied on the browser's cloud SpeechRecognition, which
+sends audio to the browser vendor's servers and fails on many real
+networks (and unreliably for mr-IN/hi-IN). Fix: transcribe locally,
+consistent with this app's no-cloud-dependency design rule.*
+
+## T. Voice search — local Whisper transcription
+
+- The Python inference service gains **`POST /transcribe`** and a
+  **faster-whisper** model (`Systran/faster-whisper-small`, ~244 MB,
+  CPU int8), loaded at startup alongside the food models and reported
+  in `/health` as `whisper_loaded`. If it cannot load, `/transcribe`
+  returns an honest 503 and food recognition is unaffected.
+- Audio is decoded in `inference/speech.py` with PyAV directly to
+  16 kHz mono — faster-whisper's own decode path passes kwargs newer
+  PyAV versions reject (`metadata_errors`), which broke transcription
+  outright; decoding ourselves removes that version sensitivity.
+  Language hint: the UI language (`en`/`mr`/`hi`); auto-detect
+  otherwise. Verified on a real speech sample (sandbox): exact
+  transcript, ~3.1 s for an 11 s clip, model load ~7 s.
+- Express gains **`POST /api/speech/transcribe`** (any signed-in role,
+  multipart `audio`, 10 MB cap, in-memory only, nothing stored) which
+  proxies to the service with the same honest-503 pattern as food
+  recognition. The audio is the user's own voice clip, recorded by
+  their own browser on their own action — it is never persisted or
+  shared.
+- Client: the YouTube-style overlay from v3.7.1 now **records** with
+  MediaRecorder (tap mic → recording with timer → "Done — search it",
+  auto-stop at 15 s), shows "Transcribing…", then commits the
+  transcript to the search box. The browser cloud recognizer remains
+  ONLY as a fallback when the local service answers 503 and the
+  browser offers it. Mic permission / insecure-context guidance from
+  v3.7.1 still applies.
+- `start.bat` upgrades existing installs: if `faster_whisper` is
+  missing it installs the requirements, and if the Whisper model is
+  not cached it runs the model download — once, on the first v3.8 run
+  (needs internet for that one download; afterwards fully offline).
+
+**End of PRD v3.8 amendment.**

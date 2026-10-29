@@ -9,3 +9,4 @@ uvicorn[standard]>=0.30
 Pillow>=10.3
 psutil>=5.9
 python-multipart>=0.0.9
+faster-whisper>=1.0  # local speech-to-text for voice search (PRD v3.8)

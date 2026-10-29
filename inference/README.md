@@ -47,6 +47,16 @@ inference\.venv\Scripts\python -m uvicorn app:app --app-dir inference --host 127
 
 Health check: <http://127.0.0.1:8001/health> — `primary_loaded` must be true.
 
+## Voice search (PRD v3.8)
+
+The same service transcribes Browse voice search locally with
+faster-whisper (`Systran/faster-whisper-small`, CPU int8) at
+`POST /transcribe` — no audio leaves the machine. `/health` reports
+`whisper_loaded`. `download_models.py` fetches the model files;
+`WHISPER_MODEL` env can override the model size. Audio is decoded with
+PyAV in `speech.py` (16 kHz mono) rather than faster-whisper's own
+decoder, whose kwargs newer PyAV versions reject.
+
 The Express server proxies `POST /api/listings/recognize` to this service
 (`INFERENCE_URL`, default `http://127.0.0.1:8001`).
 
