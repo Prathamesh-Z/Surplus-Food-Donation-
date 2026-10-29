@@ -693,3 +693,20 @@ consistent with this app's no-cloud-dependency design rule.*
   (needs internet for that one download; afterwards fully offline).
 
 **End of PRD v3.8 amendment.**
+
+## v3.8.1 fix (29 October 2026) — start.bat parser hardening
+
+Field report: after pulling v3.8, `start.bat` aborted with
+"... was unexpected at this time". That is cmd.exe's parser rejecting
+the script: the v3.8 upgrade block added parenthesised `if` blocks and
+non-ASCII comment characters to a file stored with LF-only line
+endings — a combination cmd.exe misparses (an earlier local edit on
+the laptop removing brackets from an echo line was a symptom of the
+same fragility). `start.bat` is rewritten defensively: linear
+goto-label flow instead of parenthesised blocks, single-line
+conditionals, plain ASCII text, CRLF line endings, and a new
+`.gitattributes` (`*.bat text eol=crlf`) so checkouts keep CRLF.
+Behavior is unchanged, including the v3.8 one-time speech package and
+model fetch.
+
+**End of v3.8.1 fix note.**
