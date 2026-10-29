@@ -297,7 +297,11 @@ claimsRouter.post('/:id/verify', requireAuth, requireRole('PROVIDER'), async (re
           verifyLockedUntil: locked ? new Date(Date.now() + 10 * 60 * 1000) : claim.verifyLockedUntil,
         },
       });
-      return res.status(401).json({
+      // QA-02: a wrong code is a validation failure, not an authentication
+      // failure. Returning 401 made the client treat it as an expired token
+      // and silently refresh + retry (and risk clearing the session). The
+      // lockout itself still answers 423 on later attempts (above).
+      return res.status(400).json({
         error: locked
           ? 'Incorrect pickup code. Verification is now locked for 10 minutes.'
           : 'Incorrect pickup code',

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 
 /**
@@ -44,7 +44,7 @@ export function Profile() {
         localStorage.setItem('fws_user', JSON.stringify(stored));
       }
     } catch (err) {
-      setError(err.message);
+      setError(formatApiError(err));
     }
   }
 

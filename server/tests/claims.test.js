@@ -247,13 +247,15 @@ describe('Module 5 — Claims & pickup codes (FR-09 to FR-12)', () => {
         .post(`/api/claims/${claimId}/verify`)
         .set(auth(provider.token))
         .send({ code });
-      expect(res.status).toBe(401);
+      // QA-02: a wrong code is a validation failure (400), not an auth
+      // failure — 401 made the client refresh + retry as if the token died.
+      expect(res.status).toBe(400);
     }
     const fifth = await request(app)
       .post(`/api/claims/${claimId}/verify`)
       .set(auth(provider.token))
       .send({ code });
-    expect(fifth.status).toBe(401);
+    expect(fifth.status).toBe(400);
     const dbClaim = await prisma.claim.findUnique({ where: { id: claimId } });
     expect(dbClaim.status).toBe('CONFIRMED');
     expect(dbClaim.verifyLockedUntil).toBeTruthy();

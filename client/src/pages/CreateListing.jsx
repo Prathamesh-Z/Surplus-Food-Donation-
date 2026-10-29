@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authedFetch, recognizeFood } from '../lib/api.js';
+import { useNavigate, useParams } from 'react-router-dom';
+import { authedFetch, recognizeFood, api, fieldErrorsText } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { CameraCapture } from '../components/CameraCapture.jsx';
@@ -65,8 +65,20 @@ function nowParts(offsetMinutes = 0) {
   return { date: todayStr(d), time: { hh: String(h), mm, ap } };
 }
 
+// QA-04 edit mode: split a stored ISO timestamp back into the form's
+// local date + 12-hour time parts (minutes round down to the 5-minute grid).
+function fromISO(iso) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  let h = d.getHours();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return { date: todayStr(d), time: { hh: String(h), mm: pad(Math.floor(d.getMinutes() / 5) * 5), ap } };
+}
+
 export function CreateListing() {
   const navigate = useNavigate();
+  const { id: editId } = useParams();
   const { t } = useLang();
   const cookedInit = nowParts(-60);
   const deadlineInit = nowParts(180);
@@ -113,6 +125,52 @@ export function CreateListing() {
   );
   const [cameraOpen, setCameraOpen] = useState(false);
   const detectSeq = useRef(0);
+  // QA-04 edit mode + QA-17 photo failure state.
+  const [editListing, setEditListing] = useState(null);
+  const [loadingEdit, setLoadingEdit] = useState(Boolean(editId));
+  const [photoFailedId, setPhotoFailedId] = useState('');
+  const [photoRetryError, setPhotoRetryError] = useState('');
+
+  // QA-04: prefill the form when editing an existing listing.
+  useEffect(() => {
+    if (!editId) return;
+    api(`/api/listings/${editId}`)
+      .then((data) => {
+        const l = data.listing;
+        setEditListing(l);
+        setForm((f) => ({
+          ...f,
+          foodName: l.foodName ?? '',
+          foodDetails: l.foodDetails ?? '',
+          category: l.category ?? 'COOKED_MEALS',
+          categoryNote: l.categoryNote ?? '',
+          dietaryType: l.dietaryType ?? 'VEG',
+          portionType: l.portionType ?? 'INDIVIDUAL_MEALS',
+          bulkUnit: l.bulkUnit ?? 'KILOGRAMS',
+          totalPortions: l.totalPortions ?? 50,
+          ngoSuitable: Boolean(l.ngoSuitable),
+          pickupLocationText: l.pickupLocationText ?? '',
+          contactPhone: l.donorContact ?? f.contactPhone,
+          showContact: Boolean(l.showContact),
+        }));
+        const cooked = fromISO(l.cookedAt);
+        setCookedDate(cooked.date);
+        setCookedTime(cooked.time);
+        const deadline = fromISO(l.collectionDeadline);
+        setDeadlineDate(deadline.date);
+        setDeadlineTime(deadline.time);
+        setAgreed((l.checklistConfirmedItems ?? []).length >= ALL_IDS.length);
+        if (typeof l.pickupLat === 'number' && typeof l.pickupLng === 'number') {
+          setPickupCoords({ lat: l.pickupLat, lng: l.pickupLng });
+        }
+        setLoadingEdit(false);
+      })
+      .catch((err) => {
+        setError(err.data?.error || err.message);
+        setLoadingEdit(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId]);
 
   const set = (k) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
@@ -204,9 +262,39 @@ export function CreateListing() {
     );
   }
 
+  async function uploadPhoto(listingId, file) {
+    const res = await authedFetch(`/api/listings/${listingId}/photo`, () => {
+      const f = new FormData();
+      f.append('photo', file);
+      return { method: 'POST', body: f };
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Photo upload failed');
+    }
+  }
+
+  async function retryPhoto() {
+    if (!photoFailedId || !photoFile) return;
+    setPhotoRetryError('');
+    try {
+      await uploadPhoto(photoFailedId, photoFile);
+      navigate('/my-listings');
+    } catch (err) {
+      setPhotoRetryError(err.message);
+    }
+  }
+
   async function submit(e) {
     e.preventDefault();
     setError('');
+    setPhotoFailedId('');
+    // QA-10: an invalid number used to be silently replaced by the profile
+    // number. Reject it with feedback instead — the user decides.
+    if (form.contactPhone.trim() && !/^[6-9]\d{9}$/.test(form.contactPhone.trim())) {
+      setError(t('contactInvalid'));
+      return;
+    }
     try {
       const body = {
         foodName: form.foodName,
@@ -218,7 +306,7 @@ export function CreateListing() {
         bulkUnit: form.portionType === 'BULK_SERVINGS' ? form.bulkUnit : undefined,
         totalPortions: Number(form.totalPortions),
         ngoSuitable: form.ngoSuitable,
-        contactPhone: /^[6-9]\d{9}$/.test(form.contactPhone.trim()) ? form.contactPhone.trim() : undefined,
+        contactPhone: form.contactPhone.trim() || undefined,
         showContact: form.showContact,
         pickupLocationText: form.pickupLocationText,
         pickupLat: pickupCoords?.lat,
@@ -227,19 +315,57 @@ export function CreateListing() {
         collectionDeadline: toISO(deadlineDate, deadlineTime),
         checklistItems: agreed ? ALL_IDS : [],
       };
+      if (editId) {
+        // QA-04 edit path: PATCH keeps the status; a DRAFT saved with the
+        // full agreement is published right after, so Edit doubles as the
+        // Publish flow for drafts. When the agreement is unchecked, the
+        // checklist key is omitted so existing confirmations are preserved
+        // instead of wiped.
+        const editBody = { ...body };
+        if (!agreed) delete editBody.checklistItems;
+        await api(`/api/listings/${editId}`, { method: 'PATCH', body: editBody });
+        if (editListing?.status === 'DRAFT' && agreed) {
+          try {
+            await api(`/api/listings/${editId}/publish`, { method: 'POST', body: { checklistItems: ALL_IDS } });
+          } catch (pubErr) {
+            setError(pubErr.data?.error || pubErr.message);
+            return;
+          }
+        }
+        if (photoFile) {
+          try {
+            await uploadPhoto(editId, photoFile);
+          } catch {
+            setPhotoFailedId(editId);
+            return;
+          }
+        }
+        navigate('/my-listings');
+        return;
+      }
       const res = await authedFetch('/api/listings', () => ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       }));
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create listing');
+      // QA-03: surface the server's field errors instead of only
+      // "Validation failed".
+      if (!res.ok) throw new Error(fieldErrorsText(data) || data.error || 'Failed to create listing');
       if (photoFile) {
-        await authedFetch(`/api/listings/${data.listing.id}/photo`, () => {
-          const f = new FormData();
-          f.append('photo', photoFile);
-          return { method: 'POST', body: f };
-        }).catch(() => {});
+        try {
+          await uploadPhoto(data.listing.id, photoFile);
+        } catch {
+          // QA-17: never swallow a photo failure again. A LIVE listing
+          // stays on this page with a retry panel; a DRAFT keeps its draft
+          // warning plus the photo note.
+          if (data.listing.status === 'DRAFT') {
+            setError(`${t('draftWarning')} ${t('photoFailed')}`);
+            return;
+          }
+          setPhotoFailedId(data.listing.id);
+          return;
+        }
       }
       if (data.listing.status === 'DRAFT') {
         setError(t('draftWarning'));
@@ -247,14 +373,26 @@ export function CreateListing() {
       }
       navigate('/my-listings');
     } catch (err) {
-      setError(err.message);
+      setError(err.data?.error || err.message);
     }
   }
 
+  if (loadingEdit) return <section><p>Loading…</p></section>;
+
   return (
     <section>
-      <h1>{t('createListingTitle')}</h1>
+      <h1>{editId ? t('editListingTitle') : t('createListingTitle')}</h1>
       {error && <div className="error">{error}</div>}
+      {photoFailedId && (
+        <div className="success">
+          <p style={{ margin: '0 0 8px' }}>{t('photoFailed')}</p>
+          {photoRetryError && <p className="error">{photoRetryError}</p>}
+          <div className="row">
+            <button type="button" onClick={retryPhoto}>Try photo again</button>
+            <button type="button" className="secondary" onClick={() => navigate('/my-listings')}>Continue to My Listings</button>
+          </div>
+        </div>
+      )}
       <form onSubmit={submit}>
         {/* ── Photo + AI detection (v3.4: upload or camera, auto-detect) ── */}
         <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
@@ -271,9 +409,9 @@ export function CreateListing() {
           {cameraOpen && (
             <CameraCapture onCapture={onCameraCapture} onClose={() => setCameraOpen(false)} />
           )}
-          {photoPreview && (
+          {(photoPreview || (editListing?.photoPath && !photoFile)) && (
             <div className="row" style={{ alignItems: 'flex-start', marginTop: 10 }}>
-              <img src={photoPreview} alt="" style={{ maxWidth: 240, borderRadius: 10 }} />
+              <img src={photoPreview || editListing?.photoPath} alt="" style={{ maxWidth: 240, borderRadius: 10 }} />
               <div>
                 {detect.status === 'loading' && <p className="muted">🤖 {t('detectWarming')}</p>}
                 {detect.status === 'done' && detect.result?.food_name && (
@@ -411,6 +549,7 @@ export function CreateListing() {
         <button type="button" className="secondary" onClick={useCurrentLocation} disabled={locating} style={{ marginBottom: 12 }}>
           📍 {locating ? t('locating') : t('useCurrentLocation')}
         </button>
+        <p className="muted" style={{ marginTop: -6 }}>{t('geocodePrivacyNote')}</p>
         {pickupCoords && <p className="success" style={{ marginTop: -6 }}>📍 {t('pickupPointSet')}</p>}
 
         {/* ── Donor contact (v3.4): prefilled from the profile ── */}
@@ -463,7 +602,7 @@ export function CreateListing() {
             </span>
           </label>
         </div>
-        <button type="submit">{t('publish')}</button>
+        <button type="submit">{editId ? t('saveChanges') : t('publish')}</button>
       </form>
 
       {termsOpen && (

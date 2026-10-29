@@ -15,10 +15,35 @@ export function getRefreshToken() {
 export function setTokens(access, refresh) {
   if (access) localStorage.setItem(TOKEN_KEY, access);
   if (refresh) localStorage.setItem(REFRESH_KEY, refresh);
+  notifyAuthChange();
 }
 export function clearTokens() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
+  notifyAuthChange();
+}
+
+// QA-01: token changes used to be invisible to React — Nav read
+// localStorage at render time and never re-rendered after login. Every
+// token write now broadcasts, and the AuthContext syncs from it.
+export function notifyAuthChange() {
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(new CustomEvent('fws:auth-changed'));
+  }
+}
+
+// Join Zod field errors from a server payload ({details: {fieldErrors}})
+// into one readable line; '' when there are none.
+export function fieldErrorsText(data) {
+  const fields = data?.details?.fieldErrors;
+  if (fields && Object.keys(fields).length > 0) return Object.values(fields).flat().join(' ');
+  return '';
+}
+
+// One error string for a failed api() call: field errors first (QA-03),
+// then the server message, then the generic message.
+export function formatApiError(err) {
+  return fieldErrorsText(err?.data) || err?.data?.error || err?.message || 'Request failed';
 }
 
 let refreshInFlight = null;
@@ -73,7 +98,7 @@ export async function authedFetch(path, makeInit) {
   return res;
 }
 
-export async function api(path, { method = 'GET', body, token } = {}) {
+export async function api(path, { method = 'GET', body, token, skipRefresh = false } = {}) {
   const doCall = (tok) =>
     fetch(path, {
       method,
@@ -84,7 +109,11 @@ export async function api(path, { method = 'GET', body, token } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   let res = await doCall(token ?? getAccessToken());
-  if (res.status === 401 && !token) {
+  // QA-02: some 401s are business errors, not expired tokens (the pickup
+  // verify endpoint used to answer 401 for a wrong code). Callers that know
+  // their 401 is not an auth failure pass skipRefresh so no silent refresh
+  // (and no session-clearing) happens.
+  if (res.status === 401 && !token && !skipRefresh) {
     const fresh = await refreshAccessToken();
     if (fresh) res = await doCall(fresh);
     else clearTokens();

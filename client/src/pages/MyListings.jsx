@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 import { VerifyPickup } from '../components/Pickup.jsx';
 import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { CHECKLIST } from '../lib/checklist.js';
+
+const ALL_IDS = CHECKLIST.map(([id]) => id);
 
 export function timeRemaining(deadline) {
   const ms = new Date(deadline).getTime() - Date.now();
@@ -18,6 +21,22 @@ export function MyListings() {
   const [listings, setListings] = useState([]);
   const [error, setError] = useState('');
   const [claims, setClaims] = useState({});
+  // QA-04: publish modal state — which DRAFT is being published + its ticks.
+  const [publishId, setPublishId] = useState('');
+  const [publishTicks, setPublishTicks] = useState([]);
+  const [publishError, setPublishError] = useState('');
+
+  async function publish() {
+    setPublishError('');
+    try {
+      await api(`/api/listings/${publishId}/publish`, { method: 'POST', body: { checklistItems: publishTicks } });
+      setPublishId('');
+      setPublishTicks([]);
+      load();
+    } catch (err) {
+      setPublishError(formatApiError(err));
+    }
+  }
 
   async function load() {
     try {
@@ -96,10 +115,55 @@ export function MyListings() {
             </div>
           )}
           {['LIVE', 'PARTIALLY_CLAIMED', 'FULLY_CLAIMED', 'DRAFT'].includes(l.status) && (
-            <button className="danger" onClick={() => cancel(l.id)}>{t('cancelListing')}</button>
+            <div className="row" style={{ marginTop: 8 }}>
+              <Link className="btn secondary" to={`/listings/${l.id}/edit`}>{t('edit')}</Link>
+              {l.status === 'DRAFT' && (
+                <button onClick={() => { setPublishId(l.id); setPublishTicks([]); setPublishError(''); }}>
+                  {t('publish')}
+                </button>
+              )}
+              <button className="danger" onClick={() => cancel(l.id)}>{t('cancelListing')}</button>
+            </div>
           )}
         </div>
       ))}
+      {publishId && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(20,40,20,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16,
+          }}
+          onClick={() => setPublishId('')}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 560, maxHeight: '82vh', overflowY: 'auto', margin: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0 }}>{t('publishChecklistTitle')}</h2>
+            {publishError && <div className="error">{publishError}</div>}
+            {CHECKLIST.map(([id, text]) => (
+              <label key={id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontWeight: 400, marginBottom: 8 }}>
+                <input
+                  type="checkbox"
+                  style={{ width: 'auto', marginTop: 3 }}
+                  checked={publishTicks.includes(id)}
+                  onChange={(e) => setPublishTicks((prev) =>
+                    e.target.checked ? [...prev, id] : prev.filter((x) => x !== id)
+                  )}
+                />
+                <span>{text}</span>
+              </label>
+            ))}
+            <div className="row">
+              <button disabled={publishTicks.length !== ALL_IDS.length} onClick={publish}>
+                {t('publish')}
+              </button>
+              <button className="secondary" onClick={() => setPublishId('')}>{t('close')}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

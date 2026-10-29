@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { timeRemaining } from './MyListings.jsx';
 import { PickupCodeDisplay } from '../components/Pickup.jsx';
@@ -29,7 +29,7 @@ export function MyClaims() {
       const data = await api(`/api/claims/${id}/code`);
       setCodes({ ...codes, [id]: data.pickupCode });
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 
@@ -39,7 +39,7 @@ export function MyClaims() {
       await api(`/api/claims/${id}/cancel`, { method: 'POST', body: {} });
       load();
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 

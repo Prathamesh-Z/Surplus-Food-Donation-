@@ -17,8 +17,8 @@ export const PORTION_TYPES = ['INDIVIDUAL_MEALS', 'BULK_SERVINGS', 'KILOGRAMS', 
 // of creation (stated default in the PRD); cookedAt must not be in the future.
 export const createListingSchema = z
   .object({
-    foodName: z.string().trim().min(1),
-    foodDetails: z.string().trim().min(1),
+    foodName: z.string().trim().min(1).max(200),
+    foodDetails: z.string().trim().min(1).max(2000),
     category: z.enum(CATEGORIES),
     dietaryType: z.enum(DIETARY_TYPES),
     portionType: z.enum(PORTION_TYPES),
@@ -57,8 +57,8 @@ export const createListingSchema = z
   });
 
 export const editListingSchema = z.object({
-  foodName: z.string().trim().min(1).optional(),
-  foodDetails: z.string().trim().min(1).optional(),
+  foodName: z.string().trim().min(1).max(200).optional(),
+  foodDetails: z.string().trim().min(1).max(2000).optional(),
   category: z.enum(CATEGORIES).optional(),
   dietaryType: z.enum(DIETARY_TYPES).optional(),
   portionType: z.enum(PORTION_TYPES).optional(),

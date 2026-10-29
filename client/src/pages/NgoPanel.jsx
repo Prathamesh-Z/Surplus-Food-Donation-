@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 
 const DEST_TYPES = ['SHELTER', 'COMMUNITY_KITCHEN', 'OLD_AGE_HOME', 'SCHOOL', 'INDIVIDUALS', 'OTHER'];
 
@@ -42,7 +42,7 @@ export function NgoPanel() {
       });
       load();
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 
@@ -51,7 +51,7 @@ export function NgoPanel() {
       await api(`/api/ngo/redistributions/${id}`, { method: 'DELETE' });
       load();
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 

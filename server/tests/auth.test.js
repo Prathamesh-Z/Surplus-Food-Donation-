@@ -23,13 +23,15 @@ describe('Module 2 — Auth (FR-01, FR-02, FR-03)', () => {
     expect(dbUser.passwordHash.startsWith('$2')).toBe(true);
   });
 
-  it('FR-01: duplicate email -> 409; short password -> 422; ADMIN role via public endpoint -> 422', async () => {
+  it('FR-01: duplicate email -> 200 generic (QA-15, no enumeration); short password -> 422; ADMIN role via public endpoint -> 422', async () => {
     const first = await registerUser(app, request, { role: 'CLAIMER' });
     expect(first.res.status).toBe(201);
     const dup = await request(app)
       .post('/api/auth/register')
       .send({ ...first.body, mobile: '9111111111' });
-    expect(dup.status).toBe(409);
+    expect(dup.status).toBe(200);
+    expect(dup.body.user).toBeUndefined();
+    expect(dup.body.message).toMatch(/already registered/);
 
     const short = await request(app)
       .post('/api/auth/register')

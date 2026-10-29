@@ -10,8 +10,8 @@ export const scheduleSchema = z.object({
   generationTimeLocal: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:MM 24-hour'),
   deadlineOffsetMinutes: z.number().int().min(15).max(23 * 60).optional().default(180),
   template: z.object({
-    foodName: z.string().trim().min(1),
-    foodDetails: z.string().trim().min(1),
+    foodName: z.string().trim().min(1).max(200),
+    foodDetails: z.string().trim().min(1).max(2000),
     category: z.enum(CATEGORIES),
     dietaryType: z.enum(DIETARY_TYPES),
     portionType: z.enum(PORTION_TYPES),
