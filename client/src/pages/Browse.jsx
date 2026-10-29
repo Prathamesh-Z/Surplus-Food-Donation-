@@ -159,7 +159,7 @@ export function Browse() {
               placeholder={t('searchFood')}
               value={filters.q}
               onChange={set('q')}
-              style={{ width: '100%', paddingRight: 46, boxSizing: 'border-box' }}
+              style={{ width: '100%', paddingRight: 46, boxSizing: 'border-box', margin: 0 }}
             />
             <div
               style={{

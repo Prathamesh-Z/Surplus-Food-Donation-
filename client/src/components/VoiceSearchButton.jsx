@@ -3,22 +3,25 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 import { transcribeVoice } from '../lib/api.js';
 
 /**
- * Voice search (v3.8; UX v3.9) — YouTube/Google-style: a mic icon INSIDE
- * the search box opens a listening overlay; you speak, pause, and the
- * search runs by itself. No "Done" tap is required.
+ * Voice search (v3.8 local Whisper; v3.9 silence auto-stop; v3.9.1 UI).
  *
- * How it works:
- *  - MediaRecorder captures the mic; a Web Audio analyser watches the
- *    input level. After SILENCE_MS of quiet following actual speech,
- *    recording stops automatically and the clip is transcribed by the
- *    app's LOCAL Whisper service (nothing leaves the laptop).
- *  - If no speech energy is ever detected, the clip is never sent —
- *    the user just gets a "didn't hear anything" message.
- *  - The browser's cloud SpeechRecognition remains only as a fallback
- *    when the local service answers 503 (it endpoints on its own).
- *  - Cancel (✕, backdrop, or the Cancel button) tears down tracks,
- *    the audio context, timers and listeners. A session counter makes
- *    stale async completions harmless.
+ * The mic lives inside the Browse search input. Clicking it does NOT
+ * open a modal: the search box itself switches into a listening state —
+ * a compact panel that exactly covers the input (this component must be
+ * rendered inside the position:relative search container) showing a
+ * pulsing mic, "Listening…", a live level meter and a cancel button.
+ * Errors appear as a small dropdown card under the input. Nothing ever
+ * covers the page.
+ *
+ * Flow: MediaRecorder captures the mic; a Web Audio analyser watches
+ * the level. After SILENCE_MS of quiet following actual speech the
+ * recording stops by itself, the clip is transcribed by the app's LOCAL
+ * Whisper service, and the transcript fills the search box and runs the
+ * search. A clip with no detected speech energy is never sent. The
+ * browser's cloud SpeechRecognition remains only as a fallback when the
+ * local service answers 503. Sessions are guarded (active flag +
+ * session counter); tracks, AudioContext, timers, monitors and key
+ * listeners are all released on stop, cancel and unmount.
  */
 const SPEECH_LANGS = { en: 'en-IN', mr: 'mr-IN', hi: 'hi-IN' };
 
@@ -28,22 +31,26 @@ const SILENCE_RMS = 0.02; // level above which audio counts as sound
 const NO_SPEECH_STOP_MS = 6000; // give up if nothing is said at all
 const MAX_SECONDS = 15; // hard cap
 
-const OVERLAY_CSS = `
-@keyframes fwsPulse {
-  0% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0.45); }
-  70% { box-shadow: 0 0 0 34px rgba(179, 38, 30, 0); }
+const PANEL_CSS = `
+@keyframes fwsDotPulse {
+  0% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0.40); }
+  70% { box-shadow: 0 0 0 9px rgba(179, 38, 30, 0); }
   100% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0); }
 }
-@keyframes fwsFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fwsDropIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
 `;
 
-export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
+const BAR_FACTORS = [0.45, 0.8, 1.25, 0.8, 0.45];
+
+export function VoiceSearchButton({ onTranscript, variant = 'inline' }) {
   const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState('idle'); // recording | transcribing | heard | problem
   const [heard, setHeard] = useState('');
   const [problem, setProblem] = useState('');
   const [seconds, setSeconds] = useState(0);
+  const [level, setLevel] = useState(0);
+  const [usingFallback, setUsingFallback] = useState(false);
   const recRef = useRef(null); // MediaRecorder or SpeechRecognition
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
@@ -54,7 +61,6 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
   const activeRef = useRef(false);
   const sessionRef = useRef(0);
   const hasSpokenRef = useRef(false);
-  const usingFallbackRef = useRef(false);
 
   const hasRecorder =
     typeof window !== 'undefined' &&
@@ -79,9 +85,19 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
       audioCtxRef.current.close().catch(() => {});
     }
     audioCtxRef.current = null;
+    setLevel(0);
   }
 
   useEffect(() => () => stopAll(), []);
+
+  // Escape cancels an open session/panel.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open ]);
 
   if (!hasRecorder && !Recognition) return null;
 
@@ -115,7 +131,7 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
     }, 650);
   }
 
-  /** Watch the mic level; end the recording after a spoken pause. */
+  /** Watch the mic level: drives the meter AND the silence auto-stop. */
   function startSilenceMonitor(stream, rec, session) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return; // no analyser available — MAX_SECONDS still caps it
@@ -139,6 +155,7 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
           sum += v * v;
         }
         const rms = Math.sqrt(sum / (data.length / 4));
+        setLevel(Math.min(1, rms * 3.2));
         const now = Date.now();
         if (rms > SILENCE_RMS) {
           lastSoundAt = now;
@@ -187,6 +204,7 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
         audioCtxRef.current.close().catch(() => {});
       }
       audioCtxRef.current = null;
+      setLevel(0);
       if (doneRef.current || session !== sessionRef.current) return;
       if (!hasSpokenRef.current) {
         fail('voiceNoSpeech');
@@ -203,7 +221,7 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
       } catch (err) {
         if (session !== sessionRef.current) return;
         if (err.status === 503 && Recognition) {
-          usingFallbackRef.current = true;
+          setUsingFallback(true);
           startBrowserFallback(session);
         } else if (err.status === 503) {
           fail('voiceServiceDown');
@@ -275,41 +293,54 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
     setHeard('');
     setProblem('');
     setSeconds(0);
+    setLevel(0);
+    setUsingFallback(false);
     doneRef.current = false;
-    usingFallbackRef.current = false;
     setPhase('recording');
     setOpen(true);
     if (!window.isSecureContext) {
       setProblem(t('voiceInsecure'));
       setPhase('problem');
+      activeRef.current = false;
       return;
     }
     if (hasRecorder) startLocal(session);
-    else startBrowserFallback(session);
+    else {
+      setUsingFallback(true);
+      startBrowserFallback(session);
+    }
   }
 
   function stopRecording() {
     try { recRef.current?.stop?.(); } catch { /* noop */ }
   }
 
-  const micColor = phase === 'problem' ? '#9e9e9e' : '#b3261e';
+  const clock = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  const statusText =
+    phase === 'transcribing'
+      ? t('transcribing')
+      : phase === 'heard'
+        ? heard
+        : heard || `${t('listening')} ${clock}`;
+
   const buttonStyle =
-    variant === 'inline'
+    variant === 'round'
       ? {
-          width: 36, height: 36, borderRadius: '50%', flex: '0 0 auto',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 17, background: 'transparent', border: 'none',
-          cursor: 'pointer', padding: 0,
-        }
-      : {
           width: 42, height: 42, borderRadius: '50%', flex: '0 0 auto',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 19, background: '#eef4ea', border: '1px solid #c9d8c3',
+          cursor: 'pointer', padding: 0,
+        }
+      : {
+          width: 36, height: 36, borderRadius: '50%', flex: '0 0 auto',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 17, background: 'transparent', border: 'none',
           cursor: 'pointer', padding: 0,
         };
 
   return (
     <>
+      <style>{PANEL_CSS}</style>
       <button
         type="button"
         onClick={start}
@@ -319,81 +350,113 @@ export function VoiceSearchButton({ onTranscript, variant = 'round' }) {
       >
         🎤
       </button>
-      {open && (
+
+      {open && phase !== 'problem' && (
         <div
-          role="dialog"
+          role="status"
           aria-label={t('voiceSearch')}
-          onClick={close}
           style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(255,255,255,0.97)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            padding: '9vh 24px 24px', animation: 'fwsFadeIn 0.15s ease-out',
+            position: 'absolute', inset: 0, zIndex: 6,
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '0 4px 0 8px',
+            background: '#fff',
+            border: `1.5px solid ${phase === 'heard' ? '#2e7d32' : '#b3261e'}`,
+            borderRadius: 9,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.10)',
+            boxSizing: 'border-box',
+            animation: 'fwsDropIn 0.12s ease-out',
           }}
         >
-          <style>{OVERLAY_CSS}</style>
+          <button
+            type="button"
+            onClick={phase === 'recording' ? stopRecording : undefined}
+            title={phase === 'recording' ? t('tapWhenDone') : undefined}
+            aria-label={t('voiceSearch')}
+            style={{
+              width: 28, height: 28, borderRadius: '50%', border: 'none', flex: '0 0 auto',
+              background: phase === 'heard' ? '#2e7d32' : phase === 'transcribing' ? '#9e9e9e' : '#b3261e',
+              color: '#fff', fontSize: 14, lineHeight: 1,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              cursor: phase === 'recording' ? 'pointer' : 'default', padding: 0,
+              animation: phase === 'recording' ? 'fwsDotPulse 1.6s ease-out infinite' : 'none',
+            }}
+          >
+            {phase === 'heard' ? '✓' : '🎤'}
+          </button>
+          <span
+            style={{
+              flex: '1 1 auto', minWidth: 0, fontSize: 14,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              color: phase === 'recording' && !heard ? '#555' : '#111',
+            }}
+          >
+            {statusText}
+          </span>
+          {phase === 'recording' && !usingFallback && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, height: 18, flex: '0 0 auto' }} aria-hidden="true">
+              {BAR_FACTORS.map((f, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 3, borderRadius: 2, background: '#b3261e',
+                    height: Math.max(3, Math.min(18, 3 + level * 15 * f)),
+                    transition: 'height 0.1s ease-out',
+                  }}
+                />
+              ))}
+            </span>
+          )}
           <button
             type="button"
             onClick={close}
             aria-label={t('voiceClose')}
+            title={t('voiceClose')}
             style={{
-              position: 'absolute', top: 14, right: 18, width: 40, height: 40,
-              borderRadius: '50%', border: 'none', background: 'transparent',
-              fontSize: 22, cursor: 'pointer', color: '#444',
+              width: 30, height: 30, borderRadius: '50%', border: 'none', flex: '0 0 auto',
+              background: 'transparent', fontSize: 15, color: '#555',
+              cursor: 'pointer', padding: 0,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             ✕
           </button>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: 640, width: '100%' }}
-          >
+        </div>
+      )}
+
+      {open && phase === 'problem' && (
+        <div
+          role="alert"
+          style={{
+            position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 20,
+            background: '#fff', border: '1px solid #e2e2e2', borderRadius: 10,
+            boxShadow: '0 10px 28px rgba(0,0,0,0.16)',
+            padding: '10px 12px', boxSizing: 'border-box',
+            animation: 'fwsDropIn 0.12s ease-out',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 13.5, lineHeight: 1.45, color: '#333', flex: '1 1 auto' }}>
+              {problem}
+            </span>
             <button
               type="button"
-              onClick={phase === 'recording' ? stopRecording : undefined}
-              aria-label={t('voiceSearch')}
+              onClick={close}
+              aria-label={t('voiceClose')}
               style={{
-                width: 96, height: 96, borderRadius: '50%', border: 'none',
-                background: micColor,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 44, color: '#fff', cursor: phase === 'recording' ? 'pointer' : 'default',
-                animation: phase === 'recording' ? 'fwsPulse 1.6s ease-out infinite' : 'none',
+                width: 26, height: 26, borderRadius: '50%', border: 'none', flex: '0 0 auto',
+                background: 'transparent', fontSize: 13, color: '#555', cursor: 'pointer', padding: 0,
               }}
             >
-              🎤
+              ✕
             </button>
-            <p style={{ fontSize: 20, color: '#555', marginTop: 26 }}>
-              {phase === 'problem'
-                ? t('voiceProblemTitle')
-                : phase === 'transcribing'
-                  ? t('transcribing')
-                  : phase === 'heard'
-                    ? t('voiceSearch')
-                    : `${t('recording')} ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`}
-            </p>
-            <p
-              style={{
-                fontSize: 30, lineHeight: 1.35, textAlign: 'center',
-                minHeight: 82, color: heard ? '#111' : '#999', fontWeight: 500,
-                margin: '6px 0 0',
-              }}
-            >
-              {phase === 'problem' ? problem : heard || t('voiceTrySaying')}
-            </p>
-            {phase === 'recording' && (
-              <>
-                <p className="muted" style={{ marginTop: 10 }}>{t('voiceAutoStop')}</p>
-                <button type="button" className="secondary" onClick={close} style={{ marginTop: 8 }}>
-                  {t('voiceClose')}
-                </button>
-              </>
-            )}
-            {phase === 'problem' && (
-              <div className="row" style={{ marginTop: 18 }}>
-                <button type="button" onClick={start}>{t('voiceRetry')}</button>
-                <button type="button" className="secondary" onClick={close}>{t('voiceClose')}</button>
-              </div>
-            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button type="button" onClick={start} style={{ padding: '6px 12px', fontSize: 13 }}>
+              {t('voiceRetry')}
+            </button>
+            <button type="button" className="secondary" onClick={close} style={{ padding: '6px 12px', fontSize: 13 }}>
+              {t('voiceClose')}
+            </button>
           </div>
         </div>
       )}

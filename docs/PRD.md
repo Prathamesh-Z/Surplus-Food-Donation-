@@ -759,3 +759,38 @@ looked urgent and claimable, and a voice search that needed a manual
   keeps its own built-in end-of-speech behaviour.
 
 **End of PRD v3.9 amendment.**
+
+---
+
+# Amendment — PRD v3.9.1 (decided and BUILT 29 October 2026)
+
+*Scope: the voice-search RECORDING UI only. Recording, silence
+auto-stop, local Whisper transcription, and the browser fallback are
+unchanged from v3.8/v3.9.*
+
+- **Root cause of the broken UI:** the listening UI was a page-level
+  modal — a `position: fixed; inset: 0` full-viewport overlay with a
+  96 px pulsing circle and 30 px message text, launched from a button
+  inside the search box. It covered the search bar and the whole page,
+  visually disconnected speaking from the field it fills, and its
+  oversized text wrapped/clipped badly at phone widths (worst on the
+  long error messages). No CSS tweak fixes a wrong component shape.
+- **Replacement:** the search box itself becomes the recording UI.
+  Clicking the in-input mic swaps the input's own box for a compact
+  panel of exactly the input's size (the component renders inside the
+  `position: relative` search container; the input's vertical margins
+  are zeroed so the panel's `inset: 0` matches the input box exactly):
+  a small pulsing red mic dot (tap it to finish early), "Listening…"
+  plus the elapsed time or the live interim transcript, a five-bar
+  live level meter driven by the same Web Audio analyser that detects
+  silence, and an obvious ✕ cancel. Transcribing and heard states show
+  in the same footprint (green ✓ for heard); nothing on the page moves
+  and nothing else is covered.
+- **Errors** (permission denied, no speech, service down, insecure
+  context) appear as a small dropdown card directly under the input —
+  normal-size text, Retry and Close actions, ✕ to dismiss — instead of
+  a full-screen takeover. Escape also cancels. All cleanup (tracks,
+  AudioContext, timers, monitors, key listener) and the session guards
+  from v3.9 are unchanged.
+
+**End of PRD v3.9.1 amendment.**
