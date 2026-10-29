@@ -72,6 +72,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | v3.6 | Registration field-error display + mobile normalization, notification dismiss/click-through/nav badge, separate Post Surplus Food nav item, My Listings contain-fit photos, password reset (hashed single-use tokens, session revocation), expiry-priority card badges | PRD v3.6 |
 | v3.7 | Voice search on Browse (Web Speech API, follows UI language; v3.7.1 rebuilt it YouTube-style with a listening overlay, live transcript and specific error guidance), Cancel Claim on Browse cards and the listing detail page (same endpoint/rules as My Claims) | PRD v3.7 |
 | v3.8 | Voice search transcribed LOCALLY by Whisper (faster-whisper small) in the inference service — no browser-vendor cloud recognizer; browser mic recording in the overlay, `POST /api/speech/transcribe`; start.bat one-time upgrade for older installs | PRD v3.8 |
+| v3.9 | Fully-claimed Browse cards get a neutral grey treatment + "View details" (no claim wording); voice search mic inside the search input with Web Audio silence detection — speak, pause, and it searches automatically | PRD v3.9 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.

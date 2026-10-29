@@ -154,10 +154,25 @@ export function Browse() {
       {error && <div className="error">{error}</div>}
       <div className="card">
         <div className="row">
-          <input placeholder={t('searchFood')} value={filters.q} onChange={set('q')} style={{ maxWidth: 220 }} />
-          <VoiceSearchButton
-            onTranscript={(text) => setFilters({ ...filters, q: text })}
-          />
+          <div style={{ position: 'relative', flex: '1 1 210px', maxWidth: 280 }}>
+            <input
+              placeholder={t('searchFood')}
+              value={filters.q}
+              onChange={set('q')}
+              style={{ width: '100%', paddingRight: 46, boxSizing: 'border-box' }}
+            />
+            <div
+              style={{
+                position: 'absolute', right: 4, top: '50%',
+                transform: 'translateY(-50%)', display: 'flex',
+              }}
+            >
+              <VoiceSearchButton
+                variant="inline"
+                onTranscript={(text) => setFilters({ ...filters, q: text })}
+              />
+            </div>
+          </div>
           <select value={filters.category} onChange={set('category')}>
             <option value="">{t('allCategories')}</option>
             <option value="COOKED_MEALS">Cooked meals</option>
@@ -196,14 +211,26 @@ export function Browse() {
       </div>
       {sorted.length === 0 && <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>}
       <div className="grid">
-        {sorted.map((l) => (
-          <div className="card" key={l.id} style={priorityCardStyle(l.collectionDeadline)}>
+        {sorted.map((l) => {
+          // Sold out = the backend says so: FULLY_CLAIMED status, or zero
+          // portions remaining. Such cards get a neutral treatment — no
+          // urgency accent, no priority badge, no "claim" wording.
+          const soldOut = l.status === 'FULLY_CLAIMED' || l.portionsRemaining <= 0;
+          return (
+          <div
+            className="card"
+            key={l.id}
+            style={soldOut ? { borderLeft: '5px solid #9aa0a6', opacity: 0.82 } : priorityCardStyle(l.collectionDeadline)}
+          >
             {l.photoPath && !imgFailed.has(l.id) ? (
               <img
                 src={l.photoPath}
                 alt={l.foodName}
                 onError={() => setImgFailed((prev) => new Set(prev).add(l.id))}
-                style={{ width: '100%', height: 160, borderRadius: 8, objectFit: 'cover' }}
+                style={{
+                  width: '100%', height: 160, borderRadius: 8, objectFit: 'cover',
+                  ...(soldOut ? { filter: 'grayscale(45%)' } : {}),
+                }}
               />
             ) : (
               <div
@@ -220,9 +247,13 @@ export function Browse() {
             <div className="row">
               <strong>{l.foodName}</strong>
               <DietMark type={l.dietaryType} />
-              <PriorityBadge deadline={l.collectionDeadline} />
+              {!soldOut && <PriorityBadge deadline={l.collectionDeadline} />}
               {l.ngoSuitable && <span className="badge warn">NGO-suitable</span>}
-              {l.status === 'FULLY_CLAIMED' && <span className="badge danger">Fully claimed</span>}
+              {soldOut && (
+                <span className="badge" style={{ background: '#eceff1', color: '#546e7a', border: '1px solid #b0bec5' }}>
+                  {t('fullyClaimed')}
+                </span>
+              )}
             </div>
             <p>{l.foodDetails}</p>
             <p className="muted">
@@ -234,7 +265,7 @@ export function Browse() {
               )}
               <br />By {l.providerName}
             </p>
-            <Link className="btn" to={`/listings/${l.id}`}>{t('viewClaim')}</Link>
+            <Link className="btn" to={`/listings/${l.id}`}>{soldOut ? t('viewDetails') : t('viewClaim')}</Link>
             {(() => {
               const mine = myClaimFor(l.id);
               if (!mine) return null;
@@ -246,7 +277,8 @@ export function Browse() {
               );
             })()}
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

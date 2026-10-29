@@ -710,3 +710,52 @@ Behavior is unchanged, including the v3.8 one-time speech package and
 model fetch.
 
 **End of v3.8.1 fix note.**
+
+---
+
+# Amendment — PRD v3.9 (decided and BUILT 29 October 2026)
+
+*Scope: two UX fixes from field use — fully-claimed cards that still
+looked urgent and claimable, and a voice search that needed a manual
+"Done" tap. Client-only changes; no schema or API changes.*
+
+## U. Fully-claimed Browse cards
+
+- **Root cause:** the Browse API always knew the truth (a sold-out
+  listing has status `FULLY_CLAIMED` and `portionsRemaining: 0`, and it
+  is hidden by default unless the "available only" filter is off), but
+  the card rendered every listing identically — priority-coloured
+  border, urgency badge, and a "View & claim" button — with only a
+  small red "Fully claimed" badge as a hint.
+- **Fix:** a sold-out card (status `FULLY_CLAIMED` or zero portions)
+  now gets a neutral grey accent, a slightly desaturated photo, no
+  priority badge, a grey "Fully claimed" label (translated in all
+  three languages), and a **View details** action instead of
+  "View & claim". Expired and cancelled listings never reach Browse at
+  all, so the four states stay distinct. The existing 30-second
+  refresh updates a card's state in place when its last portions are
+  claimed. Backend protection is unchanged and re-verified: claiming a
+  sold-out listing returns 409, and the concurrency gates still hold.
+
+## V. Voice search — automatic end-of-speech
+
+- The mic button now sits **inside** the search input (right side,
+  input text padded clear of it), in the style of Google Search.
+- Recording ends **automatically**: a Web Audio analyser watches the
+  microphone level, and after **1.8 s of silence** following actual
+  speech the recording stops, transcribes locally (Whisper, as in
+  v3.8), fills the search box, and runs the search — no confirmation
+  tap. Tuning lives in three constants at the top of
+  `VoiceSearchButton.jsx` (`SILENCE_MS`, `SILENCE_RMS`,
+  `NO_SPEECH_STOP_MS`). A clip with no detected speech energy is never
+  sent for transcription (the user gets "didn't hear anything"); a
+  15-second hard cap remains, as do the pulsing overlay, the Cancel
+  control, and tap-the-mic to finish early.
+- Sessions are guarded by a session counter plus an active-session
+  flag, so double-taps, retries, and late async results can't create
+  duplicate searches; microphone tracks, the AudioContext, monitors
+  and timers are all released on stop, cancel, and unmount. The
+  browser-recognizer fallback (only when the local service is down)
+  keeps its own built-in end-of-speech behaviour.
+
+**End of PRD v3.9 amendment.**
