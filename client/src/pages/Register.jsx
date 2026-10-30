@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PasswordInput } from '../components/PasswordInput.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api.js';
 import { useAuth } from '../lib/AuthContext.jsx';
@@ -88,7 +89,7 @@ export function Register() {
         <label>Full name<input value={form.name} onChange={set('name')} autoComplete="name" required /></label>
         <label>Email<input type="email" value={form.email} onChange={set('email')} autoComplete="email" required /></label>
         <label>Mobile (10 digits, e.g. 9812345678)<input value={form.mobile} onChange={set('mobile')} inputMode="tel" autoComplete="tel" placeholder="9812345678" required /></label>
-        <label>Password (min 8 characters)<input type="password" value={form.password} onChange={set('password')} autoComplete="new-password" required /></label>
+        <label>Password (min 8 characters)<PasswordInput value={form.password} onChange={set('password')} autoComplete="new-password" required /></label>
         <label>
           I am a
           <select value={form.role} onChange={set('role')}>

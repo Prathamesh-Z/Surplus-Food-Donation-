@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PasswordInput } from '../components/PasswordInput.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api.js';
 import { useAuth } from '../lib/AuthContext.jsx';
@@ -31,7 +32,7 @@ export function Login() {
       {error && <div className="error">{error}</div>}
       <form onSubmit={submit}>
         <label>Email<input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-        <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+        <label>Password<PasswordInput autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
         <button type="submit">Log in</button>
       </form>
       <p><Link to="/forgot-password">{t('forgotPassword')}</Link></p>

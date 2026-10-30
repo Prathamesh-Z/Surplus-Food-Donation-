@@ -1012,3 +1012,17 @@ changes nothing about verification.*
   poll retries on its interval; contact, address, pickup code and QR
   remain available independently of live tracking.
 
+---
+
+## Amendment v3.14 (2026-10-30) — Password visibility toggle (batch F5)
+
+- All password fields (Login, Register, Reset Password — both fields)
+  use one shared `PasswordInput` component with an eye/eye-off toggle
+  button inside the field. Passwords are hidden by default; the toggle
+  switches the input between `password` and `text` types and nothing
+  else — value handling, validation, autocomplete attributes and
+  submission logic are unchanged.
+- The toggle is a real button with a localized accessible label
+  ("Show password" / "Hide password" in English, Marathi and Hindi),
+  usable by keyboard and on touch devices.
+
