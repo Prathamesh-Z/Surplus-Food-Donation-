@@ -5,7 +5,7 @@ import { api } from '../lib/api.js';
 import { haversineKm, formatDistance } from '../lib/distance.js';
 import {
   routeUrl, parseRouteResponse, shouldRequestRoute, msUntilRouteAllowed,
-  formatDuration, ROUTE_TIMEOUT_MS,
+  formatDuration, ROUTE_TIMEOUT_MS, googleMapsDirectionsUrl,
 } from '../lib/routing.js';
 import { buildRouteDiagnostics } from '../lib/routing.js';
 import { accuracyBand } from '../lib/location.js';
@@ -387,6 +387,12 @@ export function DistanceMap({ claimId, listing }) {
     );
   }
 
+  // Google Maps handoff: strictly the app's selected origin (myPos —
+  // saved record, or Live GPS only when explicitly selected) and the
+  // routing destination (routeDest — fresh donor live point, else the
+  // static pickup coordinates; never the stale-inclusive marker dest).
+  const directionsUrl = googleMapsDirectionsUrl({ from: myPos, to: routeDest, mode });
+
   const donorTime = donorLive?.updatedAt ? new Date(donorLive.updatedAt).toLocaleTimeString() : '';
 
   return (
@@ -425,6 +431,23 @@ export function DistanceMap({ claimId, listing }) {
             <p className="muted" style={{ margin: '4px 0 0' }}>⚠ {t('routeUnavailable')}</p>
           )}
           <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{t('routingAttribution')}</p>
+          {directionsUrl && (
+            <>
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-block', marginTop: 8, padding: '8px 16px',
+                  background: '#2e7d32', color: '#fff', borderRadius: 8,
+                  textDecoration: 'none', fontWeight: 600,
+                }}
+              >
+                🧭 {t('getDirections')}
+              </a>
+              <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>{t('directionsPrivacy')}</p>
+            </>
+          )}
         </div>
       )}
       {donorLive?.state === 'live' && (

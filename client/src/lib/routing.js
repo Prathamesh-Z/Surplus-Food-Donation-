@@ -167,6 +167,32 @@ export function msUntilRouteAllowed(lastFetchAt, now) {
 
 /** Provider duration, formatted from the response value — never an
  *  invented speed estimate: "38 min", "1 h 5 min", "< 1 min". */
+const GOOGLE_TRAVEL_MODES = { foot: 'walking', bike: 'bicycling' };
+
+/**
+ * Google Maps Directions URL (official api=1 format) for handing
+ * navigation off to Google Maps — the user opens it explicitly; this
+ * app does not navigate anyone anywhere by itself. Pure: returns the
+ * URL, or null for missing/invalid coordinates or an unsupported
+ * mode. NOTE the coordinate order: Google wants lat,lng — the
+ * OPPOSITE of the FOSSGIS path segments in routeUrl above. Nothing
+ * is fabricated: invalid input is a null, never a default place.
+ */
+export function googleMapsDirectionsUrl({ from, to, mode } = {}) {
+  // Own-property check, not a bare lookup: GOOGLE_TRAVEL_MODES[mode]
+  // would otherwise resolve inherited Object properties ('toString',
+  // 'constructor', '__proto__') to truthy values for invalid modes.
+  if (!Object.hasOwn(GOOGLE_TRAVEL_MODES, mode)) return null;
+  const travelmode = GOOGLE_TRAVEL_MODES[mode];
+  if (!validCoords(from) || !validCoords(to)) return null;
+  return (
+    'https://www.google.com/maps/dir/?api=1' +
+    `&origin=${from.lat},${from.lng}` +
+    `&destination=${to.lat},${to.lng}` +
+    `&travelmode=${travelmode}`
+  );
+}
+
 export function formatDuration(durationSec) {
   const mins = Math.round(durationSec / 60);
   if (mins < 1) return '< 1 min';
