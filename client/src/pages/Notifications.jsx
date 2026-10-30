@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { notificationPath } from '../lib/notificationNav.js';
+import { resolveNotificationNavigation, guardReasonKey } from '../lib/notificationNav.js';
+import { useAuth } from '../lib/AuthContext.jsx';
+import { useLocation } from '../location/LocationContext.jsx';
+import { formatDistance } from '../lib/distance.js';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
@@ -7,9 +10,12 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 export function Notifications() {
   const { t } = useLang();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { location } = useLocation();
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   async function load() {
     try {
@@ -40,11 +46,31 @@ export function Notifications() {
     load();
   }
 
-  /** Click-through: open the record the notification is about, marking it read. */
-  function open(n) {
+  /** Click-through: mark read (existing semantics), then open the
+   * record — through the shared 5 km guard for claiming roles
+   * (PRD v3.21), which explains instead of navigating when blocked. */
+  async function open(n) {
     if (!n.read) markRead(n.id);
-    const path = notificationPath(n);
-    if (path) navigate(path);
+    setNotice('');
+    const userPos =
+      location && typeof location.lat === 'number' && typeof location.lng === 'number'
+        ? { lat: location.lat, lng: location.lng }
+        : null;
+    const res = await resolveNotificationNavigation(n, {
+      role: user?.role ?? null,
+      userPos,
+      fetchListing: async (id) => (await api(`/api/listings/${id}`)).listing ?? null,
+    });
+    if (res.blocked) {
+      setNotice(
+        t(guardReasonKey(res.blocked)) +
+          (res.blocked === 'outside-radius' && typeof res.distanceKm === 'number'
+            ? ` · ${formatDistance(res.distanceKm)}`
+            : ''),
+      );
+      return;
+    }
+    if (res.path) navigate(res.path);
   }
 
   return (
@@ -52,6 +78,7 @@ export function Notifications() {
       <h1>{t('notifications')} {unread > 0 && <span className="badge">{unread} {t('unread')}</span>}</h1>
       {unread > 0 && <button className="secondary" onClick={readAll}>{t('markAllRead')}</button>}
       {error && <div className="error">{error}</div>}
+      {notice && <div className="error">🚫 {notice}</div>}
       {items.length === 0 && <p className="muted">{t('noNotifications')}</p>}
       {items.map((n) => (
         <div className="card" key={n.id} style={{ opacity: n.read ? 0.65 : 1 }}>

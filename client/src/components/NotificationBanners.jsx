@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { useNotifications } from '../lib/NotificationsContext.jsx';
-import { notificationPath } from '../lib/notificationNav.js';
+import { resolveNotificationNavigation, guardReasonKey } from '../lib/notificationNav.js';
+import { api } from '../lib/api.js';
+import { useLocation } from '../location/LocationContext.jsx';
+import { formatDistance } from '../lib/distance.js';
 
 /**
  * Notification banners (PRD v3.17, batch F3).
@@ -51,7 +54,7 @@ function BannerItem({ n, onOpen, onDismiss }) {
       }}
     >
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-        <strong style={{ fontSize: 14 }}>🔔 {n.title}</strong>
+        <strong style={{ fontSize: 14 }}>{n.notice ? n.title : `🔔 ${n.title}`}</strong>
         <button
           type="button"
           className="secondary"
@@ -73,7 +76,10 @@ function BannerItem({ n, onOpen, onDismiss }) {
 export function NotificationBanners() {
   const { notifications, loaded, markRead } = useNotifications();
   const { user } = useAuth();
+  const { location } = useLocation();
+  const { t } = useLang();
   const navigate = useNavigate();
+  const [notices, setNotices] = useState([]);
   const baselineRef = useRef(null);
   const shownRef = useRef(new Set());
   const queueRef = useRef([]);
@@ -120,14 +126,41 @@ export function NotificationBanners() {
     setVisible((v) => v.filter((n) => n.id !== id));
   }
 
-  function open(n) {
+  // Click-through (v3.21): mark read exactly as before, then resolve
+  // through the shared radius guard — a blocked click dismisses the
+  // banner and explains itself in a notice instead of navigating.
+  async function open(n) {
     if (!n.read) markRead(n.id);
     dismiss(n.id);
-    const path = notificationPath(n);
-    if (path) navigate(path);
+    const userPos =
+      location && typeof location.lat === 'number' && typeof location.lng === 'number'
+        ? { lat: location.lat, lng: location.lng }
+        : null;
+    const res = await resolveNotificationNavigation(n, {
+      role: user?.role ?? null,
+      userPos,
+      fetchListing: async (id) => (await api(`/api/listings/${id}`)).listing ?? null,
+    });
+    if (res.blocked) {
+      const body =
+        t(guardReasonKey(res.blocked)) +
+        (res.blocked === 'outside-radius' && typeof res.distanceKm === 'number'
+          ? ` · ${formatDistance(res.distanceKm)}`
+          : '');
+      setNotices((prev) => [
+        ...prev,
+        { id: `guard-${Date.now()}`, notice: true, title: `🚫 ${t('guardTitle')}`, body },
+      ]);
+      return;
+    }
+    if (res.path) navigate(res.path);
   }
 
-  if (visible.length === 0) return null;
+  function dismissNotice(id) {
+    setNotices((prev) => prev.filter((n) => n.id !== id));
+  }
+
+  if (visible.length === 0 && notices.length === 0) return null;
   return (
     <div
       style={{
@@ -136,6 +169,9 @@ export function NotificationBanners() {
         maxWidth: 380, marginLeft: 'auto', pointerEvents: 'none',
       }}
     >
+      {notices.map((n) => (
+        <BannerItem key={n.id} n={n} onOpen={() => dismissNotice(n.id)} onDismiss={dismissNotice} />
+      ))}
       {visible.map((n) => (
         <BannerItem key={n.id} n={n} onOpen={open} onDismiss={dismiss} />
       ))}

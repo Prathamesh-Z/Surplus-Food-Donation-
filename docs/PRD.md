@@ -1217,3 +1217,33 @@ changes nothing about verification.*
   sent to the app backend; the routing provider receives the active
   route origin only, as routing requires.
 
+---
+
+## Amendment v3.21 (2026-10-30) — Notification click-through radius guard
+
+- Closing a discovery side door: Browse hides out-of-radius
+  listings from CLAIMER/NGO users, and notification click-through
+  now applies the SAME rule. When a claiming-role user clicks a
+  listing-linked notification (banner or Notifications page — one
+  shared resolver in lib/notificationNav.js), the app fetches the
+  listing's pickup coordinates through the existing detail endpoint
+  and applies the Browse verdict: within or exactly at 5 km
+  (Haversine, BROWSE_RADIUS_KM) opens normally; beyond 5 km does
+  NOT navigate and shows a localised explanation (with the distance
+  when known); missing/invalid listing coordinates block with a
+  "distance cannot be verified" message; missing/invalid user
+  coordinates block with a "set your location" message. No GPS is
+  requested and no default coordinate is assumed.
+- PROVIDER and ADMIN navigation is unchanged; claim-only
+  notifications still go to My Claims; destination-less
+  notifications still do not navigate. Listing-first mapping for
+  notifications carrying both references is preserved, with the
+  guard applied before the listing opens. Read-marking keeps its
+  existing semantics in all cases — a blocked notification is still
+  marked read exactly once, as any click was.
+- Scope honesty: this guards NOTIFICATION NAVIGATION only. Direct
+  listing URLs and claim authorisation are deliberately unchanged —
+  the radius remains a discovery rule, not an access rule, exactly
+  as F4 defined it. No backend change, no new endpoint, and user
+  coordinates are never sent anywhere by the guard.
+
