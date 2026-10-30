@@ -62,6 +62,8 @@ export async function createListing(app, request, token, overrides = {}) {
     bulkUnit: overrides.bulkUnit,
     contactPhone: overrides.contactPhone,
     showContact: overrides.showContact,
+    pickupLat: overrides.pickupLat,
+    pickupLng: overrides.pickupLng,
     pickupLocationText: overrides.pickupLocationText ?? 'Hostel Mess Gate, Karad',
     cookedAt: overrides.cookedAt ?? new Date(now - 60 * 60 * 1000).toISOString(),
     collectionDeadline:

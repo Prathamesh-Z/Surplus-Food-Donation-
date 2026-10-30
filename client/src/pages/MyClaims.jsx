@@ -3,6 +3,7 @@ import { api, formatApiError } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { timeRemaining } from './MyListings.jsx';
 import { PickupCodeDisplay } from '../components/Pickup.jsx';
+import { DistanceMap } from '../components/DistanceMap.jsx';
 
 export function MyClaims() {
   const { t } = useLang();
@@ -56,6 +57,12 @@ export function MyClaims() {
             <span className="muted">{c.portionsClaimed} {t('portions')}</span>
             <span className="muted">⏰ {timeRemaining(c.listing.collectionDeadline)}</span>
           </div>
+          {c.status === 'CONFIRMED' && c.listing.donorContact && (
+            <p style={{ margin: '6px 0 0' }}>
+              📞 {t('donorContactTitle')}:{' '}
+              <a href={`tel:+91${c.listing.donorContact}`}>{c.listing.donorContact}</a>
+            </p>
+          )}
           <p className="muted">
             📍 {c.listing.pickupLocationText} · {t('provider')}: {c.listing.providerName}
             <br />Deadline: {new Date(c.listing.collectionDeadline).toLocaleString()}
@@ -70,6 +77,7 @@ export function MyClaims() {
               <button className="danger" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>
             </div>
           )}
+          {c.status === 'CONFIRMED' && <DistanceMap listing={c.listing} />}
           {c.status === 'COLLECTED' && (
             <p className="success">Collected ✓ {c.collectedAt ? new Date(c.collectedAt).toLocaleString() : ''}</p>
           )}

@@ -128,6 +128,10 @@ claimsRouter.get('/mine', requireAuth, requireRole('CLAIMER', 'NGO'), async (req
           id: true,
           foodName: true,
           pickupLocationText: true,
+          pickupLat: true,
+          pickupLng: true,
+          contactPhone: true,
+          showContact: true,
           collectionDeadline: true,
           status: true,
           provider: { select: { name: true } },
@@ -147,6 +151,19 @@ claimsRouter.get('/mine', requireAuth, requireRole('CLAIMER', 'NGO'), async (req
       listing: {
         foodName: c.listing.foodName,
         pickupLocationText: c.listing.pickupLocationText,
+        // PRD v3.12: pickup coordinates for the claimer's distance map.
+        // These were already visible to anonymous browse users (PR #1),
+        // so including them for the claim owner adds no new exposure.
+        pickupLat: c.listing.pickupLat,
+        pickupLng: c.listing.pickupLng,
+        // PRD v3.12: donor contact under the SAME rule as the listing
+        // detail API — only for a CONFIRMED claim and only when the
+        // donor opted in (showContact). A claim never overrides the
+        // donor's choice; the raw contactPhone is never serialized.
+        donorContact:
+          c.status === 'CONFIRMED' && c.listing.showContact && c.listing.contactPhone
+            ? c.listing.contactPhone
+            : null,
         collectionDeadline: c.listing.collectionDeadline,
         providerName: c.listing.provider.name,
       },

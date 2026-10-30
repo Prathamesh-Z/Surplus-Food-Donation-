@@ -906,3 +906,53 @@ server behaviour are unchanged.*
   unchanged — name and details remain required, as before.
 
 **End of PRD v3.11 amendment.**
+
+---
+
+# Amendment — PRD v3.12 (claimer pickup details + distance map, 30 October 2026)
+
+*My Claims becomes the complete pickup-details view for a CONFIRMED
+claim. The pickup-code and QR mechanism is exactly the one built
+earlier (code issued at claim time, owner-only re-view endpoint, QR
+encoding the same code, provider verify by scan or typed entry) —
+this amendment adds contact, coordinates and a map around it, and
+changes nothing about verification.*
+
+## AB. Pickup details on CONFIRMED claims
+
+- `GET /api/claims/mine` now also returns, per claim, the listing's
+  `pickupLat`/`pickupLng` (already visible to anonymous browse users
+  since PR #1 — no new exposure) and a gated `donorContact`.
+- `donorContact` follows the listing-detail rule exactly: it carries
+  the donor's phone ONLY when the claim is CONFIRMED and the donor
+  opted in (`showContact`). A confirmed claim does not override the
+  donor's choice; the raw `contactPhone` is never serialized, and no
+  pickup code ever appears in this polling payload (the code stays
+  behind the existing tap-to-reveal owner endpoint).
+- The My Claims CONFIRMED card shows, in order: donor contact as a
+  `tel:` link (when provided), pickup address, the existing code + QR
+  block, and the distance map below. Cancelled, expired and collected
+  cards render exactly as before.
+
+## AC. Distance map
+
+- New client component (`DistanceMap`) using Leaflet + OpenStreetMap
+  tiles, dynamically imported so it loads only on My Claims. Labelled
+  pins for the claimer's position and the pickup point, a dashed line
+  between them, and bounds-fitted zoom.
+- Distance is the existing on-device Haversine (`lib/distance.js`),
+  displayed as e.g. "2.4 km away". The claimer's coordinates come from
+  the app's saved location or a fresh Geolocation request and live
+  only in component state — never sent to the server, never persisted
+  by the component.
+- Fallbacks: a listing without coordinates shows the address with a
+  map-unavailable note (no invented position, no fake distance);
+  denied/unavailable geolocation explains that the claimer's location
+  is needed and leaves every other pickup detail usable; failed map
+  tiles still draw markers and the route over a plain background with
+  an explanatory note. The 15-second My Claims poll does not reset
+  the map or re-request geolocation (the map effect depends only on
+  coordinate values). The map is a distance visualization — it does
+  not claim turn-by-turn navigation.
+
+**End of PRD v3.12 amendment.**

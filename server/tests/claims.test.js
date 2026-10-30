@@ -287,3 +287,78 @@ describe('Module 5 — Claims & pickup codes (FR-09 to FR-12)', () => {
     expect(notes).toHaveLength(1);
   });
 });
+
+describe('PRD v3.12 — /claims/mine pickup details (coordinates + donor contact)', () => {
+  let provider, claimer, otherClaimer;
+  beforeEach(async () => {
+    await cleanDb();
+    provider = await authedUser(app, request, { role: 'PROVIDER' });
+    claimer = await authedUser(app, request, { role: 'CLAIMER' });
+    otherClaimer = await authedUser(app, request, { role: 'CLAIMER' });
+  });
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  async function claimMine(token, listingId) {
+    const res = await request(app)
+      .post('/api/claims')
+      .set(auth(token))
+      .send({ listingId, portions: 5 });
+    expect(res.status).toBe(201);
+    const mine = await request(app).get('/api/claims/mine').set(auth(token));
+    expect(mine.status).toBe(200);
+    return mine.body.claims.find((c) => c.listingId === listingId);
+  }
+
+  it('includes the pickup coordinates for the claim owner', async () => {
+    const listing = await makeListing(provider.token, { pickupLat: 17.276, pickupLng: 74.184 });
+    const mine = await claimMine(claimer.token, listing.id);
+    expect(mine.listing.pickupLat).toBeCloseTo(17.276);
+    expect(mine.listing.pickupLng).toBeCloseTo(74.184);
+  });
+
+  it('coordinates are null (not invented) when the listing has none', async () => {
+    const listing = await makeListing(provider.token, {});
+    const mine = await claimMine(claimer.token, listing.id);
+    expect(mine.listing.pickupLat).toBeNull();
+    expect(mine.listing.pickupLng).toBeNull();
+  });
+
+  it('donorContact is returned for a CONFIRMED claim when the donor opted in', async () => {
+    const listing = await makeListing(provider.token, { contactPhone: '9876543210', showContact: true });
+    const mine = await claimMine(claimer.token, listing.id);
+    expect(mine.status).toBe('CONFIRMED');
+    expect(mine.listing.donorContact).toBe('9876543210');
+  });
+
+  it('donorContact is withheld when the donor opted out (showContact false)', async () => {
+    const listing = await makeListing(provider.token, { contactPhone: '9876543210', showContact: false });
+    const mine = await claimMine(claimer.token, listing.id);
+    expect(mine.listing.donorContact).toBeNull();
+  });
+
+  it('donorContact is withheld once the claim is no longer CONFIRMED', async () => {
+    const listing = await makeListing(provider.token, { contactPhone: '9876543210', showContact: true });
+    const mine = await claimMine(claimer.token, listing.id);
+    expect(mine.listing.donorContact).toBe('9876543210');
+    const cancel = await request(app)
+      .post(`/api/claims/${mine.id}/cancel`)
+      .set(auth(claimer.token))
+      .send({});
+    expect(cancel.status).toBe(200);
+    const after = await request(app).get('/api/claims/mine').set(auth(claimer.token));
+    const cancelled = after.body.claims.find((c) => c.id === mine.id);
+    expect(cancelled.status).not.toBe('CONFIRMED');
+    expect(cancelled.listing.donorContact).toBeNull();
+  });
+
+  it("cross-user isolation: another claimer's /mine contains none of my claims or contact data", async () => {
+    const listing = await makeListing(provider.token, { contactPhone: '9876543210', showContact: true });
+    await claimMine(claimer.token, listing.id);
+    const other = await request(app).get('/api/claims/mine').set(auth(otherClaimer.token));
+    expect(other.status).toBe(200);
+    expect(other.body.claims).toHaveLength(0);
+    expect(JSON.stringify(other.body)).not.toContain('9876543210');
+  });
+});
