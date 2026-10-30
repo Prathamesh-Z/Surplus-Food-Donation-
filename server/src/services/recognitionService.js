@@ -76,15 +76,29 @@ export async function recognizeFood(buffer, filename = 'photo.jpg') {
     .map(enrichPrediction)
     .filter((p) => p.label !== featured?.label);
 
+  // BUG-02: an explicit outcome so the client can REJECT instead of
+  // auto-filling a guess. When the inference service flags the result
+  // uncertain (the pipeline's own low-signal signal — non-food photos
+  // score ~0.03–0.05 on the primary), the featured name is a top-1 guess
+  // on noise and is WITHHELD: food_name/category come back null, and the
+  // outcome is 'not_recognized'. Nothing about the models, thresholds or
+  // calibration changes — this only stops presenting a guess as an
+  // identification. (An unsupported dish the specialist is confidently
+  // wrong about still returns 'recognized'; that model limitation is
+  // documented in docs/RECOGNITION_EVAL.md and is not hidden here.)
+  const uncertain = Boolean(data.uncertain);
+  const recognized = !uncertain && Boolean(featured);
+
   return {
     success: true,
-    food_name: featured?.name ?? null,
-    description: featured?.description ?? DESCRIPTION_FALLBACK,
-    category: featured?.category ?? null,
-    categoryNote: featured?.categoryNote ?? null,
+    outcome: recognized ? 'recognized' : 'not_recognized',
+    food_name: recognized ? featured.name : null,
+    description: recognized ? featured.description : DESCRIPTION_FALLBACK,
+    category: recognized ? featured.category : null,
+    categoryNote: recognized ? featured.categoryNote : null,
     confidence: featured?.score ?? null,
     source: data.featured?.source ?? null,
-    uncertain: Boolean(data.uncertain),
+    uncertain,
     alternatives: primaryTop.filter((p) => p.label !== featured?.label).slice(0, 2),
     specialist: data.specialist
       ? { model: data.specialist.model, top: specialistTop }

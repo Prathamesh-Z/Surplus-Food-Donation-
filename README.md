@@ -74,6 +74,8 @@ npm run dev --workspace=server     # http://localhost:4000
 | v3.8 | Voice search transcribed LOCALLY by Whisper (faster-whisper small) in the inference service — no browser-vendor cloud recognizer; browser mic recording in the overlay, `POST /api/speech/transcribe`; start.bat one-time upgrade for older installs | PRD v3.8 |
 | v3.9 | Fully-claimed Browse cards get a neutral grey treatment + "View details" (no claim wording); voice search mic inside the search input with Web Audio silence detection — speak, pause, and it searches automatically | PRD v3.9 |
 | v3.9.1 | Voice recording UI rebuilt: the full-screen overlay is gone — the search box itself becomes the listening panel (level meter, timer, cancel), errors drop down under the input | PRD v3.9.1 |
+| PR #1 | Teammate PR (Sahil): 20 QA fixes + invite links — public browse, AuthContext header, draft publish/edit, rate-limit split, invite codes | merged d4eb611 |
+| v3.9.2 | Bug fixes: Browse search tolerates messy whitespace in the query; recognition gains a not_recognized rejection state — non-food photos no longer auto-fill a guessed dish name | PRD v3.9.2 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.

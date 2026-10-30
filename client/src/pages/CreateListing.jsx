@@ -125,6 +125,7 @@ export function CreateListing() {
   );
   const [cameraOpen, setCameraOpen] = useState(false);
   const detectSeq = useRef(0);
+  const photoInputRef = useRef(null);
   // QA-04 edit mode + QA-17 photo failure state.
   const [editListing, setEditListing] = useState(null);
   const [loadingEdit, setLoadingEdit] = useState(Boolean(editId));
@@ -215,9 +216,14 @@ export function CreateListing() {
     try {
       const result = await recognizeFood(file);
       if (detectSeq.current !== seq) return; // a newer image superseded this
-      if (result.food_name) {
-        applySuggestion(result.food_name, result.description, result.category, result.categoryNote);
+      if (result.outcome === 'not_recognized' || !result.food_name) {
+        // BUG-02: the pipeline could not identify a food item in this
+        // image. Show the dedicated rejection state — NEVER auto-fill
+        // the form from a low-confidence guess.
+        setDetect({ status: 'notrecognized', result, error: '' });
+        return;
       }
+      applySuggestion(result.food_name, result.description, result.category, result.categoryNote);
       setDetect({ status: 'done', result, error: '' });
     } catch (err) {
       if (detectSeq.current !== seq) return;
@@ -400,7 +406,7 @@ export function CreateListing() {
           <div className="row">
             <label className="secondary" style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}>
               📁 {t('uploadImage')}
-              <input type="file" accept="image/*" onChange={onPhoto} style={{ display: 'none' }} />
+              <input ref={photoInputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: 'none' }} />
             </label>
             <button type="button" className="secondary" onClick={() => setCameraOpen(true)}>
               📷 {t('scanCamera')}
@@ -452,6 +458,35 @@ export function CreateListing() {
                         ))}
                       </p>
                     )}
+                  </div>
+                )}
+                {detect.status === 'notrecognized' && (
+                  <div
+                    style={{
+                      marginTop: 8, border: '1px solid #e3c878', background: '#fdf6e0',
+                      borderRadius: 8, padding: '10px 12px',
+                    }}
+                  >
+                    <p style={{ margin: '0 0 4px', fontWeight: 600 }}>⚠ {t('unableToIdentify')}</p>
+                    <p className="muted" style={{ margin: '0 0 8px' }}>{t('unableToIdentifyBody')}</p>
+                    <div className="row">
+                      <button
+                        type="button"
+                        className="secondary"
+                        style={{ padding: '6px 12px' }}
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        📁 {t('uploadAnother')}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary"
+                        style={{ padding: '6px 12px' }}
+                        onClick={() => setCameraOpen(true)}
+                      >
+                        📷 {t('captureAgain')}
+                      </button>
+                    </div>
                   </div>
                 )}
                 {detect.status === 'error' && (

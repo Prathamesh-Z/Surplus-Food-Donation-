@@ -224,10 +224,17 @@ listingsRouter.get('/', optionalAuth, async (req, res) => {
       lte: new Date(Date.now() + 60 * 60 * 1000),
     };
   }
-  if (q) {
+  // BUG-01: normalize the search text's whitespace before the substring
+  // match — trim, and collapse any run of spaces/tabs/newlines to one
+  // space. Stored names are validated trimmed and single-spaced, so a
+  // query typed with a trailing space, pasted with doubled spaces, or
+  // padded by a voice transcript otherwise matches nothing at all. Only
+  // the incoming query is normalized; stored names are never rewritten.
+  const queryText = typeof q === 'string' ? q.trim().replace(/\s+/g, ' ') : '';
+  if (queryText) {
     where.OR = [
-      { foodName: { contains: String(q), mode: 'insensitive' } },
-      { foodDetails: { contains: String(q), mode: 'insensitive' } },
+      { foodName: { contains: queryText, mode: 'insensitive' } },
+      { foodDetails: { contains: queryText, mode: 'insensitive' } },
     ];
   }
   const listings = await prisma.listing.findMany({

@@ -92,6 +92,40 @@ describe('Module 4 — Discovery (FR-07, FR-08)', () => {
     expect(res.body.listings).toHaveLength(2);
   });
 
+  it('BUG-01: search tolerates leading/trailing and repeated whitespace; multi-word and punctuation names match', async () => {
+    await createListing(app, request, provider.token, {
+      foodName: 'Misal Pav',
+      foodDetails: 'Spicy curry with bread',
+    });
+    await createListing(app, request, provider.token, {
+      foodName: "St. John's Wort Soup",
+      foodDetails: 'Herbal',
+    });
+    await createListing(app, request, provider.token, { foodName: 'Soup', foodDetails: 'Tomato' });
+
+    const names = async (q) => {
+      const res = await request(app)
+        .get(`/api/listings?q=${encodeURIComponent(q)}`)
+        .set(auth(claimer.token));
+      expect(res.status).toBe(200);
+      return res.body.listings.map((l) => l.foodName);
+    };
+
+    // Exact + case-insensitive multi-word (pre-existing behaviour).
+    expect(await names('Misal Pav')).toEqual(['Misal Pav']);
+    expect(await names('misal pav')).toEqual(['Misal Pav']);
+    // Whitespace shapes that previously returned nothing.
+    expect(await names('  Misal Pav')).toEqual(['Misal Pav']);
+    expect(await names('Misal Pav  ')).toEqual(['Misal Pav']);
+    expect(await names('Misal    Pav')).toEqual(['Misal Pav']);
+    expect(await names('Misal\tPav')).toEqual(['Misal Pav']);
+    // Periods and apostrophes are literal, not syntax.
+    expect(await names("St. John's Wort")).toEqual(["St. John's Wort Soup"]);
+    // A whitespace-only query behaves like no query at all.
+    const all = await request(app).get('/api/listings?q=%20%20').set(auth(claimer.token));
+    expect(all.body.listings.length).toBe(3);
+  });
+
   it('FR-08: ngoSuitable, dietary and portion-type filters', async () => {
     await createListing(app, request, provider.token, {
       foodName: 'Bulk Dal',

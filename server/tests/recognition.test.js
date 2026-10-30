@@ -118,6 +118,30 @@ describe('PRD v3.3 — food recognition endpoint', () => {
     mode = 'ok';
   });
 
+  it('BUG-02: a confident result is outcome=recognized with the name present', async () => {
+    mode = 'ok';
+    const res = await post(provider.token);
+    expect(res.status).toBe(200);
+    expect(res.body.outcome).toBe('recognized');
+    expect(res.body.food_name).toBe('Poha');
+  });
+
+  it('BUG-02: an uncertain result is outcome=not_recognized and the guessed name is withheld', async () => {
+    mode = 'uncertain';
+    const res = await post(provider.token);
+    expect(res.status).toBe(200);
+    expect(res.body.outcome).toBe('not_recognized');
+    // The whole point: no food name (and no category) is offered for the
+    // client to auto-fill — a top-1 guess on a low-signal image must not
+    // be presentable as an identification.
+    expect(res.body.food_name).toBeNull();
+    expect(res.body.category).toBeNull();
+    expect(res.body.uncertain).toBe(true);
+    // Raw model detail remains in the payload for diagnostics.
+    expect(res.body.specialist.top[0].name).toBe('Dosa');
+    mode = 'ok';
+  });
+
   it('503 when the inference service reports the model is not loaded', async () => {
     mode = 'err503';
     const res = await post(provider.token);

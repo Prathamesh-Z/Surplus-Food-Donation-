@@ -794,3 +794,42 @@ unchanged from v3.8/v3.9.*
   from v3.9 are unchanged.
 
 **End of PRD v3.9.1 amendment.**
+
+---
+
+# Amendment — PRD v3.9.2 (bug fixes, 30 October 2026)
+
+*Two defects found in stabilization testing (see docs/TESTING_RECORD.md,
+BUG-01 and BUG-02). No features added; no models, thresholds, or
+calibration changed.*
+
+## W. Browse search whitespace (BUG-01)
+
+- Searching Browse with a query whose whitespace differed from the
+  stored name (leading/trailing space, doubled spaces, tabs) returned
+  zero results, because `q` was used verbatim in the substring match
+  while stored names are validated trimmed and single-spaced.
+- `GET /api/listings` now normalizes the incoming query only — trim and
+  collapse whitespace runs to single spaces — before filtering. Stored
+  names are never rewritten; punctuation and ordinary multi-word
+  searches behaved correctly before and are unchanged.
+
+## X. Recognition rejection state (BUG-02)
+
+- The recognition response gains an explicit `outcome`:
+  `recognized` or `not_recognized`, derived from the inference
+  service's existing `uncertain` signal. When `not_recognized`, the
+  response withholds the guessed name (`food_name: null`,
+  `category: null`) — a low-confidence top-1 guess is no longer
+  presentable as an identification.
+- The Post Surplus Food page shows a dedicated "Unable to identify
+  food" state in that case (with Upload another image / Capture again
+  actions) and never auto-fills the form from such a result. The
+  recognized path is unchanged.
+- Stated limit, unchanged from v3.3's evaluation: an unsupported dish
+  the specialist model is confidently wrong about (e.g. samosa) still
+  returns `recognized` with a wrong name the user can edit. The models
+  cannot reliably separate that case today, and this amendment does not
+  pretend otherwise.
+
+**End of PRD v3.9.2 amendment.**
