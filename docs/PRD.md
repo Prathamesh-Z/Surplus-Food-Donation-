@@ -1259,3 +1259,16 @@ Implemented 30 October 2026, following the read-only distance and location audit
 3. **Walking/bicycle routes unchanged:** DistanceMap keeps the mode icon + Walking/Bicycle label + provider distance + provider duration, distinct from its straight-line headline.
 
 i18n: 267 keys x3. The user reviewed the Marathi/Hindi translations and every affected surface before approving the release.
+
+---
+
+## Amendment v3.23 — Live GPS accuracy displayed, poor fixes warned (audit Fix 2, §AO)
+
+Implemented 30 October 2026, following the read-only distance and location audit. **Display only** — the origin model, GPS behaviour, calculations, routing and persistence are unchanged.
+
+1. DistanceMap's Live GPS watch (§AL) previously ignored `GeolocationCoordinates.accuracy` entirely — a coarse network fix (for example a browser placing the user in a different city) looked identical to a precise satellite fix.
+2. The watch now captures the device-reported accuracy on EVERY callback into dedicated state, independent of the existing 5 m position gate, and clears it when Live mode is left, so no stale figure can appear. It is never persisted and never transmitted.
+3. In Live mode with a fix, the map shows "GPS accuracy: approximately N m" (the reported value, rounded; nothing is shown when the browser reports no accuracy). At the existing `accuracyBand` poor threshold (> 500 m — the §AL bands: ≤100 good, ≤500 warn), a warning is shown: GPS accuracy is very poor, the displayed location may be far from the actual position, and the user is advised to consider Saved Location **if it is more accurate** (conditional wording — no claim that Saved Location is inherently better).
+4. Saved Location persistence, Saved/Live switching, permission and error handling, distance and radius calculations, and routing are all unchanged.
+
+i18n: 268 keys x3 (one new key, `liveGpsPoor`). Manual verification: Testing Record M6-14.

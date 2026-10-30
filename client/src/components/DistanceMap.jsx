@@ -7,6 +7,7 @@ import {
   routeUrl, parseRouteResponse, shouldRequestRoute, msUntilRouteAllowed,
   formatDuration, ROUTE_TIMEOUT_MS,
 } from '../lib/routing.js';
+import { accuracyBand } from '../lib/location.js';
 
 /**
  * Pickup map for a CONFIRMED claim (PRD v3.12 static map, extended by
@@ -57,6 +58,10 @@ export function DistanceMap({ claimId, listing }) {
   // the user didn't choose.
   const [originMode, setOriginMode] = useState('saved');
   const [livePos, setLivePos] = useState(null);
+  // Device-reported accuracy (metres) of the latest live fix — audit
+  // Fix 2. Updated on EVERY watch callback, independent of the 5 m
+  // position gate; never persisted, never transmitted.
+  const [liveAccuracy, setLiveAccuracy] = useState(null);
   const [heading, setHeading] = useState(null);
   const [locating, setLocating] = useState(false);
   const myPos = originMode === 'live' && livePos ? livePos : savedPos;
@@ -114,7 +119,8 @@ export function DistanceMap({ claimId, listing }) {
       (pos) => {
         setLocating(false);
         setGeoError('');
-        const { latitude: lat, longitude: lng, heading: h } = pos.coords;
+        const { latitude: lat, longitude: lng, heading: h, accuracy: acc } = pos.coords;
+        setLiveAccuracy(typeof acc === 'number' && !Number.isNaN(acc) && acc >= 0 ? acc : null);
         const cur = livePosRef.current;
         if (!cur || haversineKm(cur.lat, cur.lng, lat, lng) * 1000 >= MOVE_UPDATE_M) {
           livePosRef.current = { lat, lng };
@@ -143,6 +149,7 @@ export function DistanceMap({ claimId, listing }) {
       }
       headingRef.current = null;
       setHeading(null);
+      setLiveAccuracy(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [originMode]);
@@ -466,6 +473,14 @@ export function DistanceMap({ claimId, listing }) {
         {originMode === 'live' && locating && <span className="muted">{t('locating')}</span>}
         {originMode === 'live' && geoError && <span className="error">{geoError}</span>}
       </div>
+      {originMode === 'live' && livePos && liveAccuracy !== null && (
+        <p className="muted" style={{ margin: '4px 0 0' }}>
+          {t('gpsAccuracy')} {Math.round(liveAccuracy).toLocaleString()} m
+        </p>
+      )}
+      {originMode === 'live' && livePos && liveAccuracy !== null && accuracyBand(liveAccuracy) === 'poor' && (
+        <p className="error" style={{ margin: '4px 0 0' }}>⚠ {t('liveGpsPoor')}</p>
+      )}
       {tilesFailed && (
         <p className="muted" style={{ marginTop: 4 }}>⚠ {t('tilesFailed')}</p>
       )}
