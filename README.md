@@ -81,6 +81,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | v3.12 | Claimer pickup details + distance map on My Claims: gated donor contact (showContact rule), pickup coordinates in /claims/mine, Leaflet map with your-location + pickup markers, route line and Haversine distance — claimer coordinates never leave the device | PRD v3.12 |
 | v3.13 | Live pickup tracking: donor opt-in live location sharing per confirmed claim (one overwriting DB row per claim, 60 s stale threshold, participant-only endpoints); claimer map follows the donor live point with a heading arrow and straight-line distance; OSRM deferred until after the hackathon | PRD v3.13 |
 | v3.14 | Password visibility toggle (batch F5): one shared PasswordInput with a localized, accessible show/hide control on Login, Register and Reset Password — hidden by default, no auth logic changed | PRD v3.14 |
+| v3.15 | Claim-success popup (batch F6): e-commerce-style confirmation modal after a successful claim — food, portions, deadline, address, gated donor contact, the same pickup code + QR; once per claim, immune to polling/rerenders | PRD v3.15 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.

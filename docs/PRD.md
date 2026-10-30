@@ -1026,3 +1026,25 @@ changes nothing about verification.*
   ("Show password" / "Hide password" in English, Marathi and Hindi),
   usable by keyboard and on touch devices.
 
+---
+
+## Amendment v3.15 (2026-10-30) — Claim-success popup (batch F6)
+
+- After a successful claim on the listing detail page, a confirmation
+  modal ("Claim Successful!") presents the claim: food name, portions
+  claimed (from the claim response itself), pickup deadline (same
+  locale formatting as the detail page), pickup address, the pickup
+  code and QR via the existing PickupCodeDisplay, and the donor
+  contact ONLY when the listing payload already carries it under the
+  showContact rule — the modal introduces no new data exposure.
+- Actions: "View My Claims" (navigates to My Claims) and "Done"
+  (closes; Escape and backdrop click also close). The modal's primary
+  action receives focus on open; it is a labelled dialog
+  (role="dialog", aria-modal).
+- The modal's visibility is state set exactly once in the claim
+  success handler — it is not derived from polled data, so the page's
+  15-second refresh and re-renders cannot reopen or duplicate it, and
+  it never appears for a failed claim. The pre-existing inline success
+  block remains behind it as the fallback. No claim, code, or
+  verification behaviour changes.
+

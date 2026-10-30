@@ -6,6 +6,7 @@ import { useLocation } from '../location/LocationContext.jsx';
 import { listingDistanceKm, formatDistance } from '../lib/distance.js';
 import { PriorityBadge } from '../components/PriorityBadge.jsx';
 import { PickupCodeDisplay } from '../components/Pickup.jsx';
+import { ClaimSuccessModal } from '../components/ClaimSuccessModal.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
 export function ListingDetail() {
@@ -16,6 +17,7 @@ export function ListingDetail() {
   const [portions, setPortions] = useState(1);
   const [message, setMessage] = useState('');
   const [issuedCode, setIssuedCode] = useState('');
+  const [successClaim, setSuccessClaim] = useState(null);
   const [myClaims, setMyClaims] = useState([]);
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
@@ -64,6 +66,7 @@ export function ListingDetail() {
       });
       setMessage(t('claimSuccess'));
       setIssuedCode(data.pickupCode);
+      setSuccessClaim({ portionsClaimed: data.claim.portionsClaimed, code: data.pickupCode });
       load();
       loadMine();
     } catch (err) {
@@ -128,6 +131,14 @@ export function ListingDetail() {
         </div>
       )}
       {error && <div className="error">{error}</div>}
+      {successClaim && (
+        <ClaimSuccessModal
+          portionsClaimed={successClaim.portionsClaimed}
+          listing={listing}
+          code={successClaim.code}
+          onClose={() => setSuccessClaim(null)}
+        />
+      )}
       {canClaim && listing.portionsRemaining > 0 && (
         <form onSubmit={claim} className="row">
           <label>
