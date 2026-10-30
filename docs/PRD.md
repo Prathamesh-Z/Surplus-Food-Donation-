@@ -1048,3 +1048,26 @@ changes nothing about verification.*
   block remains behind it as the fallback. No claim, code, or
   verification behaviour changes.
 
+---
+
+## Amendment v3.16 (2026-10-30) — On-the-way notification (batch F1)
+
+- A claimer (CLAIMER or NGO — both claim) can press "On the way" on a
+  CONFIRMED claim in My Claims: `POST /api/claims/:id/on-the-way`.
+  Authorization: authenticated, the claim must be the requester's own
+  (403 otherwise; 404 unknown claim), status CONFIRMED (409 otherwise).
+- Exactly once per claim, enforced server-side: the timestamp
+  `Claim.onTheWayAt` is claimed by a single conditional UPDATE
+  (status CONFIRMED and onTheWayAt null) inside a transaction; only
+  the winning request creates the donor notification. Repeats and
+  concurrent duplicates return 409 with the persisted timestamp.
+  Button disabling is a courtesy, never the mechanism.
+- The notification uses the existing infrastructure unchanged:
+  type `CLAIMER_ON_THE_WAY`, recipient derived from the claim's
+  listing (never client input), body naming the claimer and food,
+  relatedListingId + relatedClaimId set for the existing click-through.
+- `GET /api/claims/mine` exposes `onTheWayAt` on the claimer's own
+  claims; My Claims replaces the button with a persistent
+  "Donor notified · HH:MM" status (locale time), reconciles from the
+  server on a 409, and never shows the status on a failed request.
+

@@ -153,6 +153,9 @@ claimsRouter.get('/mine', requireAuth, requireRole('CLAIMER', 'NGO'), async (req
       status: c.status,
       collectedAt: c.collectedAt,
       createdAt: c.createdAt,
+      // PRD v3.16 (batch F1): the claimer's own on-the-way timestamp —
+      // only ever on their own claims (this endpoint is owner-scoped).
+      onTheWayAt: c.onTheWayAt,
       listing: {
         foodName: c.listing.foodName,
         pickupLocationText: c.listing.pickupLocationText,
@@ -265,6 +268,64 @@ claimsRouter.get('/:id/location', requireAuth, async (req, res, next) => {
     const isParticipant = claim.claimerId === req.user.id || claim.listing.providerId === req.user.id;
     if (!isParticipant) return res.status(403).json({ error: 'Not your claim' });
     return res.json(liveLocationState(claim.status, claim.liveLocation));
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// ── On the way (PRD v3.16, batch F1) ────────────────────────────────────────
+// The claimer tells the donor they are travelling to collect. Exactly
+// once per claim: the timestamp is claimed with a single conditional
+// UPDATE (status CONFIRMED and onTheWayAt still null), so concurrent
+// requests cannot both win; only the winner creates the notification,
+// inside the same transaction. The recipient is always derived from
+// the claim's listing — never from client input.
+claimsRouter.post('/:id/on-the-way', requireAuth, requireRole('CLAIMER', 'NGO'), async (req, res, next) => {
+  try {
+    const claim = await prisma.claim.findUnique({
+      where: { id: req.params.id },
+      include: {
+        listing: { select: { providerId: true, foodName: true } },
+        claimer: { select: { name: true } },
+      },
+    });
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (claim.claimerId !== req.user.id) {
+      return res.status(403).json({ error: 'Not your claim' });
+    }
+    if (claim.status !== 'CONFIRMED') {
+      return res.status(409).json({ error: `On-the-way requires a CONFIRMED claim — claim is ${claim.status}` });
+    }
+    const now = new Date();
+    const result = await prisma.$transaction(async (tx) => {
+      const won = await tx.claim.updateMany({
+        where: { id: claim.id, status: 'CONFIRMED', onTheWayAt: null },
+        data: { onTheWayAt: now },
+      });
+      if (won.count === 0) return null;
+      await createNotification(
+        {
+          userId: claim.listing.providerId,
+          type: 'CLAIMER_ON_THE_WAY',
+          title: 'Claimer on the way',
+          body: `${claim.claimer.name} is on the way to collect ${claim.listing.foodName}.`,
+          relatedListingId: claim.listingId,
+          relatedClaimId: claim.id,
+        },
+        tx,
+      );
+      return now;
+    });
+    if (!result) {
+      // Lost the race (or the claim changed state): the timestamp is
+      // the source of truth — report the persisted state as a 409.
+      const fresh = await prisma.claim.findUnique({
+        where: { id: claim.id },
+        select: { onTheWayAt: true },
+      });
+      return res.status(409).json({ error: 'Donor already notified', onTheWayAt: fresh?.onTheWayAt ?? null });
+    }
+    return res.json({ ok: true, onTheWayAt: result });
   } catch (err) {
     return next(err);
   }

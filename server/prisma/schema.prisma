@@ -87,6 +87,7 @@ enum DestinationType {
 enum NotificationType {
   NEW_LISTING
   CLAIM_PLACED
+  CLAIMER_ON_THE_WAY
   CLAIM_CANCELLED
   LISTING_CANCELLED
   NEAR_DEADLINE_PROVIDER
@@ -239,6 +240,10 @@ model Claim {
   verifyFailCount     Int         @default(0)
   verifyLockedUntil   DateTime?
   collectedAt         DateTime?
+  // PRD v3.16 (batch F1): set exactly once when the claimer presses
+  // "On the way"; the conditional update on this being null is what
+  // makes the donor notification exactly-once under concurrency.
+  onTheWayAt          DateTime?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
   liveLocation        LiveLocation?

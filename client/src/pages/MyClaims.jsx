@@ -9,6 +9,7 @@ export function MyClaims() {
   const { t } = useLang();
   const [claims, setClaims] = useState([]);
   const [codes, setCodes] = useState({});
+  const [wayBusy, setWayBusy] = useState(null);
   const [error, setError] = useState('');
 
   async function load() {
@@ -31,6 +32,27 @@ export function MyClaims() {
       setCodes({ ...codes, [id]: data.pickupCode });
     } catch (err) {
       setError(formatApiError(err));
+    }
+  }
+
+  async function onTheWay(id) {
+    setWayBusy(id);
+    setError('');
+    try {
+      const res = await api(`/api/claims/${id}/on-the-way`, { method: 'POST', body: {} });
+      // Immediate local update from the server's own timestamp; the
+      // 15 s poll keeps it reconciled thereafter.
+      setClaims((prev) => prev.map((x) => (x.id === id ? { ...x, onTheWayAt: res.onTheWayAt } : x)));
+    } catch (err) {
+      if (err.status === 409) {
+        // Already notified (e.g. pressed on another device): reload so
+        // the persisted status replaces the button.
+        load();
+      } else {
+        setError(formatApiError(err));
+      }
+    } finally {
+      setWayBusy(null);
     }
   }
 
@@ -73,6 +95,16 @@ export function MyClaims() {
                 <PickupCodeDisplay code={codes[c.id]} />
               ) : (
                 <button className="secondary" onClick={() => showCode(c.id)}>{t('showCode')}</button>
+              )}
+              {c.onTheWayAt ? (
+                <span className="success">
+                  🚶 {t('donorNotified')} ·{' '}
+                  {new Date(c.onTheWayAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              ) : (
+                <button className="secondary" onClick={() => onTheWay(c.id)} disabled={wayBusy === c.id}>
+                  🚶 {t('onTheWay')}
+                </button>
               )}
               <button className="danger" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>
             </div>
