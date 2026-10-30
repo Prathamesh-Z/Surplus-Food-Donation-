@@ -3,6 +3,10 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { api } from '../lib/api.js';
 import { haversineKm, formatDistance } from '../lib/distance.js';
+import {
+  routeUrl, parseRouteResponse, shouldRequestRoute, msUntilRouteAllowed,
+  formatDuration, ROUTE_TIMEOUT_MS,
+} from '../lib/routing.js';
 
 /**
  * Pickup map for a CONFIRMED claim (PRD v3.12 static map, extended by
@@ -19,8 +23,16 @@ import { haversineKm, formatDistance } from '../lib/distance.js';
  * and none are ever sent. The map is north-up; travel direction is a
  * rotating arrow on the claimer pin when the device reports a heading
  * (stationary devices report none, and the plain pin is the fallback).
- * Distances are Haversine straight-line and are labelled as such —
- * this is not road routing and claims no turn-by-turn navigation.
+ * The headline distance is the Haversine straight-line, labelled as
+ * such. Since v3.19 the map additionally draws a real walking or
+ * bicycle ROAD route (FOSSGIS routing.openstreetmap.de) from the
+ * claimer to the route destination — fresh live donor point, else
+ * the static pickup point — with the provider's own distance and
+ * duration. Route guidance only: no turn-by-turn navigation. When
+ * routing fails, the route line is dropped and the labelled
+ * straight-line remains. Route requests are change-gated (>= 50 m
+ * endpoint movement or a mode switch) and spaced to respect the
+ * public service's ~1 request/second limit.
  */
 const DONOR_POLL_MS = 10_000;
 const MOVE_UPDATE_M = 5;
@@ -65,6 +77,22 @@ export function DistanceMap({ claimId, listing }) {
   const dest = donorPoint ?? pickupPoint;
   const destKind = donorPoint ? donorLive.state : 'pickup';
   const km = myPos && dest ? haversineKm(myPos.lat, myPos.lng, dest.lat, dest.lng) : null;
+  // Route destination (v3.19): the donor's LIVE point only while it is
+  // fresh; stale/stopped/waiting sharing routes to the static pickup
+  // point instead (the marker above still shows the stale point grey,
+  // exactly as before — only the route target differs).
+  const routeDest = donorLive?.state === 'live' ? donorPoint : pickupPoint;
+
+  // ── Routing (v3.19, batch F2) ─────────────────────────────────────
+  const [mode, setMode] = useState('foot');
+  const [route, setRoute] = useState(null);
+  const [routeStatus, setRouteStatus] = useState('idle');
+  const routeLineRef = useRef(null);
+  const routeReqRef = useRef(null);
+  const routeSeqRef = useRef(0);
+  const routeAbortRef = useRef(null);
+  const routeTimerRef = useRef(null);
+  const lastFetchAtRef = useRef(0);
 
   // ── Claimer watchPosition (device-only; never transmitted) ─────────
   useEffect(() => {
@@ -125,6 +153,79 @@ export function DistanceMap({ claimId, listing }) {
       clearInterval(iv);
     };
   }, [claimId]);
+
+  async function fireRoute(next, seq) {
+    routeAbortRef.current?.abort();
+    const ac = new AbortController();
+    routeAbortRef.current = ac;
+    let timedOut = false;
+    const killer = setTimeout(() => {
+      timedOut = true;
+      ac.abort();
+    }, ROUTE_TIMEOUT_MS);
+    lastFetchAtRef.current = Date.now();
+    setRouteStatus('loading');
+    try {
+      const res = await fetch(
+        routeUrl(next.mode, { lat: next.oLat, lng: next.oLng }, { lat: next.dLat, lng: next.dLng }),
+        { signal: ac.signal },
+      );
+      const json = await res.json();
+      if (seq !== routeSeqRef.current) return; // a newer request owns the map now
+      const parsed = parseRouteResponse(json);
+      if (!parsed) {
+        setRoute(null);
+        setRouteStatus('unavailable');
+        return;
+      }
+      setRoute({ ...parsed, mode: next.mode });
+      setRouteStatus('ok');
+    } catch {
+      if (seq !== routeSeqRef.current) return;
+      if (!timedOut && routeAbortRef.current !== ac) return; // superseded abort
+      setRoute(null);
+      setRouteStatus('unavailable');
+    } finally {
+      clearTimeout(killer);
+    }
+  }
+
+  // Change-gated route requests: mode switch, or either endpoint moved
+  // >= 50 m from the last issued request. Repeat 10 s donor polls with
+  // unchanged coordinates never re-request. Scheduling honours the
+  // provider spacing; the latest descriptor wins.
+  useEffect(() => {
+    if (!myPos || !routeDest) {
+      setRoute(null);
+      setRouteStatus('idle');
+      return undefined;
+    }
+    const next = { mode, oLat: myPos.lat, oLng: myPos.lng, dLat: routeDest.lat, dLng: routeDest.lng };
+    if (!shouldRequestRoute(routeReqRef.current, next)) return undefined;
+    routeReqRef.current = next;
+    const seq = ++routeSeqRef.current;
+    const wait = msUntilRouteAllowed(lastFetchAtRef.current, Date.now());
+    clearTimeout(routeTimerRef.current);
+    routeTimerRef.current = setTimeout(() => fireRoute(next, seq), wait);
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, myPos, routeDest]);
+
+  // Route polyline on the existing map instance; refit once per route.
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!mapReady || !L || !map) return;
+    if (routeLineRef.current) {
+      routeLineRef.current.remove();
+      routeLineRef.current = null;
+    }
+    if (route?.coords?.length >= 2) {
+      routeLineRef.current = L.polyline(route.coords, { color: '#1565c0', weight: 5, opacity: 0.85 }).addTo(map);
+      map.fitBounds(L.latLngBounds(route.coords), { padding: [36, 36] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route, mapReady]);
 
   // ── Leaflet: init once a destination exists ────────────────────────
   useEffect(() => {
@@ -217,11 +318,14 @@ export function DistanceMap({ claimId, listing }) {
 
   useEffect(
     () => () => {
+      clearTimeout(routeTimerRef.current);
+      routeAbortRef.current?.abort();
       mapRef.current?.remove();
       mapRef.current = null;
       youRef.current = null;
       destRef.current = null;
       lineRef.current = null;
+      routeLineRef.current = null;
     },
     [],
   );
@@ -248,6 +352,39 @@ export function DistanceMap({ claimId, listing }) {
       <p style={{ margin: '0 0 2px', fontWeight: 600 }}>
         {t('distanceToPickup')}: {km !== null ? `${formatDistance(km)} ${t('away')} · ${t('straightLine')}` : '—'}
       </p>
+      {myPos && routeDest && (
+        <div style={{ margin: '2px 0 6px' }}>
+          <div className="row" role="group" aria-label={t('travelMode')} style={{ gap: 6 }}>
+            <button
+              type="button"
+              className={mode === 'foot' ? undefined : 'secondary'}
+              aria-pressed={mode === 'foot'}
+              onClick={() => setMode('foot')}
+            >
+              🚶 {t('modeWalking')}
+            </button>
+            <button
+              type="button"
+              className={mode === 'bike' ? undefined : 'secondary'}
+              aria-pressed={mode === 'bike'}
+              onClick={() => setMode('bike')}
+            >
+              🚴 {t('modeBicycle')}
+            </button>
+            {routeStatus === 'loading' && <span className="muted">{t('routeLoading')}</span>}
+          </div>
+          {routeStatus === 'ok' && route && (
+            <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#1565c0' }}>
+              {route.mode === 'foot' ? '🚶' : '🚴'} {route.mode === 'foot' ? t('modeWalking') : t('modeBicycle')}
+              {' · '}{formatDistance(route.distanceKm)}{' · '}⏱ {formatDuration(route.durationSec)}
+            </p>
+          )}
+          {routeStatus === 'unavailable' && (
+            <p className="muted" style={{ margin: '4px 0 0' }}>⚠ {t('routeUnavailable')}</p>
+          )}
+          <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{t('routingAttribution')}</p>
+        </div>
+      )}
       {donorLive?.state === 'live' && (
         <p className="success" style={{ margin: '0 0 6px' }}>
           ● {t('liveLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}

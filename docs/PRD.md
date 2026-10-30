@@ -1135,3 +1135,36 @@ changes nothing about verification.*
   listings inside the radius; drag the pin ~10 km away and the same
   listings leave Browse (they remain reachable by direct URL).
 
+---
+
+## Amendment v3.19 (2026-10-30) — Walking & bicycle routing (batch F2)
+
+- The My Claims pickup map (DistanceMap) now draws a real ROAD route
+  from the claimer to the pickup destination, with a Walking /
+  Bicycle selector. Provider: the FOSSGIS OpenStreetMap routing
+  service at routing.openstreetmap.de, profiles routed-foot and
+  routed-bike (OSRM route endpoint, GeoJSON geometry). The public
+  OSRM demo server is deliberately NOT used: it ignores the profile
+  and returns car routes for every mode (verified live). The
+  provider's own distance and duration are displayed; no speeds are
+  invented. Route guidance only — NO turn-by-turn navigation.
+- Destination follows live tracking: the donor's LIVE point while
+  sharing is fresh; stale, stopped or waiting sharing routes to the
+  listing's static pickup coordinates. Existing live/stale markers
+  and status labels are unchanged.
+- Request discipline (the service is a public good, ~1 request per
+  second, no bulk use): a route is requested only on a mode switch
+  or when either endpoint has moved >= 50 m from the last requested
+  route; requests are spaced >= 1.1 s, superseded requests are
+  aborted, stale responses can never overwrite a newer route, and
+  there is no retry loop after a failure (the next meaningful change
+  retries). Attribution for the route (OpenStreetMap contributors /
+  FOSSGIS) is shown under the map alongside the tile attribution.
+- Fallback: on any routing failure (offline, timeout, unusable
+  geometry, provider error) the route line is removed, nothing
+  fabricated is shown, and the existing Haversine straight-line
+  distance — always labelled "straight line" — remains.
+- Privacy unchanged: claimer coordinates go only to the routing
+  provider as the route origin (that is what routing means) and are
+  NEVER sent to the app backend; no backend endpoint accepts them.
+

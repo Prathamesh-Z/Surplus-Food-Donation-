@@ -85,6 +85,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | v3.16 | On-the-way notification (batch F1): claimer presses On the Way once per CONFIRMED claim (atomic Claim.onTheWayAt + CLAIMER_ON_THE_WAY notification to the donor); My Claims shows a persistent Donor notified status | PRD v3.16 |
 | v3.17 | Notification banners (batch F3): new notifications appear as clickable banners (max 3, queued, ~12 s auto-dismiss, x leaves them unread) over one shared 15 s poll shared with the nav badge; same click-through mapping as the Notifications page | PRD v3.17 |
 | v3.18 | 5 km discovery radius + map-pin location picker (batch F4): claimer/NGO Browse shows only listings within 5 km of the saved location (client-side only — user coordinates never leave the device, no show-all bypass); the location prompt gains a draggable map pin with optional place search | PRD v3.18 |
+| v3.19 | Walking & bicycle pickup routing (batch F2): the My Claims map draws real road routes via FOSSGIS routing.openstreetmap.de (routed-foot / routed-bike) with provider distance + ETA, change-gated at 50 m and rate-spaced; straight-line fallback on any failure; no turn-by-turn | PRD v3.19 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.
