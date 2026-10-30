@@ -57,7 +57,85 @@ export function parseRouteResponse(json) {
   const { distance, duration } = route;
   if (typeof distance !== 'number' || !(distance >= 0)) return null;
   if (typeof duration !== 'number' || !(duration >= 0)) return null;
-  return { coords, distanceKm: distance / 1000, durationSec: duration };
+  // Waypoints (audit Fix 4): the provider's response carries the
+  // SNAPPED point it actually routed from/to, plus its own snap
+  // distance in metres. Extracted verbatim when present and valid;
+  // missing or malformed waypoint data yields nulls and NEVER
+  // invalidates an otherwise valid route. Geometry endpoints are not
+  // a substitute and are never presented as snapped points.
+  let snappedOrigin = null;
+  let snappedDestination = null;
+  let snapOriginM = null;
+  let snapDestM = null;
+  if (Array.isArray(json.waypoints) && json.waypoints.length >= 2) {
+    const first = parseWaypoint(json.waypoints[0]);
+    const last = parseWaypoint(json.waypoints[json.waypoints.length - 1]);
+    snappedOrigin = first.point;
+    snapOriginM = first.snapM;
+    snappedDestination = last.point;
+    snapDestM = last.snapM;
+  }
+  return {
+    coords,
+    distanceKm: distance / 1000,
+    durationSec: duration,
+    snappedOrigin,
+    snappedDestination,
+    snapOriginM,
+    snapDestM,
+  };
+}
+
+/** One waypoint -> { point: {lat, lng} | null, snapM: number | null },
+ *  each field validated independently; anything malformed is null. */
+function parseWaypoint(w) {
+  if (!w || !Array.isArray(w.location) || w.location.length < 2) {
+    return { point: null, snapM: null };
+  }
+  const [lng, lat] = w.location;
+  return {
+    point: validCoords({ lat, lng }) ? { lat, lng } : null,
+    snapM: typeof w.distance === 'number' && w.distance >= 0 ? w.distance : null,
+  };
+}
+
+/**
+ * Build one diagnostic record for a route request (audit Fix 4).
+ * Pure; developer diagnostics only. `request` is the REQUEST-TIME
+ * descriptor values { mode, from, to } — never later component state.
+ * `result` is { ok: true, parsed } or { ok: false, failure } with
+ * failure 'timeout' | 'network' | 'bad-response'. Failed records
+ * carry null route distance/duration — nothing is fabricated.
+ * Snap displacement is reported two ways that cross-check: the
+ * provider's own waypoint distance (snapProviderM) and an independent
+ * haversine between the requested and snapped points (snapComputedM),
+ * the latter only when both points genuinely exist.
+ */
+export function buildRouteDiagnostics(request, result, nowMs = Date.now()) {
+  const { mode, from, to } = request;
+  const ok = !!result?.ok;
+  const parsed = ok ? result.parsed : null;
+  const straightKm = haversineKm(from?.lat, from?.lng, to?.lat, to?.lng);
+  const round = (v, dp) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 10 ** dp) / 10 ** dp : null);
+  const endpoint = (requested, snapped, snapProviderM) => ({
+    requested: requested ? { lat: requested.lat, lng: requested.lng } : null,
+    snapped: snapped ?? null,
+    snapProviderM: round(snapProviderM, 1),
+    snapComputedM: snapped && requested ? round(haversineKm(requested.lat, requested.lng, snapped.lat, snapped.lng) * 1000, 1) : null,
+  });
+  return {
+    profile: mode,
+    provider: `routing.openstreetmap.de/${mode === 'bike' ? 'routed-bike' : 'routed-foot'}`,
+    requestedAt: new Date(nowMs).toISOString(),
+    status: ok ? 'ok' : 'unavailable',
+    failure: ok ? null : (result?.failure ?? 'network'),
+    origin: endpoint(from, parsed?.snappedOrigin, parsed?.snapOriginM),
+    destination: endpoint(to, parsed?.snappedDestination, parsed?.snapDestM),
+    routeDistanceKm: ok ? parsed.distanceKm : null,
+    routeDurationSec: ok ? parsed.durationSec : null,
+    straightLineKm: round(straightKm, 3),
+    ratio: ok && typeof straightKm === 'number' && straightKm > 0 ? round(parsed.distanceKm / straightKm, 2) : null,
+  };
 }
 
 /**

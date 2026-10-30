@@ -7,6 +7,7 @@ import {
   routeUrl, parseRouteResponse, shouldRequestRoute, msUntilRouteAllowed,
   formatDuration, ROUTE_TIMEOUT_MS,
 } from '../lib/routing.js';
+import { buildRouteDiagnostics } from '../lib/routing.js';
 import { accuracyBand } from '../lib/location.js';
 
 /**
@@ -43,6 +44,23 @@ import { accuracyBand } from '../lib/location.js';
 const DONOR_POLL_MS = 10_000;
 const MOVE_UPDATE_M = 5;
 const HEADING_UPDATE_DEG = 5;
+
+// ── DEV-only routing diagnostics (audit Fix 4) ─────────────────────
+// In production import.meta.env.DEV is false and the recorder returns
+// before doing anything: no console output, no window object, nothing
+// persisted or transmitted. Records hold REQUEST-TIME descriptor
+// values, never later component state, and stay in this browser only.
+const routeDebugStore = { foot: null, bike: null };
+function recordRouteDiagnostics(next, result) {
+  if (!import.meta.env.DEV) return;
+  const record = buildRouteDiagnostics(
+    { mode: next.mode, from: { lat: next.oLat, lng: next.oLng }, to: { lat: next.dLat, lng: next.dLng } },
+    result,
+  );
+  routeDebugStore[next.mode] = record;
+  window.__FWS_ROUTE_DEBUG__ = routeDebugStore;
+  console.debug('[FWS route]', record);
+}
 
 export function DistanceMap({ claimId, listing }) {
   const { t } = useLang();
@@ -195,15 +213,18 @@ export function DistanceMap({ claimId, listing }) {
       if (seq !== routeSeqRef.current) return; // a newer request owns the map now
       const parsed = parseRouteResponse(json);
       if (!parsed) {
+        recordRouteDiagnostics(next, { ok: false, failure: 'bad-response' });
         setRoute(null);
         setRouteStatus('unavailable');
         return;
       }
+      recordRouteDiagnostics(next, { ok: true, parsed });
       setRoute({ ...parsed, mode: next.mode });
       setRouteStatus('ok');
     } catch {
       if (seq !== routeSeqRef.current) return;
       if (!timedOut && routeAbortRef.current !== ac) return; // superseded abort
+      recordRouteDiagnostics(next, { ok: false, failure: timedOut ? 'timeout' : 'network' });
       setRoute(null);
       setRouteStatus('unavailable');
     } finally {

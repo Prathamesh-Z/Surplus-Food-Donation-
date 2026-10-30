@@ -1272,3 +1272,16 @@ Implemented 30 October 2026, following the read-only distance and location audit
 4. Saved Location persistence, Saved/Live switching, permission and error handling, distance and radius calculations, and routing are all unchanged.
 
 i18n: 268 keys x3 (one new key, `liveGpsPoor`). Manual verification: Testing Record M6-14.
+
+---
+
+## Amendment v3.24 — Routing diagnostics (audit Fix 4, §AP)
+
+Implemented 30 October 2026, following the read-only distance and location audit. **Diagnostics only** — this amendment does not change, tune or optimize routing in any way: provider, profiles, route selection, request gating and timing are exactly as in §AK.
+
+1. **Waypoint extraction.** The FOSSGIS (OSRM-format) response has always carried a `waypoints` array — the snapped point the provider actually routed from/to, plus the provider's own snap distance in metres. `parseRouteResponse` previously discarded it; it now also extracts `snappedOrigin`, `snappedDestination`, `snapOriginM` and `snapDestM`, each validated independently. Missing or malformed waypoint data yields nulls and never invalidates an otherwise valid route; route geometry endpoints are never substituted for snapped points.
+2. **Snap displacement, two ways.** Diagnostics report the provider-reported snap metres AND an independent haversine between the requested and snapped points, so the two cross-check: on a genuine captured response they agreed within ~0.2 m (origin 54.1 vs 54.3 m; destination 13.2 vs 13.3 m; Karad sample pair).
+3. **Records.** The pure `buildRouteDiagnostics()` builds one record per issued request from the REQUEST-TIME descriptor values: profile, provider, timestamp, status and failure class (timeout / network / bad-response), requested vs snapped endpoints with both snap figures, provider route distance and duration, straight-line distance over the request endpoints, and the route-to-straight-line ratio (zero-guarded). Failed requests record null route values — nothing is fabricated. Walking and bicycle records are kept separately, latest per profile.
+4. **Development-only exposure.** Records are exposed only in development builds (`import.meta.env.DEV`): `console.debug('[FWS route]', record)` per issued route and `window.__FWS_ROUTE_DEBUG__` holding the latest record per profile. The production bundle was verified to contain no trace of either (the diagnostics code is eliminated at build time); nothing is persisted or transmitted in any build, and the ordinary-user UI is unchanged. Practical consequence: diagnostics are available when the client runs under the Vite dev server (`npm run dev` in `client/`); the production build served by start.bat does not expose them.
+
+Verification at release: routing node checks 29/29 (the pre-existing §AK contract plus waypoint valid/missing/malformed cases and diagnostics success/failure/zero cases, run against two genuine captured FOSSGIS responses, one per profile); full regression 118/118. Manual reproduction of the original long-route report: Testing Record M6-15 (Not Tested — the report is not claimed explained or resolved).
