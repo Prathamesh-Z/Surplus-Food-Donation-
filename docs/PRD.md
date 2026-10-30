@@ -833,3 +833,43 @@ calibration changed.*
   pretend otherwise.
 
 **End of PRD v3.9.2 amendment.**
+
+---
+
+# Amendment — PRD v3.10 (voice search removed, 30 October 2026)
+
+*At the user's direction, the voice search feature (added in v3.7,
+rebuilt in v3.7.1/v3.8/v3.9/v3.9.1) is REMOVED in full. Browse is a
+text-search-only interface again. This amendment records a deletion,
+not a new feature.*
+
+## Y. What was removed
+
+- Client: the microphone button and all recording UI on Browse
+  (`components/VoiceSearchButton.jsx` deleted); Browse's search box is
+  a plain text input. `transcribeVoice` removed from the client API
+  library. The 16 voice-only i18n keys removed in all three languages
+  (198 → 182 keys).
+- Server: `POST /api/speech/transcribe` and its service deleted; the
+  `/speech` mount removed. The endpoint now returns 404.
+- Inference: `POST /transcribe` and the faster-whisper model deleted
+  (`inference/speech.py` removed; `faster-whisper` dropped from
+  requirements; the model is no longer downloaded). `/health` reports
+  only the two food models — **the service is healthy when
+  `primary_loaded` and `specialist_loaded` are both true**; there is
+  no whisper field to expect.
+- Startup: `start.bat` no longer fetches a speech package or model;
+  fresh installs skip the ~250 MB Whisper download, and inference
+  startup no longer spends time loading a speech model.
+
+## Z. What is unchanged
+
+- Text search on Browse, including the v3.9.2 whitespace-tolerant
+  matching (multi-word and punctuation queries behave exactly as
+  before; the removed input method does not change the query path).
+- Food recognition (both ViT models, `/predict`, the v3.9.2
+  `outcome` contract), camera capture, and photo upload.
+- Offline operation: the app never depended on the network for voice —
+  it now simply has one less local component.
+
+**End of PRD v3.10 amendment.**

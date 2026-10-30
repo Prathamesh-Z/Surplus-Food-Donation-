@@ -5,7 +5,6 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { listingDistanceKm, formatDistance } from '../lib/distance.js';
 import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
-import { VoiceSearchButton } from '../components/VoiceSearchButton.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
 /** Classic Indian veg/non-veg mark + label. Vegan counts as vegetarian. */
@@ -158,25 +157,12 @@ export function Browse() {
       {error && <div className="error">{error}</div>}
       <div className="card">
         <div className="row">
-          <div style={{ position: 'relative', flex: '1 1 210px', maxWidth: 280 }}>
-            <input
-              placeholder={t('searchFood')}
-              value={filters.q}
-              onChange={set('q')}
-              style={{ width: '100%', paddingRight: 46, boxSizing: 'border-box', margin: 0 }}
-            />
-            <div
-              style={{
-                position: 'absolute', right: 4, top: '50%',
-                transform: 'translateY(-50%)', display: 'flex',
-              }}
-            >
-              <VoiceSearchButton
-                variant="inline"
-                onTranscript={(text) => setFilters({ ...filters, q: text })}
-              />
-            </div>
-          </div>
+          <input
+            placeholder={t('searchFood')}
+            value={filters.q}
+            onChange={set('q')}
+            style={{ flex: '1 1 210px', maxWidth: 280 }}
+          />
           <select value={filters.category} onChange={set('category')}>
             <option value="">{t('allCategories')}</option>
             <option value="COOKED_MEALS">Cooked meals</option>

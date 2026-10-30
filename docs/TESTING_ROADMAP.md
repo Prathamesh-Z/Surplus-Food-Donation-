@@ -21,6 +21,13 @@ pickup verification, voice transcription, and recognition.
 tests are green, and the result is entered in the Test Record (Section 6).
 Once Verified, a module is frozen under the rules in Section 7.
 
+**Scope change (2026-10-30, PRD v3.10):** voice search was REMOVED at the
+user's direction (Change 1 of the voice-removal + manual-entry request).
+Module M13 is closed as *Removed by decision*; its tasks are void, not
+failed. The inference service is healthy when the two food models load —
+there is no Whisper model any more, and no checklist should expect one.
+Manual food entry (Change 2) follows separately.
+
 Priorities: **Critical** = core function, security, data integrity, or
 app-breaking. **High** = important function / major workflow failure.
 **Medium** = non-critical bugs, inconsistencies, usability. **Low** = polish.
@@ -46,16 +53,17 @@ app-breaking. **High** = important function / major workflow failure.
 | M10 | Admin (stats, users, suspend, remove, NGO verify, audit) | `routes/admin.js`, `services/auditService.js` | p1 (partial) | Partially covered — list/audit endpoints thin |
 | M11 | Recurring donations | `routes/recurring.js`, `services/recurringService.js` | p1 (FR-18, partial) | Partially covered — PATCH/DELETE thin |
 | M12 | AI food recognition | `inference/app.py`, `models.py`, `services/recognitionService.js`, `data/dishInfo.js` | recognition.test.js (8, transport stubbed) | Endpoint covered; real-model quality evaluated once (sandbox, 55 photos) |
-| M13 | Voice search (Whisper) | `inference/speech.py`, `routes/speech.js`, `components/VoiceSearchButton.jsx` | speech.test.js (4, transport stubbed) | Endpoint covered; mic UX is manual-test only |
-| M14 | Client shell (nav, AuthContext, location, i18n, responsive) | `App.jsx`, `components/Nav.jsx`, `location/LocationContext.jsx`, `i18n/strings.js` (194 keys × EN/MR/HI) | **none** (no client test runner) | Manual testing only — biggest coverage gap |
+| M13 | Voice search — **REMOVED 2026-10-30 (PRD v3.10)** | — (files deleted) | — (speech.test.js deleted with the feature) | Closed as Removed by decision; tasks void |
+| M14 | Client shell (nav, AuthContext, location, i18n, responsive) | `App.jsx`, `components/Nav.jsx`, `location/LocationContext.jsx`, `i18n/strings.js` (182 keys × EN/MR/HI) | **none** (no client test runner) | Manual testing only — biggest coverage gap |
 | M15 | Email mirror (optional SMTP) | `services/emailService.js` | p2 (FR-24: no-op + transport stub) | Passing; real SMTP never exercised |
 | M16 | Two-device / LAN demo mode | Express binds all interfaces; phone-hotspot setup | none | Explained, never confirmed run by the team |
 
 ### 1.2 Integrations and external dependencies
 
 - **PostgreSQL** (local; laptop runs PG 18 on 5432) via Prisma — all data.
-- **Python inference service** (FastAPI, port 8001): two ViT food models +
-  faster-whisper `small`; Express proxies via `INFERENCE_URL`.
+- **Python inference service** (FastAPI, port 8001): two ViT food models;
+  Express proxies via `INFERENCE_URL`. (A faster-whisper speech model
+  served voice search until both were removed in PRD v3.10.)
 - **BigDataCloud reverse-geocode** (client-side fetch, place-name only) —
   the app's only runtime internet dependency besides model downloads.
 - **SMTP** (optional; safe no-op when unconfigured).
@@ -161,7 +169,10 @@ Existing automated tests: none (environment, not code).
 
 - **M0-1 [M] Critical** — Cold start on the demo laptop via `start.bat`
   from a clean shell. → App on :4000, inference on :8001, `/health` shows
-  `primary_loaded`, `specialist_loaded`, `whisper_loaded` all true.
+  `primary_loaded` and `specialist_loaded` both true. (Since PRD v3.10
+  that is the complete expectation — voice search and its Whisper model
+  were removed; a missing `whisper_loaded` field is correct, not a
+  failure.)
   Failures: port 8001 already held (the 28 Oct incident — document the
   kill-owner procedure in the runbook), port 4000 held, PG not running.
 - **M0-2 [M] Critical** — Restart resilience: reboot laptop, run
@@ -170,8 +181,8 @@ Existing automated tests: none (environment, not code).
 - **M0-3 [M] High** — Fresh-clone path (the judge's-eye view): clone to a
   new folder, follow only the README. → App runs; note every undocumented
   step found. Failures: missing env values, model download stalls.
-- **M0-4 [M] High** — One-time downloads present: ViT models + Whisper
-  model cached; start with Wi-Fi off. → Full app works offline after boot.
+- **M0-4 [M] High** — One-time downloads present: the two ViT models
+  cached; start with Wi-Fi off. → Full app works offline after boot.
 - **M0-5 [M] Medium** — `server/.env` sanity: required secrets present,
   `DEV_RESET_LINK` understood (must be off/irrelevant on stage),
   `APP_BASE_URL` correct.
@@ -605,7 +616,7 @@ when Phase 0 starts) with one row per task ID from Section 4:
 
 | Task | Module | Test / input | Expected | Actual | Status | Bug → fix |
 |------|--------|--------------|----------|--------|--------|-----------|
-| M0-1 | Startup | Cold `start.bat` on laptop | All services up, 3 models loaded | — | Not Tested | — |
+| M0-1 | Startup | Cold `start.bat` on laptop | All services up, both food models loaded | — | Not Tested | — |
 
 Status values: **Not Tested / Passed / Failed / Needs Retesting /
 Accepted Gap** (a deliberate team decision, with the reason in the Bug
@@ -614,7 +625,8 @@ result (`94/94` style) at sign-off time.
 
 Initial state, from verified facts at roadmap time (2026-10-30):
 all **[A]** tasks = Passed (suite 94/94 on the merged tree, sandbox);
-M12-2/M12-4, M13-2, M0-1, M16-1 = Not Tested on the target laptop;
+M12-2/M12-4, M0-1, M16-1 = Not Tested on the target laptop
+(M13-2 void — feature removed in PRD v3.10);
 M4-6 = Not Tested anywhere; M14 items = Not Tested as a formal pass.
 
 ---

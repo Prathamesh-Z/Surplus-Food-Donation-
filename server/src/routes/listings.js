@@ -228,7 +228,7 @@ listingsRouter.get('/', optionalAuth, async (req, res) => {
   // match — trim, and collapse any run of spaces/tabs/newlines to one
   // space. Stored names are validated trimmed and single-spaced, so a
   // query typed with a trailing space, pasted with doubled spaces, or
-  // padded by a voice transcript otherwise matches nothing at all. Only
+  // padded while typing otherwise matches nothing at all. Only
   // the incoming query is normalized; stored names are never rewritten.
   const queryText = typeof q === 'string' ? q.trim().replace(/\s+/g, ' ') : '';
   if (queryText) {

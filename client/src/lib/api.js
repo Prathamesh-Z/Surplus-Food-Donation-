@@ -144,23 +144,3 @@ export async function recognizeFood(file) {
   return data;
 }
 
-/**
- * Voice search (PRD v3.8): upload a short recorded clip to the local
- * Whisper transcription endpoint. FormData is rebuilt inside the
- * callback so the 401-refresh retry sends a fresh body.
- */
-export async function transcribeVoice(blob, language) {
-  const res = await authedFetch('/api/speech/transcribe', () => {
-    const fd = new FormData();
-    fd.append('audio', blob, blob.type.includes('mp4') ? 'voice.mp4' : 'voice.webm');
-    if (language) fd.append('language', language);
-    return { method: 'POST', body: fd };
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(data.error || `Transcription failed (${res.status})`);
-    err.status = res.status;
-    throw err;
-  }
-  return data;
-}

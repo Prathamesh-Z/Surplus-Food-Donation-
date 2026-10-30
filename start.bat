@@ -1,7 +1,7 @@
 @echo off
 REM Food Waste Saver - one-click start (Windows)
 REM Sets everything up on first run, then starts the app server AND the
-REM AI inference service - food recognition plus voice search, port 8001.
+REM AI inference service - food recognition, port 8001.
 REM MAINTAINER NOTE: keep this file free of parenthesised blocks, echo
 REM text with brackets, and non-ASCII characters. cmd.exe misparses them
 REM and aborts with "... was unexpected at this time".
@@ -29,10 +29,6 @@ inference\.venv\Scripts\pip install -r inference\requirements.txt
 inference\.venv\Scripts\python inference\download_models.py
 :venv_ok
 
-REM Voice search - PRD v3.8: installs made before v3.8 lack the speech
-REM package and the speech model. Fetch each one once, when it is missing.
-inference\.venv\Scripts\python -c "import faster_whisper" 2>nul || inference\.venv\Scripts\pip install -r inference\requirements.txt
-if not exist "%USERPROFILE%\.cache\huggingface\hub\models--Systran--faster-whisper-small" inference\.venv\Scripts\python inference\download_models.py
 
 echo Building the web app...
 call npm run build

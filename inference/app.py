@@ -40,7 +40,6 @@ from models import (
     SPECIALIST_MODEL_ID,
     load_classifier,
 )
-from speech import WHISPER_MODEL_ID, load_speech_to_text
 
 # Calibrated on the evaluation set — see docs/RECOGNITION_EVAL.md.
 UNCERTAIN_THRESHOLD = float(os.environ.get("UNCERTAIN_THRESHOLD", "0.50"))
@@ -48,14 +47,12 @@ SPECIALIST_TRIGGER = float(os.environ.get("SPECIALIST_TRIGGER", "0.50"))
 SPECIALIST_FEATURED_MIN = float(os.environ.get("SPECIALIST_FEATURED_MIN", "0.90"))
 
 MAX_BYTES = 5 * 1024 * 1024  # matches the app's listing-photo limit (FR-04)
-MAX_AUDIO_BYTES = 10 * 1024 * 1024  # voice clips are short; 10 MB is generous
 
 app = FastAPI(title="Food Waste Saver — food recognition")
 
 _state = {
     "primary": None,
     "specialist": None,
-    "whisper": None,
     "errors": {},
     "load_seconds": None,
 }
@@ -72,10 +69,6 @@ def _startup():
     _state["specialist"] = specialist
     if err:
         _state["errors"]["specialist"] = err
-    whisper, err = load_speech_to_text()
-    _state["whisper"] = whisper
-    if err:
-        _state["errors"]["whisper"] = err
     _state["load_seconds"] = round(time.time() - started, 2)
 
 
@@ -85,8 +78,6 @@ def health():
         "status": "ok" if _state["primary"] is not None else "degraded",
         "primary_loaded": _state["primary"] is not None,
         "specialist_loaded": _state["specialist"] is not None,
-        "whisper_loaded": _state["whisper"] is not None,
-        "whisper_model": WHISPER_MODEL_ID,
         "errors": _state["errors"],
         "load_seconds": _state["load_seconds"],
         "primary_temperature": PRIMARY_TEMPERATURE,
@@ -154,37 +145,3 @@ async def predict(file: UploadFile = File(...)):
         "uncertain": uncertain,
         "latency_ms": round((time.time() - started) * 1000),
     }
-
-
-@app.post("/transcribe")
-def transcribe(file: UploadFile = File(...), language: str | None = Form(None)):
-    """Voice search (PRD v3.8): local Whisper transcription.
-
-    Declared as a plain def so FastAPI runs it in the threadpool — a
-    multi-second CPU transcription must not block the event loop that
-    also serves /predict. Honest 503 when the model is not loaded.
-    """
-    if _state["whisper"] is None:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "error": "Speech model is not loaded. "
-                "Run inference/download_models.py and restart the service.",
-                "detail": _state["errors"].get("whisper"),
-            },
-        )
-    raw = file.file.read()
-    if len(raw) == 0 or len(raw) > MAX_AUDIO_BYTES:
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Audio must be between 1 byte and {MAX_AUDIO_BYTES} bytes."},
-        )
-    started = time.time()
-    try:
-        result = _state["whisper"].transcribe_bytes(raw, language=language)
-    except Exception as exc:  # noqa: BLE001
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Could not decode that audio ({type(exc).__name__})."},
-        )
-    return {**result, "latency_ms": round((time.time() - started) * 1000)}
