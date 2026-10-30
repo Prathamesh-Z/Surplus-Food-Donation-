@@ -873,3 +873,36 @@ not a new feature.*
   it now simply has one less local component.
 
 **End of PRD v3.10 amendment.**
+
+---
+
+# Amendment — PRD v3.11 (manual food entry, 30 October 2026)
+
+*Change 2 of the voice-removal + manual-entry request (Change 1 was
+v3.10). Client-only: the recognition pipeline, its contract, and all
+server behaviour are unchanged.*
+
+## AA. Enter food details manually
+
+- After a scan has filled the Post Surplus Food form, a distinct block
+  under the result offers: **"Not happy with the scanned results? You
+  can enter the food information yourself instead."** with an
+  **Enter manually** action.
+- Choosing it discards the scan completely: exactly the four fields
+  recognition can write — food name, food details, category, category
+  note — are reset to fresh-form defaults, and the result panel is
+  dismissed so no stale suggestion remains visible. The photo,
+  portions, deadline, pickup, contact and safety checklist are the
+  user's own input and are never touched.
+- In manual mode a note marks the state. Detection may still run when
+  a new photo is added, but its result is held behind an explicit
+  **Apply scanned result** action — typed details are never
+  overwritten silently. **Use scanning** returns to automatic mode
+  with a FRESH detection on the current photo; discarded values are
+  never restored.
+- Manual entry was always possible (every field is a plain input and
+  no scan is required to post); this amendment makes the escape from a
+  wrong scan explicit and one tap away. Existing validation is
+  unchanged — name and details remain required, as before.
+
+**End of PRD v3.11 amendment.**

@@ -77,6 +77,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | PR #1 | Teammate PR (Sahil): 20 QA fixes + invite links — public browse, AuthContext header, draft publish/edit, rate-limit split, invite codes | merged d4eb611 |
 | v3.9.2 | Bug fixes: Browse search tolerates messy whitespace in the query; recognition gains a not_recognized rejection state — non-food photos no longer auto-fill a guessed dish name | PRD v3.9.2 |
 | v3.10 | Voice search REMOVED (Browse is text-only again): mic UI, /api/speech endpoint, Whisper model + startup download all deleted; inference health = the two food models | PRD v3.10 |
+| v3.11 | Manual food entry: after a scan fills the form, "Enter manually" discards all four AI-filled fields and switches to manual mode where scan results are offered, never auto-applied | PRD v3.11 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.

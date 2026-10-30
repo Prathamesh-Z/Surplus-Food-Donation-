@@ -113,6 +113,10 @@ export function CreateListing() {
   const [photoPreview, setPhotoPreview] = useState('');
   /** Recognition (PRD v3.3): { status: idle|loading|done|error, result, error } */
   const [detect, setDetect] = useState({ status: 'idle', result: null, error: '' });
+  /** Manual entry (PRD v3.11): 'scan' auto-applies recognition results;
+   * 'manual' means the user discarded them — detection may still run on
+   * a new photo, but its result is only ever offered, never applied. */
+  const [entryMode, setEntryMode] = useState('scan');
   const [locating, setLocating] = useState(false);
   // v3.5: exact pickup point for THIS listing (nullable). Seeded from the
   // app-level saved location when it carries coordinates; the form's own
@@ -211,6 +215,34 @@ export function CreateListing() {
     }));
   }
 
+  /** Discard the scan result completely (PRD v3.11): reset exactly the
+   * four fields applySuggestion can write, back to fresh-form defaults.
+   * The photo, portions, deadline, pickup, contact and checklist are the
+   * user's own input and are NOT touched. */
+  function enterManually() {
+    setForm((f) => ({ ...f, foodName: '', foodDetails: '', category: 'COOKED_MEALS', categoryNote: '' }));
+    setDetect({ status: 'idle', result: null, error: '' });
+    setEntryMode('manual');
+  }
+
+  /** Return to scanning: fresh detection on the current photo (the
+   * cleared values are never restored). With no photo yet, the upload /
+   * camera buttons above are the path — mode simply flips back. */
+  function useScanning() {
+    setEntryMode('scan');
+    if (photoFile) runDetect(photoFile, ++detectSeq.current);
+    else setDetect({ status: 'idle', result: null, error: '' });
+  }
+
+  /** Manual mode only: the user explicitly accepts a held suggestion. */
+  function applyScannedResult() {
+    const r = detect.result;
+    if (!r?.food_name) return;
+    applySuggestion(r.food_name, r.description, r.category, r.categoryNote);
+    setEntryMode('scan');
+    setDetect({ status: 'done', result: r, error: '' });
+  }
+
   async function runDetect(file, seq) {
     setDetect({ status: 'loading', result: null, error: '' });
     try {
@@ -221,6 +253,12 @@ export function CreateListing() {
         // image. Show the dedicated rejection state — NEVER auto-fill
         // the form from a low-confidence guess.
         setDetect({ status: 'notrecognized', result, error: '' });
+        return;
+      }
+      if (entryMode === 'manual') {
+        // PRD v3.11: never overwrite details the user is typing — hold
+        // the result behind an explicit Apply action instead.
+        setDetect({ status: 'suggestion', result, error: '' });
         return;
       }
       applySuggestion(result.food_name, result.description, result.category, result.categoryNote);
@@ -415,6 +453,14 @@ export function CreateListing() {
           {cameraOpen && (
             <CameraCapture onCapture={onCameraCapture} onClose={() => setCameraOpen(false)} />
           )}
+          {entryMode === 'manual' && (
+            <div className="row" style={{ marginTop: 10, alignItems: 'center' }}>
+              <p className="muted" style={{ margin: 0 }}>✍️ {t('manualModeNote')}</p>
+              <button type="button" className="secondary" style={{ padding: '6px 12px' }} onClick={useScanning}>
+                📷 {t('useScanning')}
+              </button>
+            </div>
+          )}
           {(photoPreview || (editListing?.photoPath && !photoFile)) && (
             <div className="row" style={{ alignItems: 'flex-start', marginTop: 10 }}>
               <img src={photoPreview || editListing?.photoPath} alt="" style={{ maxWidth: 240, borderRadius: 10 }} />
@@ -458,6 +504,13 @@ export function CreateListing() {
                         ))}
                       </p>
                     )}
+                    <div style={{ marginTop: 10, borderTop: '1px dashed #cfe0c8', paddingTop: 8 }}>
+                      <p style={{ margin: '0 0 2px', fontWeight: 600 }}>{t('notHappyResults')}</p>
+                      <p className="muted" style={{ margin: '0 0 6px' }}>{t('manualHint')}</p>
+                      <button type="button" className="secondary" style={{ padding: '6px 12px' }} onClick={enterManually}>
+                        ✍️ {t('enterManually')}
+                      </button>
+                    </div>
                   </div>
                 )}
                 {detect.status === 'notrecognized' && (
@@ -487,6 +540,16 @@ export function CreateListing() {
                         📷 {t('captureAgain')}
                       </button>
                     </div>
+                  </div>
+                )}
+                {detect.status === 'suggestion' && detect.result?.food_name && (
+                  <div style={{ marginTop: 8 }}>
+                    <p className="muted" style={{ margin: '0 0 6px' }}>
+                      ✓ {t('detectedAs')}: {detect.result.food_name} ({Math.round(detect.result.confidence * 100)}%)
+                    </p>
+                    <button type="button" className="secondary" style={{ padding: '6px 12px' }} onClick={applyScannedResult}>
+                      {t('applyScannedResult')}
+                    </button>
                   </div>
                 )}
                 {detect.status === 'error' && (
