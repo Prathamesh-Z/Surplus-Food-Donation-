@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../lib/NotificationsContext.jsx';
+import { hasUsableCoords } from '../lib/location.js';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
@@ -11,7 +12,7 @@ export function Nav() {
   const { user, loggedIn, logout } = useAuth();
   const navigate = useNavigate();
   const { lang, setLang, t } = useLang();
-  const { location, openPrompt } = useLocation();
+  const { location, openPrompt, openDetails } = useLocation();
   // v3.17: the badge reads the single shared notifications poll
   // (NotificationsContext) — the same fetch the banners use.
   const { unreadCount } = useNotifications();
@@ -32,11 +33,11 @@ export function Nav() {
       <button
         type="button"
         className="secondary"
-        onClick={openPrompt}
+        onClick={() => (location ? openDetails() : openPrompt())}
         title={t('yourLocation')}
         style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
-        📍 <span className="loc-label">{location?.label ?? t('locPromptTitle')}</span> ✎
+        📍 <span className="loc-label">{location?.label ?? t('locPromptTitle')}</span>{location && !hasUsableCoords(location) ? ` (${t('areaOnlyShort')})` : ''} ✎
       </button>
       <button
         type="button"

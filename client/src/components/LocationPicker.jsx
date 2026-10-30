@@ -30,24 +30,35 @@ export function LocationPicker({ initial, onConfirm, onClose }) {
   const [searching, setSearching] = useState(false);
   const [tilesFailed, setTilesFailed] = useState(false);
   const labelDirtyRef = useRef(false);
+  const labelSeqRef = useRef(0);
+  // v3.20: starting from the country-centre default, Save stays locked
+  // until the user actually picks a place (drag, tap or search).
+  const [interacted, setInteracted] = useState(() => validCoords(initial));
+  const [approxNote, setApproxNote] = useState(false);
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const selectedRef = useRef(start);
 
-  function movePin(pos, { lookup = true } = {}) {
+  function movePin(pos, { lookup = true, viaSearch = false } = {}) {
     selectedRef.current = pos;
     setSelected(pos);
+    setInteracted(true);
+    if (!viaSearch) setApproxNote(false);
     markerRef.current?.setLatLng([pos.lat, pos.lng]);
     if (lookup) lookupLabel(pos);
   }
 
   async function lookupLabel(pos) {
+    // v3.20: sequence-guarded — a response for an older pin position
+    // can never overwrite the label of the current one.
+    const seq = ++labelSeqRef.current;
     try {
       const res = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.lat}&longitude=${pos.lng}&localityLanguage=en`,
       );
       const data = await res.json();
+      if (seq !== labelSeqRef.current) return; // superseded by a newer move
       const text = [data.locality, data.city, data.principalSubdivision]
         .filter(Boolean)
         .filter((v, i, a) => a.indexOf(v) === i)
@@ -112,7 +123,8 @@ export function LocationPicker({ initial, onConfirm, onClose }) {
       }
       const pos = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       mapRef.current?.setView([pos.lat, pos.lng], 15);
-      movePin(pos, { lookup: false });
+      movePin(pos, { lookup: false, viaSearch: true });
+      setApproxNote(true);
       if (data[0].display_name) {
         setLabel(data[0].display_name.split(',').slice(0, 3).join(','));
         labelDirtyRef.current = false;
@@ -169,6 +181,12 @@ export function LocationPicker({ initial, onConfirm, onClose }) {
           }}
         />
         {tilesFailed && <p className="muted" style={{ marginTop: 4 }}>⚠ {t('tilesFailed')}</p>}
+        {!interacted && (
+          <p style={{ margin: '8px 0 0', fontSize: 13 }}>⚠ {t('pickerStartHint')}</p>
+        )}
+        {approxNote && (
+          <p style={{ margin: '8px 0 0', fontSize: 13 }}>📍 {t('searchApprox')}</p>
+        )}
         <p className="muted" style={{ margin: '8px 0 4px' }}>{t('dragPinHint')}</p>
         <p style={{ margin: '0 0 8px', fontSize: 13 }}>
           📍 {selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}
@@ -188,7 +206,7 @@ export function LocationPicker({ initial, onConfirm, onClose }) {
           <button type="button" className="secondary" onClick={onClose}>
             {t('close')}
           </button>
-          <button type="button" onClick={confirm}>
+          <button type="button" onClick={confirm} disabled={!interacted}>
             {t('saveLocation')}
           </button>
         </div>

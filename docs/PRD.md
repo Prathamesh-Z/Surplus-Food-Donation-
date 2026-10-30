@@ -1168,3 +1168,52 @@ changes nothing about verification.*
   provider as the route origin (that is what routing means) and are
   NEVER sent to the app backend; no backend endpoint accepts them.
 
+---
+
+## Amendment v3.20 (2026-10-30) — Location accuracy, consistency & transparency (batch F8)
+
+- ONE reference origin: the saved location record is the distance
+  origin for Browse, ListingDetail and the pickup map alike. The
+  pickup map's GPS watcher NO LONGER starts automatically; Live GPS
+  is an explicit, temporary origin selected on the map ("Distance
+  from: Saved location / Live GPS"). Switching back restores the
+  saved origin immediately; a failed watch falls back to the saved
+  origin with an error shown; watching never writes the saved
+  record. F2 routing uses whichever origin is active (saved by
+  default), with its 50 m gating and spacing unchanged.
+- GPS detection (location prompt): high-accuracy request, the
+  device-reported accuracy is shown before saving (bands: <=100 m
+  fine, 100-500 m warning, >500 m requires an explicitly labelled
+  "Save approximate location" action), permission/timeout/
+  unavailable are distinct messages, and a valid fix is NEVER
+  discarded for a failed reverse geocode — it saves with the
+  fallback label "Selected GPS location". High accuracy is a
+  request to the device, not a guarantee; the UI says so via the
+  reported accuracy figure itself.
+- Picker reliability: when no location exists yet, the map's
+  country-centre starting point CANNOT be saved until the user
+  drags the pin, taps the map, or picks a search result; search
+  results carry an "approximate area" note until the pin is
+  adjusted; reverse-geocode label lookups are sequence-guarded so a
+  stale response can never label a newer pin position (typed labels
+  remain untouchable, as before).
+- Transparency: records carry a `source` (gps | pin | text; older
+  records are interpreted, never migrated). The header location
+  control now opens a details view showing the label, the exact
+  saved coordinates, the source, and the saved time — no developer
+  tools needed. Text-only records are visibly marked "area only" in
+  the header and in details: they support NO distances, NO 5 km
+  filtering and NO routing, exactly as the engine already treated
+  them. Labels remain locality-level (locality/city/state) — the
+  app does not claim a street address.
+- CreateListing now seeds pickup details from the live
+  LocationContext (was a one-off localStorage read). If the saved
+  location changes while the form is open, the form keeps what it
+  started with and OFFERS the new location explicitly; user-edited
+  pickup fields are never overwritten.
+- Unchanged by design: the 5 km Haversine rule (F4), routing
+  provider/profiles/fallback (F2), donor live sharing, backend
+  contracts, and the privacy rule — claimer coordinates are never
+  sent to the app backend; the routing provider receives the active
+  route origin only, as routing requires.
+

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { authedFetch, recognizeFood, api, fieldErrorsText } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { useLocation } from '../location/LocationContext.jsx';
+import { sameLocation } from '../lib/location.js';
 import { CameraCapture } from '../components/CameraCapture.jsx';
 
 const ALL_IDS = CHECKLIST.map(([id]) => id);
@@ -83,11 +85,19 @@ export function CreateListing() {
   const cookedInit = nowParts(-60);
   const deadlineInit = nowParts(180);
   const savedUser = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
-  const savedLocObj = (() => {
-    try { return JSON.parse(localStorage.getItem('fws_location') ?? 'null'); }
-    catch { return null; }
-  })();
+  // v3.20: seed from the live LocationContext (previously a one-off
+  // localStorage parse — the same record, but the context is the one
+  // source of truth the rest of the app reads).
+  const { location: savedLocObj } = useLocation();
   const savedLocation = savedLocObj?.label ?? '';
+  // The pickup seed this form started with. If the saved location
+  // changes while the form is open, the form NEVER silently adopts
+  // it — it offers the change explicitly (see the pickup section).
+  const seedRef = useRef({
+    label: savedLocObj?.label ?? '',
+    lat: typeof savedLocObj?.lat === 'number' ? savedLocObj.lat : null,
+    lng: typeof savedLocObj?.lng === 'number' ? savedLocObj.lng : null,
+  });
   const [form, setForm] = useState({
     foodName: '',
     foodDetails: '',
@@ -649,6 +659,39 @@ export function CreateListing() {
         </button>
         <p className="muted" style={{ marginTop: -6 }}>{t('geocodePrivacyNote')}</p>
         {pickupCoords && <p className="success" style={{ marginTop: -6 }}>📍 {t('pickupPointSet')}</p>}
+        {(() => {
+          const seed = seedRef.current;
+          const changed = savedLocObj && !sameLocation(seed, savedLocObj);
+          const untouched =
+            form.pickupLocationText === seed.label &&
+            (pickupCoords?.lat ?? null) === seed.lat &&
+            (pickupCoords?.lng ?? null) === seed.lng;
+          if (!changed || !untouched) return null;
+          return (
+            <div style={{ marginTop: -4, marginBottom: 10 }}>
+              <p className="muted" style={{ margin: '0 0 4px' }}>{t('pickupLocationChanged')}</p>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  setForm((f) => ({ ...f, pickupLocationText: savedLocObj.label ?? '' }));
+                  setPickupCoords(
+                    typeof savedLocObj.lat === 'number' && typeof savedLocObj.lng === 'number'
+                      ? { lat: savedLocObj.lat, lng: savedLocObj.lng }
+                      : null,
+                  );
+                  seedRef.current = {
+                    label: savedLocObj.label ?? '',
+                    lat: savedLocObj.lat ?? null,
+                    lng: savedLocObj.lng ?? null,
+                  };
+                }}
+              >
+                {t('useNewSavedLocation')}
+              </button>
+            </div>
+          );
+        })()}
 
         {/* ── Donor contact (v3.4): prefilled from the profile ── */}
         <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>

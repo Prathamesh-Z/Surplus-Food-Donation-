@@ -18,9 +18,14 @@ import {
  * point is drawn grey and labelled with its last-update time — never
  * presented as live.
  *
- * The claimer's own position comes from watchPosition and lives ONLY
- * in this component's state — no endpoint accepts claimer coordinates
- * and none are ever sent. The map is north-up; travel direction is a
+ * The claimer's distance origin (v3.20, batch F8) is the SAVED
+ * location by default — the same origin Browse and ListingDetail
+ * use. Live GPS is an explicit, temporary alternative the user
+ * switches on here; the watcher never starts on its own, switching
+ * back restores the saved origin instantly, and the saved record is
+ * never modified by watching. Live positions live ONLY in this
+ * component's state — no endpoint accepts claimer coordinates and
+ * none are ever sent. The map is north-up; travel direction is a
  * rotating arrow on the claimer pin when the device reports a heading
  * (stationary devices report none, and the plain pin is the fallback).
  * The headline distance is the Haversine straight-line, labelled as
@@ -45,10 +50,16 @@ export function DistanceMap({ claimId, listing }) {
     location && typeof location.lat === 'number' && typeof location.lng === 'number'
       ? { lat: location.lat, lng: location.lng }
       : null;
-  const [myPos, setMyPos] = useState(savedPos);
+  // Origin model (v3.20): 'saved' (default, the LocationContext
+  // record) or 'live' (explicit opt-in GPS watch). myPos is DERIVED —
+  // live wins only while Live GPS is selected AND has a fix; a failed
+  // or pending watch falls back to the saved origin, never to nothing
+  // the user didn't choose.
+  const [originMode, setOriginMode] = useState('saved');
+  const [livePos, setLivePos] = useState(null);
   const [heading, setHeading] = useState(null);
-  const [watchWanted, setWatchWanted] = useState(Boolean(savedPos));
   const [locating, setLocating] = useState(false);
+  const myPos = originMode === 'live' && livePos ? livePos : savedPos;
   const [geoError, setGeoError] = useState('');
   const [donorLive, setDonorLive] = useState(null);
   const [netDown, setNetDown] = useState(false);
@@ -62,7 +73,7 @@ export function DistanceMap({ claimId, listing }) {
   const destRef = useRef(null);
   const lineRef = useRef(null);
   const watchIdRef = useRef(null);
-  const myPosRef = useRef(savedPos);
+  const livePosRef = useRef(null);
   const headingRef = useRef(null);
   const fitKeyRef = useRef('');
 
@@ -94,19 +105,20 @@ export function DistanceMap({ claimId, listing }) {
   const routeTimerRef = useRef(null);
   const lastFetchAtRef = useRef(0);
 
-  // ── Claimer watchPosition (device-only; never transmitted) ─────────
+  // ── Claimer watchPosition: ONLY while Live GPS is explicitly
+  // selected (v3.20). Device-only; never transmitted, never saved. ──
   useEffect(() => {
-    if (!watchWanted || watchIdRef.current !== null || !navigator.geolocation) return undefined;
+    if (originMode !== 'live' || !navigator.geolocation) return undefined;
     setLocating(true);
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         setLocating(false);
         setGeoError('');
         const { latitude: lat, longitude: lng, heading: h } = pos.coords;
-        const cur = myPosRef.current;
+        const cur = livePosRef.current;
         if (!cur || haversineKm(cur.lat, cur.lng, lat, lng) * 1000 >= MOVE_UPDATE_M) {
-          myPosRef.current = { lat, lng };
-          setMyPos({ lat, lng });
+          livePosRef.current = { lat, lng };
+          setLivePos({ lat, lng });
         }
         if (typeof h === 'number' && !Number.isNaN(h)) {
           if (headingRef.current === null || Math.abs(h - headingRef.current) >= HEADING_UPDATE_DEG) {
@@ -129,9 +141,11 @@ export function DistanceMap({ claimId, listing }) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
+      headingRef.current = null;
+      setHeading(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchWanted]);
+  }, [originMode]);
 
   // ── Donor live point: claim-scoped poll while mounted ──────────────
   useEffect(() => {
@@ -415,10 +429,10 @@ export function DistanceMap({ claimId, listing }) {
           <button
             type="button"
             className="secondary"
-            onClick={() => setWatchWanted(true)}
-            disabled={locating || watchWanted}
+            onClick={() => setOriginMode('live')}
+            disabled={locating}
           >
-            📍 {locating ? t('locating') : t('useMyLocation')}
+            📍 {locating ? t('locating') : t('originLiveGps')}
           </button>
           {geoError && <p className="error" style={{ margin: '8px 0 0' }}>{geoError}</p>}
         </div>
@@ -430,14 +444,28 @@ export function DistanceMap({ claimId, listing }) {
           overflow: 'hidden', background: '#eef3ea', position: 'relative', zIndex: 0,
         }}
       />
-      {myPos && (
-        <div className="row" style={{ marginTop: 6, alignItems: 'center' }}>
-          <button type="button" className="secondary" onClick={() => setWatchWanted(true)} disabled={watchWanted && !geoError}>
-            📍 {t('useMyLocation')}
-          </button>
-          {geoError && <span className="error">{geoError}</span>}
-        </div>
-      )}
+      <div className="row" style={{ marginTop: 6, alignItems: 'center' }} role="group" aria-label={t('distanceFrom')}>
+        <span className="muted">{t('distanceFrom')}:</span>
+        <button
+          type="button"
+          className={originMode === 'saved' ? undefined : 'secondary'}
+          aria-pressed={originMode === 'saved'}
+          onClick={() => setOriginMode('saved')}
+          disabled={!savedPos}
+        >
+          📍 {t('originSaved')}
+        </button>
+        <button
+          type="button"
+          className={originMode === 'live' ? undefined : 'secondary'}
+          aria-pressed={originMode === 'live'}
+          onClick={() => setOriginMode('live')}
+        >
+          🛰️ {t('originLiveGps')}
+        </button>
+        {originMode === 'live' && locating && <span className="muted">{t('locating')}</span>}
+        {originMode === 'live' && geoError && <span className="error">{geoError}</span>}
+      </div>
       {tilesFailed && (
         <p className="muted" style={{ marginTop: 4 }}>⚠ {t('tilesFailed')}</p>
       )}
