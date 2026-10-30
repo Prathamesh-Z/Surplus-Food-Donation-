@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../lib/api.js';
+import { useNotifications } from '../lib/NotificationsContext.jsx';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
@@ -12,23 +12,11 @@ export function Nav() {
   const navigate = useNavigate();
   const { lang, setLang, t } = useLang();
   const { location, openPrompt } = useLocation();
-  const [unreadCount, setUnreadCount] = useState(0);
+  // v3.17: the badge reads the single shared notifications poll
+  // (NotificationsContext) — the same fetch the banners use.
+  const { unreadCount } = useNotifications();
   // QA-08: collapsed menu on small screens (was ~299px of wrapped links).
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Unread-notification badge (v3.6): same 15-second polling cadence as
-  // the Notifications page (PRD FR-14 — in-app only, no push).
-  useEffect(() => {
-    if (!loggedIn) return;
-    let live = true;
-    const poll = () =>
-      api('/api/notifications')
-        .then((d) => { if (live) setUnreadCount(d.unreadCount ?? 0); })
-        .catch(() => {});
-    poll();
-    const timer = setInterval(poll, 15000);
-    return () => { live = false; clearInterval(timer); };
-  }, [loggedIn]);
 
   async function handleLogout() {
     // QA-13: revoke server-side, then leave — no full reload needed now

@@ -1071,3 +1071,31 @@ changes nothing about verification.*
   "Donor notified · HH:MM" status (locale time), reconciles from the
   server on a 409, and never shows the status on a failed request.
 
+---
+
+## Amendment v3.17 (2026-10-30) — Notification banners (batch F3)
+
+- New app-level banners surface genuinely new in-app notifications
+  while the app is in use. The poll is NOT duplicated: the existing
+  Nav badge poll was lifted into a shared NotificationsContext
+  (one 15-second fetch of GET /api/notifications) consumed by the
+  badge and the banner host alike. The Notifications page keeps its
+  own full fetch and behaviour, unchanged.
+- Baseline rule: the first loaded fetch defines "existing" — none of
+  it ever banners, so login, refresh and remounts cannot flood the
+  user with old unread items. New-arrival detection is by
+  notification ID (never timestamps): an unread ID in neither the
+  baseline nor the session shown-set is new, and a shown ID can never
+  banner twice, however often polling returns it.
+- At most 3 banners are visible; further arrivals queue in order and
+  surface as slots free. Each visible banner auto-dismisses after
+  ~12 seconds (per-banner timer, cleaned up on removal/unmount).
+  State resets when the signed-in user changes.
+- Clicking a banner marks it read through the existing endpoint and
+  navigates via the SAME destination mapping as the Notifications
+  page (now shared code: linked listing → detail, else linked claim
+  → My Claims, else no navigation). The × control dismisses only the
+  banner — read state is untouched and the notification remains on
+  the Notifications page, unread. Banner text is the notification's
+  own title/body, exactly as the page displays them.
+

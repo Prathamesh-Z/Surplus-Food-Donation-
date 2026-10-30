@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider } from './lib/AuthContext.jsx';
 import { useLang } from './i18n/LanguageContext.jsx';
 import { Nav } from './components/Nav.jsx';
+import { NotificationsProvider } from './lib/NotificationsContext.jsx';
+import { NotificationBanners } from './components/NotificationBanners.jsx';
 import { InviteBanner } from './components/InviteBanner.jsx';
 import { Home } from './pages/Home.jsx';
 import { Login } from './pages/Login.jsx';
@@ -40,7 +42,9 @@ export function App() {
     <LocationProvider>
     <BrowserRouter>
     <AuthProvider>
+    <NotificationsProvider>
       <Nav />
+      <NotificationBanners />
       <div className="container">
         <InviteBanner />
       </div>
@@ -67,6 +71,7 @@ export function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+    </NotificationsProvider>
     </AuthProvider>
     </BrowserRouter>
     </LocationProvider>

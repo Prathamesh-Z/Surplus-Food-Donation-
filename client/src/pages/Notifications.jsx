@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { notificationPath } from '../lib/notificationNav.js';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
@@ -42,8 +43,8 @@ export function Notifications() {
   /** Click-through: open the record the notification is about, marking it read. */
   function open(n) {
     if (!n.read) markRead(n.id);
-    if (n.relatedListingId) navigate(`/listings/${n.relatedListingId}`);
-    else if (n.relatedClaimId) navigate('/my-claims');
+    const path = notificationPath(n);
+    if (path) navigate(path);
   }
 
   return (
