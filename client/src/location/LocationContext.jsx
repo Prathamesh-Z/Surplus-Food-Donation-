@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { LocationPicker } from '../components/LocationPicker.jsx';
 
 /**
  * App-level location (v3.4), Zepto/Blinkit-style: a place NAME the user
@@ -82,6 +83,7 @@ function LocationPrompt({ onClose }) {
   const { t } = useLang();
   const { location, setLocation } = useLocation();
   const [manual, setManual] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -137,6 +139,19 @@ function LocationPrompt({ onClose }) {
         <button type="button" onClick={detect} disabled={busy} style={{ width: '100%', marginBottom: 10 }}>
           {busy ? t('locating') : `📍 ${t('useCurrentLocation')}`}
         </button>
+        <button type="button" className="secondary" onClick={() => setPickerOpen(true)} style={{ width: '100%', marginBottom: 10 }}>
+          🗺️ {t('pickOnMap')}
+        </button>
+        {pickerOpen && (
+          <LocationPicker
+            initial={location}
+            onClose={() => setPickerOpen(false)}
+            onConfirm={(label, coords) => {
+              setPickerOpen(false);
+              setLocation(label, coords);
+            }}
+          />
+        )}
         <label>
           {t('enterLocationManually')}
           <input

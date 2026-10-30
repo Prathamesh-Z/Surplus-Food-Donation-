@@ -1099,3 +1099,39 @@ changes nothing about verification.*
   the Notifications page, unread. Banner text is the notification's
   own title/body, exactly as the page displays them.
 
+---
+
+## Amendment v3.18 (2026-10-30) — 5 km discovery radius + map-pin location picker (batch F4)
+
+- Browse discovery radius: for CLAIMER and NGO users with saved
+  location coordinates, Browse shows only listings whose known
+  Haversine distance from the user is <= BROWSE_RADIUS_KM (5,
+  client/src/lib/distance.js) — the boundary is inclusive. Listings
+  beyond 5 km and listings with missing or invalid pickup
+  coordinates are hidden while the radius is active, and a note
+  states how many were hidden. Providers and admins are never
+  radius-filtered. Users without coordinates (including text-only
+  locations) see everything, with a prompt to set a location — no
+  default coordinate is invented and there is NO "show all" bypass.
+  The radius is a discovery filter only: direct listing URLs and
+  claim authorisation are unchanged.
+- PRIVACY (unchanged model, restated): the user's coordinates never
+  leave the device. Filtering and distances are computed in the
+  browser from the listing coordinates the server already publishes;
+  the user's position is never sent in any request, parameter, body
+  or log.
+- Manual pin picker: the location prompt gains "Pick on map"
+  (client/src/components/LocationPicker.jsx, existing Leaflet). A
+  draggable pin (drag or tap) sets the point; an optional place
+  search uses Nominatim only on explicit submit (never per
+  keystroke, never required); the label comes from the app's
+  existing BigDataCloud lookup unless the user types their own, and
+  a failed lookup falls back to the coordinates as the label —
+  saving always works. Nothing is written until Save; Cancel keeps
+  the previously saved location. Saving goes through the existing
+  LocationContext persistence (localStorage), and Browse re-filters
+  immediately on the confirmed change.
+- Demo: set the location by pin in Karad to show the seeded Karad
+  listings inside the radius; drag the pin ~10 km away and the same
+  listings leave Browse (they remain reachable by direct URL).
+

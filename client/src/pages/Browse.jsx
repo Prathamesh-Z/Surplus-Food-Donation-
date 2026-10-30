@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
-import { listingDistanceKm, formatDistance } from '../lib/distance.js';
+import { listingDistanceKm, formatDistance, applyBrowseRadius } from '../lib/distance.js';
 import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
@@ -31,7 +31,7 @@ const SORTS = ['urgent', 'timeHigh', 'vegFirst', 'nonvegFirst', 'nearest', 'fart
 
 export function Browse() {
   const { t } = useLang();
-  const { location } = useLocation();
+  const { location, openPrompt } = useLocation();
   const [listings, setListings] = useState([]);
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('urgent');
@@ -109,8 +109,16 @@ export function Browse() {
   // (there is no pagination), so the global order is correct. Listings
   // without coordinates always go last in distance sorts — an unknown
   // distance is never treated as nearest or farthest.
+  // PRD v3.18 (batch F4): the 5 km discovery radius — claimer/NGO only,
+  // only with real saved coordinates, applied client-side before sorting.
+  const radius = useMemo(
+    () => applyBrowseRadius(listings, userCoords, browseUser?.role ?? null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [listings, location?.lat, location?.lng, browseUser?.role],
+  );
+
   const sorted = useMemo(() => {
-    const withDist = listings.map((l) => ({ ...l, distanceKm: listingDistanceKm(userCoords, l) }));
+    const withDist = radius.listings.map((l) => ({ ...l, distanceKm: listingDistanceKm(userCoords, l) }));
     const byDeadline = (a, b) => new Date(a.collectionDeadline) - new Date(b.collectionDeadline);
     const vegRank = (l) => (l.dietaryType === 'NON_VEG' ? 1 : 0);
     const arr = [...withDist];
@@ -135,7 +143,7 @@ export function Browse() {
     }
     return arr;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listings, effectiveSort, location?.lat, location?.lng]);
+  }, [radius.listings, effectiveSort, location?.lat, location?.lng]);
 
   const sortLabels = {
     urgent: t('sortUrgent'),
@@ -199,7 +207,20 @@ export function Browse() {
         </div>
         {distanceSort && !userCoords && <p className="muted" style={{ marginBottom: 0 }}>{t('distanceNeedsLocation')}</p>}
       </div>
-      {sorted.length === 0 && <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>}
+      {canClaimRole && !userCoords && (
+        <p className="muted">
+          {t('radiusPrompt')}{' '}
+          <button type="button" className="secondary" onClick={openPrompt}>{t('setLocation')}</button>
+        </p>
+      )}
+      {radius.applied && radius.hiddenCount > 0 && (
+        <p className="muted">{radius.hiddenCount} {t('listingsHiddenRadius')}</p>
+      )}
+      {sorted.length === 0 && radius.applied && listings.length > 0 ? (
+        <p className="muted">{t('noListingsWithinRadius')}</p>
+      ) : sorted.length === 0 ? (
+        <p className="muted">Nothing matches right now. Listings appear here as providers post them.</p>
+      ) : null}
       <div className="grid">
         {sorted.map((l) => {
           // Sold out = the backend says so: FULLY_CLAIMED status, or zero
