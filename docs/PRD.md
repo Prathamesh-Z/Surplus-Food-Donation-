@@ -1247,3 +1247,15 @@ changes nothing about verification.*
   as F4 defined it. No backend change, no new endpoint, and user
   coordinates are never sent anywhere by the guard.
 
+
+---
+
+## Amendment v3.22 — Distance labels clarified (audit Fix 1, §AN)
+
+Implemented 30 October 2026, following the read-only distance and location audit. **Display text only** — no distance calculation, GPS behaviour, routing, radius-guard computation or schema changed.
+
+1. **Browse cards and ListingDetail:** the straight-line figure previously carried a walking-person icon (🚶), implying a walking distance. It now uses a neutral 📍 icon and is labelled "straight-line distance" (new i18n key `straightLineDistance` x3, reusing the established सरळ अंतर / सीधी दूरी phrasing of the existing `straightLine` key).
+2. **Notification guard:** `guardOutsideRadius` now reads "This listing is outside your 5 km straight-line discovery radius" (all three languages); the appended figure remains the straight-line `distanceKm` from the unchanged §AM computation.
+3. **Walking/bicycle routes unchanged:** DistanceMap keeps the mode icon + Walking/Bicycle label + provider distance + provider duration, distinct from its straight-line headline.
+
+i18n: 267 keys x3. The user reviewed the Marathi/Hindi translations and every affected surface before approving the release.

@@ -103,7 +103,7 @@ export function ListingDetail() {
               typeof location?.lat === 'number' ? { lat: location.lat, lng: location.lng } : null,
               listing
             );
-            return d !== null ? <> · 🚶 {formatDistance(d)} {t('awayFromYou')}</> : null;
+            return d !== null ? <> · 📍 {formatDistance(d)} {t('awayFromYou')} · {t('straightLineDistance')}</> : null;
           })()}
         </p>
         <p className="muted">

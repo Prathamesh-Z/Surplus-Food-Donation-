@@ -272,7 +272,7 @@ export function Browse() {
               {l.categoryNote ? <><br />Other: {l.categoryNote}</> : ''}
               <br />📍 {l.pickupLocationText}
               {l.distanceKm !== null && l.distanceKm !== undefined && (
-                <> · 🚶 {formatDistance(l.distanceKm)} {t('awayFromYou')}</>
+                <> · 📍 {formatDistance(l.distanceKm)} {t('awayFromYou')} · {t('straightLineDistance')}</>
               )}
               <br />By {l.providerName}
             </p>
