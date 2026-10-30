@@ -117,6 +117,13 @@ model User {
   languagePref     LanguagePref @default(EN)
   suspended        Boolean      @default(false)
   suspensionReason String?
+  // Invite links: every user has a unique shareable code; invitedById
+  // records who invited this user (null = organic signup). Unknown invite
+  // codes at registration are ignored, never an error.
+  inviteCode       String?      @unique
+  invitedById      String?
+  invitedBy        User?        @relation("UserInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedUsers     User[]       @relation("UserInvites")
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 

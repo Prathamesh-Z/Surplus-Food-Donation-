@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider } from './lib/AuthContext.jsx';
 import { useLang } from './i18n/LanguageContext.jsx';
 import { Nav } from './components/Nav.jsx';
+import { InviteBanner } from './components/InviteBanner.jsx';
 import { Home } from './pages/Home.jsx';
 import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
@@ -40,6 +41,9 @@ export function App() {
     <BrowserRouter>
     <AuthProvider>
       <Nav />
+      <div className="container">
+        <InviteBanner />
+      </div>
       <main className="container">
         <Routes>
           <Route path="/" element={<Home />} />

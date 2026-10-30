@@ -27,6 +27,7 @@ export async function registerUser(app, request, overrides = {}) {
     mobile: overrides.mobile ?? uniqueMobile(),
     password: overrides.password ?? 'TestPass1',
     role: overrides.role ?? 'CLAIMER',
+    ...(overrides.inviteCode ? { inviteCode: overrides.inviteCode } : {}),
     ...(overrides.organisationName ? { organisationName: overrides.organisationName } : {}),
     ...(overrides.registrationDetail ? { registrationDetail: overrides.registrationDetail } : {}),
   };

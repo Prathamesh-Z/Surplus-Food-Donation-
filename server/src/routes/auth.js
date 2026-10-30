@@ -15,6 +15,7 @@ import {
   publicUser,
   requestPasswordReset,
   resetPasswordWithToken,
+  ensureInviteCode,
 } from '../services/authService.js';
 import { sendEmail } from '../services/emailService.js';
 import { config } from '../lib/config.js';
@@ -163,5 +164,21 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     req.user.role === 'NGO'
       ? await prisma.ngoProfile.findUnique({ where: { userId: req.user.id } })
       : undefined;
-  return res.json({ user: publicUser(req.user, ngoProfile ?? undefined) });
+  // Lazy backfill for pre-invite accounts, plus the invite count for the
+  // profile's invite section.
+  const inviteCode = await ensureInviteCode(req.user.id);
+  const invitesCount = await prisma.user.count({ where: { invitedById: req.user.id } });
+  const user = { ...publicUser(req.user, ngoProfile ?? undefined), inviteCode, invitesCount };
+  return res.json({ user });
+});
+
+// Public invite-code lookup for the landing banner: resolves a code to the
+// inviter's first name only. Unknown codes answer { valid: false } —
+// nothing else about any account is revealed.
+authRouter.get('/invite/:code', async (req, res) => {
+  const code = String(req.params.code ?? '').trim().toUpperCase();
+  if (!code) return res.json({ valid: false });
+  const inviter = await prisma.user.findUnique({ where: { inviteCode: code } });
+  if (!inviter) return res.json({ valid: false });
+  return res.json({ valid: true, inviterName: inviter.name });
 });

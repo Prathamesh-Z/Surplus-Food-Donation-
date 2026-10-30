@@ -2,10 +2,29 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api.js';
 import { useAuth } from '../lib/AuthContext.jsx';
+import { useLang } from '../i18n/LanguageContext.jsx';
+
+const INVITE_STORAGE_KEY = 'fws_invite_code';
+
+function readInviteCode() {
+  try {
+    const param = new URLSearchParams(window.location.search).get('invite');
+    if (param?.trim()) {
+      const clean = param.trim().toUpperCase();
+      localStorage.setItem(INVITE_STORAGE_KEY, clean);
+      return clean;
+    }
+    return localStorage.getItem(INVITE_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 export function Register() {
   const navigate = useNavigate();
   const { login: setAuth } = useAuth();
+  const { t } = useLang();
+  const [inviteCode] = useState(readInviteCode);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -30,6 +49,7 @@ export function Register() {
       // string is not the same as "not provided" to the API.
       if (!body.organisationName?.trim()) delete body.organisationName;
       if (!body.registrationDetail?.trim()) delete body.registrationDetail;
+      if (inviteCode) body.inviteCode = inviteCode;
       const reg = await api('/api/auth/register', { method: 'POST', body });
       // QA-15: a duplicate email/mobile answers with a neutral message and
       // no user object. Show it with a login link instead of auto-signing
@@ -43,6 +63,11 @@ export function Register() {
         body: { email: form.email, password: form.password },
       });
       setAuth(login.user, login.accessToken, login.refreshToken);
+      try {
+        localStorage.removeItem(INVITE_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
       navigate('/browse');
     } catch (err) {
       setError(formatApiError(err));
@@ -52,6 +77,7 @@ export function Register() {
   return (
     <section>
       <h1>Register</h1>
+      {inviteCode && <p className="success">{t('joiningViaInvite')}</p>}
       {error && <div className="error">{error}</div>}
       {info && (
         <div className="success">

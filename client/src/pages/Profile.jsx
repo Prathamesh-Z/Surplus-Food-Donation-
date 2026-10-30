@@ -13,6 +13,7 @@ export function Profile() {
   const [mobile, setMobile] = useState('');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     api('/api/auth/me')
@@ -72,6 +73,57 @@ export function Profile() {
         {error && <div className="error">{error}</div>}
         <button type="submit">{t('save')}</button>
       </form>
+      {user.inviteCode && (
+        <>
+          <h3>{t('inviteFriends')}</h3>
+          <p className="muted">{t('inviteLinkHint')}</p>
+          <p style={{ wordBreak: 'break-all' }}>
+            {`${window.location.origin}/?invite=${user.inviteCode}`}
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="secondary"
+              onClick={async () => {
+                const link = `${window.location.origin}/?invite=${user.inviteCode}`;
+                let ok = false;
+                try {
+                  await navigator.clipboard.writeText(link);
+                  ok = true;
+                } catch {
+                  try {
+                    const ta = document.createElement('textarea');
+                    ta.value = link;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                  } catch {
+                    ok = false;
+                  }
+                }
+                if (ok) {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }
+              }}
+            >
+              {copied ? t('copied') : t('copyLink')}
+            </button>
+            <a
+              className="btn secondary"
+              href={`https://wa.me/?text=${encodeURIComponent(`${t('inviteShareText')} ${window.location.origin}/?invite=${user.inviteCode}`)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('shareOnWhatsApp')}
+            </a>
+          </div>
+          <p className="muted">
+            {t('invitedCount')}: {user.invitesCount ?? 0}
+          </p>
+        </>
+      )}
     </section>
   );
 }

@@ -20,8 +20,43 @@ export function publicUser(user, ngoProfile = undefined) {
     role: user.role,
     languagePref: user.languagePref,
     suspended: user.suspended,
+    inviteCode: user.inviteCode ?? null,
     ...(ngoProfile !== undefined ? { ngoProfile } : {}),
   };
+}
+
+// Invite codes: 8 characters from an unambiguous alphabet (no 0/O/1/I),
+// so a code read off a screen or a poster still types correctly.
+const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export function makeInviteCode() {
+  let code = '';
+  for (let i = 0; i < 8; i += 1) {
+    code += INVITE_ALPHABET[crypto.randomInt(INVITE_ALPHABET.length)];
+  }
+  return code;
+}
+
+export async function generateUniqueInviteCode(tx = prisma) {
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const code = makeInviteCode();
+    const clash = await tx.user.findUnique({ where: { inviteCode: code } });
+    if (!clash) return code;
+  }
+  throw new Error('Could not generate a unique invite code');
+}
+
+// Lazy backfill: accounts created before invite links existed get their
+// code the first time it is needed (profile/invite endpoints). Idempotent.
+export async function ensureInviteCode(userId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return null;
+  if (user.inviteCode) return user.inviteCode;
+  const code = await generateUniqueInviteCode();
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { inviteCode: code },
+  });
+  return updated.inviteCode;
 }
 
 export async function registerUser(data) {
@@ -35,6 +70,15 @@ export async function registerUser(data) {
     throw err;
   }
   const passwordHash = await bcrypt.hash(data.password, 12);
+  // Invite attribution: a valid code links the new account to its inviter.
+  // An unknown code is ignored (never a signup error) so a mistyped link
+  // can never block registration.
+  let invitedById = null;
+  const rawCode = typeof data.inviteCode === 'string' ? data.inviteCode.trim().toUpperCase() : '';
+  if (rawCode) {
+    const inviter = await prisma.user.findUnique({ where: { inviteCode: rawCode } });
+    if (inviter) invitedById = inviter.id;
+  }
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
       data: {
@@ -43,6 +87,8 @@ export async function registerUser(data) {
         mobile: data.mobile,
         passwordHash,
         role: data.role,
+        inviteCode: await generateUniqueInviteCode(tx),
+        invitedById,
       },
     });
     if (data.role === 'NGO') {
