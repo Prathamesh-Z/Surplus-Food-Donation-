@@ -956,3 +956,59 @@ changes nothing about verification.*
   not claim turn-by-turn navigation.
 
 **End of PRD v3.12 amendment.**
+
+---
+
+## Amendment v3.13 (2026-10-30) — Live pickup tracking (straight-line only)
+
+### §AD Live donor location sharing
+
+- A donor may share their live location per confirmed claim (My Listings
+  claim row → "Share live location"). Sharing is explicit opt-in per
+  claim and is claim-scoped end to end.
+- Storage: one `LiveLocation` row per claim (claimId is the key), so a
+  publish overwrites the previous point — no location history exists.
+  Columns: lat, lng (nullable), active, updatedAt.
+- Endpoints (all authenticated; coordinates never appear in error
+  bodies, list payloads or any public endpoint, and are never logged):
+  - `POST /api/claims/:id/location` — only the claim's donor, only
+    while the claim is CONFIRMED (409 otherwise); body validated as
+    one coordinate pair (lat ±90, lng ±180; invalid → 422).
+  - `DELETE /api/claims/:id/location` — the donor stops: the row is
+    marked inactive and its coordinates are NULLED, so no last point
+    lingers to be misread as current.
+  - `GET /api/claims/:id/location` — only the claim's two participants
+    (403 otherwise). Returns a computed state: `live` (point ≤60 s
+    old), `stale` (older; the point is returned but labelled
+    last-known), `stopped`, `waiting` (never shared), or `inactive`
+    (claim no longer CONFIRMED — no coordinates in that response).
+- The donor client publishes on ≥25 m of movement or a 20-second
+  heartbeat (watchPosition; a single watcher per control; stopping or
+  leaving the screen clears the watch immediately). After a refresh
+  the control restores its state from the GET endpoint.
+- The 60-second job purges LiveLocation rows whose claim is no longer
+  CONFIRMED; the purge filter cannot match an active CONFIRMED claim.
+- The claimer's coordinates are NEVER sent to the backend — no
+  endpoint accepts them; the claimer side renders locally only.
+
+### §AE Claimer live map
+
+- DistanceMap polls the donor point every 10 s while a CONFIRMED
+  claim card is mounted. Destination = the donor's live point while
+  live; a STALE donor point is drawn grey with its last-update time;
+  waiting/stopped fall back to the listing's static pickup
+  coordinates, labelled as the pickup point.
+- The claimer's marker follows watchPosition (updates throttled to
+  ≥5 m). When the device reports a GPS heading, a rotating arrow on
+  the claimer pin shows the travel direction; the map itself stays
+  north-up (no simulated rotation), and a missing heading falls back
+  to the plain pin.
+- Distance is the Haversine straight-line distance to the current
+  destination and is ALWAYS labelled "straight line" — no road
+  distance or turn-by-turn navigation is claimed. OSRM road routing
+  was evaluated and is DEFERRED until after the hackathon (decision
+  2026-10-30) to keep the demo free of another external dependency.
+- Network failure during polling shows a connection-lost note and the
+  poll retries on its interval; contact, address, pickup code and QR
+  remain available independently of live tracking.
+

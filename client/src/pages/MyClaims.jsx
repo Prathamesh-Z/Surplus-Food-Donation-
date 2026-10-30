@@ -77,7 +77,7 @@ export function MyClaims() {
               <button className="danger" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>
             </div>
           )}
-          {c.status === 'CONFIRMED' && <DistanceMap listing={c.listing} />}
+          {c.status === 'CONFIRMED' && <DistanceMap claimId={c.id} listing={c.listing} />}
           {c.status === 'COLLECTED' && (
             <p className="success">Collected ✓ {c.collectedAt ? new Date(c.collectedAt).toLocaleString() : ''}</p>
           )}

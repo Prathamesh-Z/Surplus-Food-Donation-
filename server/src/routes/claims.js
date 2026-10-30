@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import { createClaimSchema, verifyClaimSchema } from '../validators/claims.js';
+import { createClaimSchema, verifyClaimSchema, liveLocationSchema } from '../validators/claims.js';
+import {
+  publishLiveLocation,
+  stopLiveLocation,
+  liveLocationState,
+} from '../services/liveLocationService.js';
 import {
   generateCode,
   codeStorageFields,
@@ -207,6 +212,62 @@ claimsRouter.get('/:id/code', requireAuth, async (req, res) => {
   const code = decryptCode(claim);
   if (!code) return res.status(409).json({ error: 'Pickup code no longer available' });
   return res.json({ pickupCode: code });
+});
+
+// ── Live donor location (PRD v3.13) ─────────────────────────────────────────
+// Claim-scoped and participant-only. Coordinates appear ONLY in the GET
+// response to a participant while sharing is live/stale — never in any
+// error body, list payload, or public endpoint.
+
+async function loadClaimForLocation(id) {
+  return prisma.claim.findUnique({
+    where: { id },
+    include: { listing: { select: { providerId: true } }, liveLocation: true },
+  });
+}
+
+claimsRouter.post('/:id/location', requireAuth, requireRole('PROVIDER'), async (req, res, next) => {
+  try {
+    const claim = await loadClaimForLocation(req.params.id);
+    if (!claim || claim.listing.providerId !== req.user.id) {
+      return res.status(404).json({ error: 'Claim not found for your listings' });
+    }
+    if (claim.status !== 'CONFIRMED') {
+      return res.status(409).json({ error: `Location sharing requires a CONFIRMED claim — claim is ${claim.status}` });
+    }
+    const { lat, lng } = liveLocationSchema.parse(req.body);
+    const row = await publishLiveLocation(claim.id, { lat, lng });
+    return res.json({ ok: true, updatedAt: row.updatedAt });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+claimsRouter.delete('/:id/location', requireAuth, requireRole('PROVIDER'), async (req, res, next) => {
+  try {
+    const claim = await loadClaimForLocation(req.params.id);
+    if (!claim || claim.listing.providerId !== req.user.id) {
+      return res.status(404).json({ error: 'Claim not found for your listings' });
+    }
+    // Stopping is always allowed for the owner (even on a terminal
+    // claim) — it only ever removes data.
+    await stopLiveLocation(claim.id);
+    return res.json({ ok: true });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+claimsRouter.get('/:id/location', requireAuth, async (req, res, next) => {
+  try {
+    const claim = await loadClaimForLocation(req.params.id);
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    const isParticipant = claim.claimerId === req.user.id || claim.listing.providerId === req.user.id;
+    if (!isParticipant) return res.status(403).json({ error: 'Not your claim' });
+    return res.json(liveLocationState(claim.status, claim.liveLocation));
+  } catch (err) {
+    return next(err);
+  }
 });
 
 // ── Cancel a claim (FR-10) ──────────────────────────────────────────────────

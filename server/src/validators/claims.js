@@ -14,3 +14,10 @@ export const verifyClaimSchema = z.object({
     .transform((s) => s.toUpperCase())
     .pipe(z.string().length(8)),
 });
+
+// PRD v3.13: a live-location publish is exactly one coordinate pair,
+// range-checked like listing pickup coordinates (v3.5).
+export const liveLocationSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});

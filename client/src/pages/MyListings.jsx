@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api.js';
 import { VerifyPickup } from '../components/Pickup.jsx';
+import { LiveShareControl } from '../components/LiveShareControl.jsx';
 import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { CHECKLIST } from '../lib/checklist.js';
@@ -110,6 +111,7 @@ export function MyListings() {
                 <div className="row" key={c.id} style={{ marginTop: 6 }}>
                   <span>{c.claimerName} — {c.portionsClaimed} portions — {c.status}</span>
                   {c.status === 'CONFIRMED' && <VerifyPickup claimId={c.id} onDone={load} />}
+                  {c.status === 'CONFIRMED' && <LiveShareControl claimId={c.id} />}
                 </div>
               ))}
             </div>

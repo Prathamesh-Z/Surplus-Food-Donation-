@@ -241,11 +241,25 @@ model Claim {
   collectedAt         DateTime?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
-
-  redistributionLogs RedistributionLog[]
+  liveLocation        LiveLocation?
+  redistributionLogs  RedistributionLog[]
 
   @@index([listingId])
   @@index([claimerId])
+}
+
+// Live donor location for one claim (PRD v3.13). ONE row per claim —
+// every publish overwrites it, so no location history ever exists.
+// Coordinates are nulled when sharing stops; rows for claims that leave
+// CONFIRMED are purged by the 60-second job. Never exposed through any
+// listing/public payload.
+model LiveLocation {
+  claimId   String   @id
+  claim     Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  lat       Float?
+  lng       Float?
+  active    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
 }
 
 model RecurringSchedule {

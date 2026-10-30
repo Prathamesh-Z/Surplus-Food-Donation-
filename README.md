@@ -79,6 +79,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | v3.10 | Voice search REMOVED (Browse is text-only again): mic UI, /api/speech endpoint, Whisper model + startup download all deleted; inference health = the two food models | PRD v3.10 |
 | v3.11 | Manual food entry: after a scan fills the form, "Enter manually" discards all four AI-filled fields and switches to manual mode where scan results are offered, never auto-applied | PRD v3.11 |
 | v3.12 | Claimer pickup details + distance map on My Claims: gated donor contact (showContact rule), pickup coordinates in /claims/mine, Leaflet map with your-location + pickup markers, route line and Haversine distance — claimer coordinates never leave the device | PRD v3.12 |
+| v3.13 | Live pickup tracking: donor opt-in live location sharing per confirmed claim (one overwriting DB row per claim, 60 s stale threshold, participant-only endpoints); claimer map follows the donor live point with a heading arrow and straight-line distance; OSRM deferred until after the hackathon | PRD v3.13 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,
 native apps, in-app chat, ratings, SMS/WhatsApp as a primary channel.
