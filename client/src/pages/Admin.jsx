@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 
 export function Admin() {
   const [stats, setStats] = useState(null);
@@ -42,7 +42,7 @@ export function Admin() {
       await api(path, { method: 'POST', body });
       load();
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 

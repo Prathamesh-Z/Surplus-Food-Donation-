@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { useLang } from '../i18n/LanguageContext.jsx';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 
 // Pickup by QR: the claimer shows a QR of their pickup code; the provider
 // scans it with the device camera (BarcodeDetector where available) or
@@ -10,6 +10,7 @@ import { api } from '../lib/api.js';
 export function PickupCodeDisplay({ code }) {
   const { t } = useLang();
   const [qrUrl, setQrUrl] = useState('');
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     let live = true;
     if (code) {
@@ -23,11 +24,40 @@ export function PickupCodeDisplay({ code }) {
       live = false;
     };
   }, [code]);
+
+  // QA-11: copy the 8 characters — QR alone does not help where it cannot
+  // be scanned. Clipboard API with a textarea fallback for older browsers.
+  async function copyCode() {
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(code);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
       <span>
         {t('pickupCode')}: <span className="code">{code}</span>
       </span>
+      <button type="button" className="secondary" onClick={copyCode} style={{ padding: '6px 12px' }}>
+        {copied ? t('copied') : t('copyCode')}
+      </button>
       {qrUrl && (
         <img
           src={qrUrl}
@@ -101,12 +131,13 @@ export function VerifyPickup({ claimId, onDone }) {
       return;
     }
     try {
-      const res = await api(`/api/claims/${claimId}/verify`, { method: 'POST', body: { code: finalCode } });
+      // QA-02: a wrong code is not an expired token — never refresh on it.
+      const res = await api(`/api/claims/${claimId}/verify`, { method: 'POST', body: { code: finalCode }, skipRefresh: true });
       window.alert(res.alreadyCollected ? 'Already collected earlier — no change.' : 'Collected ✓');
       setOpen(false);
       onDone?.();
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 

@@ -24,6 +24,7 @@ export const registerSchema = z
     mobile: z.preprocess(normalizeMobile, z.string().regex(/^[6-9]\d{9}$/, 'Mobile must be a 10-digit Indian number')),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     role: z.enum(['PROVIDER', 'CLAIMER', 'NGO']),
+    inviteCode: z.string().trim().min(1).max(32).optional(),
     organisationName: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
     registrationDetail: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
   })

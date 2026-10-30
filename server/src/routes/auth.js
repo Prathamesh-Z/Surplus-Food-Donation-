@@ -15,6 +15,7 @@ import {
   publicUser,
   requestPasswordReset,
   resetPasswordWithToken,
+  ensureInviteCode,
 } from '../services/authService.js';
 import { sendEmail } from '../services/emailService.js';
 import { config } from '../lib/config.js';
@@ -25,18 +26,36 @@ import { prisma } from '../lib/prisma.js';
 // skipSuccessfulRequests: the limit is aimed at credential guessing; a
 // successful login/register does not consume the budget. Failed attempts do,
 // which is what the FR-03 acceptance test exercises.
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  skipSuccessfulRequests: true,
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => res.status(429).json({ error: 'Too many attempts, try again later' }),
-});
+//
+// QA-06: the buckets are SEPARATE per concern. A single shared limiter meant
+// 10 failed logins also blocked forgot-password and reset-password, so a
+// legitimate user could neither log in nor recover for 15 minutes. Login
+// guessing, account recovery, and registration now have independent budgets,
+// and the 429 names the wait so users are not left guessing.
+function makeLimiter() {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    skipSuccessfulRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      const reset = req.rateLimit?.resetTime;
+      const mins = reset ? Math.max(1, Math.ceil((reset.getTime() - Date.now()) / 60000)) : 15;
+      return res.status(429).json({
+        error: `Too many attempts, try again in ${mins} minute${mins === 1 ? '' : 's'}`,
+      });
+    },
+  });
+}
+
+const loginLimiter = makeLimiter();
+const recoveryLimiter = makeLimiter();
+const registerLimiter = makeLimiter();
 
 export const authRouter = Router();
 
-authRouter.post('/register', authLimiter, async (req, res, next) => {
+authRouter.post('/register', registerLimiter, async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body);
     const user = await registerUser(data);
@@ -46,7 +65,18 @@ authRouter.post('/register', authLimiter, async (req, res, next) => {
         : undefined;
     return res.status(201).json({ user: publicUser(user, ngoProfile ?? undefined) });
   } catch (err) {
-    if (err.status === 409) return res.status(409).json({ error: err.message });
+    // QA-15: a duplicate email/mobile must not confirm that the account
+    // exists (the old 409 named the field). Duplicates answer with the same
+    // neutral message and no user object; the client shows it with a login
+    // link instead of auto-signing in. Residual note: auto-sign-in on fresh
+    // registration still differs observably from this path — fully hiding
+    // that would mean dropping auto-sign-in, a UX decision for the team.
+    if (err.status === 409) {
+      return res.json({
+        message:
+          'Registration received. Please log in — if this email or mobile is already registered, use your existing account.',
+      });
+    }
     return next(err);
   }
 });
@@ -57,7 +87,7 @@ authRouter.post('/register', authLimiter, async (req, res, next) => {
 // is not configured AND the operator explicitly enabled DEV_RESET_LINK for
 // local testing, the link is included in the response instead (never in
 // production defaults).
-authRouter.post('/forgot-password', authLimiter, async (req, res, next) => {
+authRouter.post('/forgot-password', recoveryLimiter, async (req, res, next) => {
   try {
     const { email } = forgotPasswordSchema.parse(req.body);
     const result = await requestPasswordReset(email);
@@ -80,7 +110,7 @@ authRouter.post('/forgot-password', authLimiter, async (req, res, next) => {
   }
 });
 
-authRouter.post('/reset-password', authLimiter, async (req, res, next) => {
+authRouter.post('/reset-password', recoveryLimiter, async (req, res, next) => {
   try {
     const { token, password } = resetPasswordSchema.parse(req.body);
     const ok = await resetPasswordWithToken(token, password);
@@ -93,7 +123,7 @@ authRouter.post('/reset-password', authLimiter, async (req, res, next) => {
   }
 });
 
-authRouter.post('/login', authLimiter, async (req, res, next) => {
+authRouter.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const data = loginSchema.parse(req.body);
     const result = await loginUser(data.email, data.password);
@@ -108,7 +138,7 @@ authRouter.post('/login', authLimiter, async (req, res, next) => {
   }
 });
 
-authRouter.post('/refresh', authLimiter, async (req, res, next) => {
+authRouter.post('/refresh', loginLimiter, async (req, res, next) => {
   try {
     const { refreshToken } = refreshSchema.parse(req.body);
     const result = await refreshSession(refreshToken);
@@ -134,5 +164,21 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     req.user.role === 'NGO'
       ? await prisma.ngoProfile.findUnique({ where: { userId: req.user.id } })
       : undefined;
-  return res.json({ user: publicUser(req.user, ngoProfile ?? undefined) });
+  // Lazy backfill for pre-invite accounts, plus the invite count for the
+  // profile's invite section.
+  const inviteCode = await ensureInviteCode(req.user.id);
+  const invitesCount = await prisma.user.count({ where: { invitedById: req.user.id } });
+  const user = { ...publicUser(req.user, ngoProfile ?? undefined), inviteCode, invitesCount };
+  return res.json({ user });
+});
+
+// Public invite-code lookup for the landing banner: resolves a code to the
+// inviter's first name only. Unknown codes answer { valid: false } —
+// nothing else about any account is revealed.
+authRouter.get('/invite/:code', async (req, res) => {
+  const code = String(req.params.code ?? '').trim().toUpperCase();
+  if (!code) return res.json({ valid: false });
+  const inviter = await prisma.user.findUnique({ where: { inviteCode: code } });
+  if (!inviter) return res.json({ valid: false });
+  return res.json({ valid: true, inviterName: inviter.name });
 });

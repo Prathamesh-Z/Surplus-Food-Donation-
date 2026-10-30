@@ -10,6 +10,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function createApp() {
   const app = express();
+  app.disable('x-powered-by');
+  // Small helmet-style headers (QA report §7 hardening). CORS stays open:
+  // the client is served same-origin, and auth is a Bearer header, so there
+  // is no ambient credential for a third-party site to abuse; restricting
+  // origins is a deployment decision, not a code fix.
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
   app.use(cors());
   app.use(express.json({ limit: '1mb' }));
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 
 /**
@@ -23,7 +23,7 @@ export function ForgotPassword() {
       if (res.resetUrl) setDevLink(res.resetUrl);
       setSent(true);
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 

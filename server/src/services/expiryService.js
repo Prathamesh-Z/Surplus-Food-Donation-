@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { clearedCodeFields } from './listingService.js';
 import { createNotification } from './notificationService.js';
+import { formatDeadline } from '../lib/format.js';
 
 // PRD FR-13 / FR-14 — one expiry pass. Exported so tests and the demo
 // "run expiry now" action can invoke it directly; the scheduler runs it
@@ -57,7 +58,7 @@ export async function runExpiryPass(client = prisma) {
           userId: listing.providerId,
           type: 'NEAR_DEADLINE_PROVIDER',
           title: 'Listing ends within the hour',
-          body: `"${listing.foodName}" has ${listing.portionsRemaining} portions remaining and its deadline is ${listing.collectionDeadline.toISOString()}.`,
+          body: `"${listing.foodName}" has ${listing.portionsRemaining} portions remaining and its deadline is ${formatDeadline(listing.collectionDeadline)}.`,
           relatedListingId: listing.id,
         },
         tx
@@ -92,7 +93,7 @@ export async function runExpiryPass(client = prisma) {
             userId,
             type: 'NEAR_DEADLINE_CLAIMERS',
             title: 'Food expiring within 30 minutes',
-            body: `"${listing.foodName}" — ${listing.portionsRemaining} portions left at ${listing.pickupLocationText}. Deadline ${listing.collectionDeadline.toISOString()}.`,
+            body: `"${listing.foodName}" — ${listing.portionsRemaining} portions left at ${listing.pickupLocationText}. Deadline ${formatDeadline(listing.collectionDeadline)}.`,
             relatedListingId: listing.id,
           },
           tx

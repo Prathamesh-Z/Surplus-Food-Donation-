@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { useAuth } from '../lib/AuthContext.jsx';
 
 export function Home() {
   const { t } = useLang();
+  const { loggedIn } = useAuth();
   const [live, setLive] = useState(null);
   useEffect(() => {
     fetch('/api/dashboard/public')
@@ -21,6 +23,11 @@ export function Home() {
           <Link className="btn" to="/browse">{t('browseCta')}</Link>
           <Link className="btn secondary" to="/impact">{t('impactCta')}</Link>
         </div>
+        {loggedIn && (
+          <p style={{ marginTop: 12 }}>
+            <Link to="/profile">{t('inviteFriends')} →</Link>
+          </p>
+        )}
         {live && (
           <div className="hero-stats">
             <div><div className="n">{live.portionsAvailableNow}</div><div className="l">{t('availableNow')}</div></div>

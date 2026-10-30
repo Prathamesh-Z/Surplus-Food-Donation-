@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api, getAccessToken, clearTokens } from '../lib/api.js';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../lib/api.js';
+import { useAuth } from '../lib/AuthContext.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 
 export function Nav() {
-  const loggedIn = Boolean(getAccessToken());
-  const user = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
+  // QA-01: auth state now comes from context, so the header re-renders on
+  // login/logout with no reload (it used to read localStorage at render).
+  const { user, loggedIn, logout } = useAuth();
+  const navigate = useNavigate();
   const { lang, setLang, t } = useLang();
   const { location, openPrompt } = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+  // QA-08: collapsed menu on small screens (was ~299px of wrapped links).
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Unread-notification badge (v3.6): same 15-second polling cadence as
   // the Notifications page (PRD FR-14 — in-app only, no push).
@@ -24,9 +29,18 @@ export function Nav() {
     const timer = setInterval(poll, 15000);
     return () => { live = false; clearInterval(timer); };
   }, [loggedIn]);
+
+  async function handleLogout() {
+    // QA-13: revoke server-side, then leave — no full reload needed now
+    // that the header is context-driven.
+    await logout();
+    setMenuOpen(false);
+    navigate('/');
+  }
+
   return (
     <header className="nav">
-      <Link to="/" className="brand">🥗 {t('appName')}</Link>
+      <Link to="/" className="brand" onClick={() => setMenuOpen(false)}>🥗 {t('appName')}</Link>
       <button
         type="button"
         className="secondary"
@@ -34,9 +48,19 @@ export function Nav() {
         title={t('yourLocation')}
         style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
-        📍 {location?.label ?? t('locPromptTitle')} ✎
+        📍 <span className="loc-label">{location?.label ?? t('locPromptTitle')}</span> ✎
       </button>
-      <nav>
+      <button
+        type="button"
+        className="secondary nav-toggle"
+        aria-expanded={menuOpen}
+        aria-label="Menu"
+        title="Menu"
+        onClick={() => setMenuOpen((o) => !o)}
+      >
+        ☰
+      </button>
+      <nav className={menuOpen ? 'open' : ''} onClick={() => setMenuOpen(false)}>
         <Link to="/browse">{t('browse')}</Link>
         <Link to="/impact">Live impact</Link>
         {loggedIn ? (
@@ -55,13 +79,7 @@ export function Nav() {
               )}
             </Link>
             <Link to="/profile">{t('profile')}</Link>
-            <button
-              onClick={() => {
-                clearTokens();
-                localStorage.removeItem('fws_user');
-                window.location.href = '/';
-              }}
-            >
+            <button onClick={handleLogout}>
               {t('logout')}
             </button>
           </>

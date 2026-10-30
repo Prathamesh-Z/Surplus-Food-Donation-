@@ -2,7 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import { prisma } from '../lib/prisma.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth, requireRole, optionalAuth } from '../middleware/auth.js';
+import { formatDeadline } from '../lib/format.js';
 import {
   createListingSchema,
   editListingSchema,
@@ -104,7 +105,7 @@ listingsRouter.post('/', requireAuth, requireRole('PROVIDER'), async (req, res, 
       await notifyAllClaimersAndNgos({
         type: 'NEW_LISTING',
         title: `New food available: ${listing.foodName}`,
-        body: `${listing.totalPortions} portions — collect by ${listing.collectionDeadline.toISOString()}`,
+        body: `${listing.totalPortions} portions — collect by ${formatDeadline(listing.collectionDeadline)}`,
         relatedListingId: listing.id,
       });
     }
@@ -123,6 +124,12 @@ listingsRouter.post('/:id/publish', requireAuth, requireRole('PROVIDER'), async 
     }
     if (listing.status !== 'DRAFT') {
       return res.status(409).json({ error: `Listing is ${listing.status}, not DRAFT` });
+    }
+    // A draft whose deadline already passed cannot be published into a
+    // listing that the expiry job would kill within a minute — the provider
+    // must move the deadline forward first (edit), then publish.
+    if (new Date(listing.collectionDeadline) <= new Date()) {
+      return res.status(409).json({ error: 'This listing has expired and cannot be published' });
     }
     const items = Array.isArray(req.body?.checklistItems)
       ? CHECKLIST_IDS.filter((id) => req.body.checklistItems.includes(id))
@@ -145,7 +152,7 @@ listingsRouter.post('/:id/publish', requireAuth, requireRole('PROVIDER'), async 
     await notifyAllClaimersAndNgos({
       type: 'NEW_LISTING',
       title: `New food available: ${updated.foodName}`,
-      body: `${updated.totalPortions} portions — collect by ${updated.collectionDeadline.toISOString()}`,
+      body: `${updated.totalPortions} portions — collect by ${formatDeadline(updated.collectionDeadline)}`,
       relatedListingId: updated.id,
     });
     return res.json({ listing: listingView(updated, req.user.id) });
@@ -192,7 +199,7 @@ listingsRouter.get('/mine', requireAuth, requireRole('PROVIDER'), async (req, re
 // Ordering rule (PRD FR-07, final): collection deadline ascending,
 // ties break by created-at descending. Pickup location is TEXT only —
 // no coordinates, no distances, no nearest-first sorting anywhere.
-listingsRouter.get('/', requireAuth, async (req, res) => {
+listingsRouter.get('/', optionalAuth, async (req, res) => {
   const {
     q,
     category,
@@ -231,7 +238,7 @@ listingsRouter.get('/', requireAuth, async (req, res) => {
   const now = Date.now();
   return res.json({
     listings: listings.map((l) => ({
-      ...listingView(l, req.user.id),
+      ...listingView(l, req.user?.id ?? null),
       timeRemainingMinutes: Math.max(
         0,
         Math.round((new Date(l.collectionDeadline).getTime() - now) / 60000)
@@ -241,13 +248,13 @@ listingsRouter.get('/', requireAuth, async (req, res) => {
 });
 
 // ── Single listing ─────────────────────────────────────────────────────────
-listingsRouter.get('/:id', requireAuth, async (req, res) => {
+listingsRouter.get('/:id', optionalAuth, async (req, res) => {
   const listing = await prisma.listing.findUnique({
     where: { id: req.params.id },
     include: { provider: { select: { name: true } } },
   });
   if (!listing) return res.status(404).json({ error: 'Listing not found' });
-  return res.json({ listing: listingView(listing, req.user.id, { detail: true }) });
+  return res.json({ listing: listingView(listing, req.user?.id ?? null, { detail: true }) });
 });
 
 // ── Edit (FR-06) ───────────────────────────────────────────────────────────
@@ -260,6 +267,16 @@ listingsRouter.patch('/:id', requireAuth, requireRole('PROVIDER'), async (req, r
     }
     if (['EXPIRED', 'CANCELLED', 'REMOVED_BY_ADMIN'].includes(listing.status)) {
       return res.status(409).json({ error: `Cannot edit a ${listing.status} listing` });
+    }
+    // QA-19: the 60s expiry job leaves a listing reading LIVE for up to a
+    // minute past its deadline. Close that window at edit time with the same
+    // deadline check the claim path uses. DRAFTs are exempt on purpose: a
+    // stale draft's natural fix is editing its deadline forward.
+    if (
+      ['LIVE', 'PARTIALLY_CLAIMED', 'FULLY_CLAIMED'].includes(listing.status) &&
+      new Date(listing.collectionDeadline) <= new Date()
+    ) {
+      return res.status(409).json({ error: 'This listing has expired' });
     }
     if (data.collectionDeadline && new Date(data.collectionDeadline) <= new Date()) {
       return res.status(422).json({ error: 'collectionDeadline cannot be in the past' });

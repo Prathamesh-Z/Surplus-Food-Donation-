@@ -99,8 +99,22 @@ button.danger { background: var(--red); }
 .wall-label { color: var(--muted); font-size: 16px; margin-top: 6px; }
 
 /* ── Small screens ──────────────────────────────────────────── */
+/* QA-08: the header used to wrap ~10 links into ~299px of stacked rows.
+   Below 720px the links collapse behind a Menu button; the closed header
+   stays one row (brand + location + Menu). */
+.nav-toggle { display: none; }
+@media (max-width: 720px) {
+  .nav { flex-wrap: wrap; }
+  .nav .brand { flex: 1 1 auto; }
+  .nav .loc-label { display: none; }
+  .nav-toggle { display: inline-block; }
+  .nav nav { display: none; width: 100%; }
+  .nav nav.open {
+    display: flex; flex-direction: column; align-items: flex-start;
+    width: 100%; padding-top: 4px;
+  }
+}
 @media (max-width: 640px) {
-  .nav { flex-direction: column; align-items: flex-start; }
   .hero h1 { font-size: 27px; }
   .wall-value { font-size: 42px; }
   h1 { font-size: 24px; }

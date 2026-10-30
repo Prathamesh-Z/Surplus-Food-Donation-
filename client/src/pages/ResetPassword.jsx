@@ -58,11 +58,11 @@ export function ResetPassword() {
       <form onSubmit={submit} style={{ maxWidth: 420 }}>
         <label>
           {t('newPassword')} (min 8 characters)
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
         <label>
           {t('confirmPassword')}
-          <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+          <input type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
         </label>
         <button type="submit">{t('resetPasswordTitle')}</button>
       </form>

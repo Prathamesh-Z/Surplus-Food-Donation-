@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
 import { CHECKLIST } from '../lib/checklist.js';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -56,7 +56,7 @@ export function Recurring() {
       setMessage('Schedule saved. Occurrences appear as DRAFTS on the chosen days — never auto-published.');
       load();
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 
@@ -82,7 +82,7 @@ export function Recurring() {
       setMessage(`“${d.foodName}” is live.`);
       load();
     } catch (err) {
-      setError(err.data?.error || err.message);
+      setError(formatApiError(err));
     }
   }
 

@@ -150,7 +150,11 @@ export function Browse() {
   return (
     <section>
       <h1>{t('availableFood')}</h1>
-      <p className="muted">{sortLabels[effectiveSort]}</p>
+      {/* QA-09: the label used to show the FALLBACK sort ("Time remaining")
+         while the dropdown still showed the chosen distance sort — a silent
+         switch. The label now matches the chosen sort; the note below the
+         filters (already present) explains the fallback order. */}
+      <p className="muted">{sortLabels[sortBy]}</p>
       {error && <div className="error">{error}</div>}
       <div className="card">
         <div className="row">

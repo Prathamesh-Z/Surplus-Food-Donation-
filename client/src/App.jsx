@@ -1,6 +1,9 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { AuthProvider } from './lib/AuthContext.jsx';
+import { useLang } from './i18n/LanguageContext.jsx';
 import { Nav } from './components/Nav.jsx';
+import { InviteBanner } from './components/InviteBanner.jsx';
 import { Home } from './pages/Home.jsx';
 import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
@@ -21,12 +24,26 @@ import { NgoPanel } from './pages/NgoPanel.jsx';
 import { Recurring } from './pages/Recurring.jsx';
 import { ImpactWall } from './pages/ImpactWall.jsx';
 
+function NotFound() {
+  const { t } = useLang();
+  return (
+    <section>
+      <h1>{t('pageNotFound')}</h1>
+      <p><Link to="/">{t('goHome')}</Link></p>
+    </section>
+  );
+}
+
 export function App() {
   return (
     <LanguageProvider>
     <LocationProvider>
     <BrowserRouter>
+    <AuthProvider>
       <Nav />
+      <div className="container">
+        <InviteBanner />
+      </div>
       <main className="container">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -46,9 +63,11 @@ export function App() {
           <Route path="/ngo" element={<NgoPanel />} />
           <Route path="/recurring" element={<Recurring />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<p>Page coming in a later module.</p>} />
+          <Route path="/listings/:id/edit" element={<CreateListing />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+    </AuthProvider>
     </BrowserRouter>
     </LocationProvider>
     </LanguageProvider>
