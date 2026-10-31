@@ -146,14 +146,21 @@ button.danger { background: var(--red); }
    horizontal bar so the listing grid owns the page. Wraps tightly on
    narrow screens; notes take a single small line of their own. */
 .filterBar {
-  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
-  background: #fff; border: 1px solid var(--line); border-radius: 12px;
-  padding: 8px 12px; margin-bottom: 12px; box-shadow: var(--card-shadow);
+  display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  padding: 6px 10px; margin-bottom: 10px; box-shadow: var(--card-shadow);
+  font-size: 14px;
 }
 /* The global form rule sets width:100% on inputs/selects, which makes
    each select a full-width flex item that wraps onto its own line.
    Inside the bar they must size to content and share the row. */
-.filterBar input, .filterBar select { width: auto; margin: 0; }
+.filterBar input, .filterBar select { width: auto; margin: 0; padding: 5px 8px; }
 .filterBar select { flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .filterBar > label { display: inline-flex; align-items: center; gap: 6px; }
-.filterBarNote { flex-basis: 100%; font-size: 12px; }
+.filterBarNote { font-size: 12px; }
+@media (max-width: 640px) {
+  /* Mobile: one horizontally scrollable navbar row instead of a tall
+     wrapped stack, so the listing grid owns the screen. */
+  .filterBar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+  .filterBar > * { flex-shrink: 0; }
+}

@@ -167,7 +167,7 @@ export function Browse() {
             placeholder={t('searchFood')}
             value={filters.q}
             onChange={set('q')}
-            style={{ flex: '1 1 150px', maxWidth: 220 }}
+            style={{ flex: '1 1 130px', maxWidth: 190 }}
           />
           <select value={filters.category} onChange={set('category')}>
             <option value="">{t('allCategories')}</option>
