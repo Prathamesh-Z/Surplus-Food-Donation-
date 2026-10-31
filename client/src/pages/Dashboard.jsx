@@ -65,7 +65,6 @@ export function Dashboard({ embedded = false }) {
 
   const body = (
     <>
-      <p className="muted">{t('impactIntro')}</p>
       <div className="row">
         <h2 style={{ margin: 0 }}>{t('platformImpact')}</h2>
         <button type="button" className="secondary" onClick={exportCsv}>{t('exportCsv')}</button>

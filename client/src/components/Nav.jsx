@@ -14,10 +14,9 @@ export function Nav() {
   const navigate = useNavigate();
   const { lang, setLang, t } = useLang();
   const { location, openPrompt, openDetails } = useLocation();
-  // v3.17: the badge reads the single shared notifications poll
+  // The bell badge reads the single shared notifications poll
   // (NotificationsContext) — the same fetch the banners use.
   const { unreadCount } = useNotifications();
-  // QA-08: collapsed menu on small screens (was ~299px of wrapped links).
   const [menuOpen, setMenuOpen] = useState(false);
 
   async function handleLogout() {
@@ -28,9 +27,27 @@ export function Nav() {
     navigate('/');
   }
 
+  const languageButton = (
+    <button
+      className="secondary"
+      title="Switch language / भाषा बदला / भाषा बदलें"
+      onClick={() => setLang(lang === 'en' ? 'mr' : lang === 'mr' ? 'hi' : 'en')}
+    >
+      {lang === 'en' ? 'मराठी' : lang === 'mr' ? 'हिन्दी' : 'English'}
+    </button>
+  );
+
   return (
     <header className="nav">
-      <Link to="/" className="brand" onClick={() => setMenuOpen(false)}>🥗 {t('appName')}</Link>
+      <Link
+        to="/"
+        className="brand"
+        aria-label={t('appName')}
+        title={t('appName')}
+        onClick={() => setMenuOpen(false)}
+      >
+        🥗
+      </Link>
       <button
         type="button"
         className="secondary"
@@ -40,6 +57,31 @@ export function Nav() {
       >
         📍 <span className="loc-label">{location?.label ?? t('locPromptTitle')}</span>{location && !hasUsableCoords(location) ? ` (${t('areaOnlyShort')})` : ''} ✎
       </button>
+      <Link
+        to="/notifications"
+        className="bellBtn"
+        aria-label={
+          unreadCount > 0
+            ? `${t('notifications')}, ${unreadCount} ${t('unread')}`
+            : t('notifications')
+        }
+        title={t('notifications')}
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75v-.7V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+        </svg>
+        {unreadCount > 0 && <span className="bellBadge">{unreadCount}</span>}
+      </Link>
       <button
         type="button"
         className="avatarBtn"
@@ -51,58 +93,54 @@ export function Nav() {
         <Avatar user={user} size={34} />
       </button>
       <nav className={menuOpen ? 'open' : ''} onClick={() => setMenuOpen(false)}>
-        <Link to="/browse">{t('browse')}</Link>
-        <Link to="/impact">{t('impactNav')}</Link>
-        <Link to="/faq">{t('faqNav')}</Link>
         {loggedIn ? (
           <>
-            {(user?.role === 'PROVIDER') && <Link to="/listings/new">{t('postFood')}</Link>}
-            {(user?.role === 'PROVIDER') && <Link to="/my-listings">{t('myListings')}</Link>}
-            {(user?.role === 'CLAIMER' || user?.role === 'NGO') && <Link to="/my-claims">{t('myClaims')}</Link>}
+            <Link to="/profile">{t('profile')}</Link>
+            {user?.role === 'PROVIDER' && <Link to="/my-listings">{t('myListings')}</Link>}
+            {(user?.role === 'CLAIMER' || user?.role === 'NGO') && (
+              <Link to="/my-claims">{t('myClaims')}</Link>
+            )}
+            <Link to="/browse">{t('browse')}</Link>
+            {user?.role === 'PROVIDER' && <Link to="/listings/new">{t('postFood')}</Link>}
+            <Link to="/impact">{t('impactNav')}</Link>
             {user?.role === 'NGO' && <Link to="/ngo">NGO panel</Link>}
             {user?.role === 'ADMIN' && <Link to="/admin">{t('admin')}</Link>}
-            <Link to="/notifications">
-              {t('notifications')}
-              {unreadCount > 0 && (
-                <span className="badge danger" style={{ marginLeft: 6 }}>{unreadCount}</span>
-              )}
-            </Link>
             {(user?.role === 'CLAIMER' || user?.role === 'PROVIDER') && (
-              <span className="segmented" role="group" aria-label={t('modeLabel')}>
-                <button
-                  type="button"
-                  aria-pressed={user.role === 'CLAIMER'}
-                  onClick={() => switchRole('CLAIMER')}
-                >
-                  {t('modeClaimer')}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={user.role === 'PROVIDER'}
-                  onClick={() => switchRole('PROVIDER')}
-                >
-                  {t('modeDonor')}
-                </button>
-              </span>
+              <div className="menuIndent">
+                <span className="segmented" role="group" aria-label={t('modeLabel')}>
+                  <button
+                    type="button"
+                    aria-pressed={user.role === 'CLAIMER'}
+                    onClick={() => switchRole('CLAIMER')}
+                  >
+                    {t('modeClaimer')}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={user.role === 'PROVIDER'}
+                    onClick={() => switchRole('PROVIDER')}
+                  >
+                    {t('modeDonor')}
+                  </button>
+                </span>
+              </div>
             )}
-            <Link to="/profile">{t('profile')}</Link>
-            <button onClick={handleLogout}>
-              {t('logout')}
-            </button>
+            <div className="menuRow">
+              <button onClick={handleLogout}>{t('logout')}</button>
+              {languageButton}
+            </div>
           </>
         ) : (
           <>
-            <Link to="/login">{t('login')}</Link>
-            <Link to="/register">{t('register')}</Link>
+            <Link to="/browse">{t('browse')}</Link>
+            <Link to="/impact">{t('impactNav')}</Link>
+            <div className="menuRow">
+              <Link to="/login">{t('login')}</Link>
+              <Link to="/register">{t('register')}</Link>
+              {languageButton}
+            </div>
           </>
         )}
-        <button
-          className="secondary"
-          title="Switch language / भाषा बदला / भाषा बदलें"
-          onClick={() => setLang(lang === 'en' ? 'mr' : lang === 'mr' ? 'hi' : 'en')}
-        >
-          {lang === 'en' ? 'मराठी' : lang === 'mr' ? 'हिन्दी' : 'English'}
-        </button>
       </nav>
     </header>
   );

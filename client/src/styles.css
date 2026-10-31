@@ -46,6 +46,39 @@ h2 { font-size: 20px; margin: 26px 0 10px; }
 }
 .avatarBtn:hover { border-color: var(--green-600); background: none; }
 .avatarBtn:focus-visible { outline: 2px solid var(--green-600); outline-offset: 2px; }
+/* Notifications bell, immediately left of the avatar: icon-only, with a
+   superscript unread badge (rendered only when the count is > 0; the
+   accessible label carries the count too). */
+.bellBtn {
+  position: relative; width: 40px; height: 40px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--green-900); text-decoration: none; flex: none;
+}
+.bellBtn:hover { background: var(--green-100); }
+.bellBtn:focus-visible { outline: 2px solid var(--green-600); outline-offset: 2px; }
+.bellBadge {
+  position: absolute; top: 0; right: 0; min-width: 18px; height: 18px;
+  padding: 0 4px; border-radius: 999px; background: var(--red); color: #fff;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+/* Avatar-menu layout: the role toggle sits indented under the links,
+   and the auth actions (logout, or login/register) share a wrapping
+   row with the language toggle. */
+.menuIndent { margin-left: 18px; }
+.menuRow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+/* Floating FAQ button: bottom-right, safe-area aware, above content. */
+.faqFab {
+  position: fixed; right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--green-600); color: #fff; text-decoration: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 800; z-index: 30;
+  box-shadow: 0 4px 14px rgba(20, 83, 45, 0.35);
+}
+.faqFab:hover { background: var(--green-900); }
+.faqFab:focus-visible { outline: 3px solid var(--green-900); outline-offset: 2px; }
 .nav nav a { text-decoration: none; font-weight: 600; }
 .nav nav a:hover { text-decoration: underline; }
 

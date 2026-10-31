@@ -1,4 +1,5 @@
 import React, { useId, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { searchFaq } from '../lib/faq.js';
 
 // /faq — Help & FAQs. A quiet, public page: category sections with an
@@ -37,12 +38,21 @@ function FaqItem({ item }) {
 }
 
 export function Faq() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState('');
   const categories = useMemo(() => searchFaq(query), [query]);
   const total = categories.reduce((n, c) => n + c.items.length, 0);
 
   return (
     <section>
+      <button
+        type="button"
+        className="secondary"
+        onClick={() => (location.key && location.key !== 'default' ? navigate(-1) : navigate('/'))}
+      >
+        ← Back
+      </button>
       <h1>Help & FAQs</h1>
       <label>
         Search questions

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/AuthContext.jsx';
 import { useLang } from './i18n/LanguageContext.jsx';
 import { Nav } from './components/Nav.jsx';
+import { FaqFab } from './components/FaqFab.jsx';
 import { NotificationsProvider } from './lib/NotificationsContext.jsx';
 import { NotificationBanners } from './components/NotificationBanners.jsx';
 import { InviteBanner } from './components/InviteBanner.jsx';
@@ -72,6 +73,7 @@ export function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <FaqFab />
     </NotificationsProvider>
     </AuthProvider>
     </BrowserRouter>

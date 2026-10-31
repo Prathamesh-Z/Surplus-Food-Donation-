@@ -54,9 +54,6 @@ export function Home() {
           <Link className="btn secondary" to="/impact">Open the impact wall</Link>
         </div>
       </div>
-      <p className="muted">
-        Demo build for Hackathon 2K26 (Team HA040). Demo data in this system is synthetic and labelled as such.
-      </p>
     </section>
   );
 }

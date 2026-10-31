@@ -1429,3 +1429,38 @@ notification-delivery behaviour changes.
 4. **Compatibility.** Accounts without a photo are unaffected (null
    renders the silhouette everywhere). Listing-photo behaviour and
    NGO-document behaviour are unchanged.
+
+## Amendment v3.29 — Navbar, Menu, FAQ Access & Copy Cleanup (2026-10-31)
+
+1. **Notifications bell.** The Notifications entry leaves the avatar
+   menu. A bell icon button sits in the header immediately left of the
+   profile avatar, linking to `/notifications`, with no visible text.
+   An unread badge (superscript) renders only when the unread count
+   is above zero, and the button's localized accessible label carries
+   the count ("Notifications, N unread", composed from the existing
+   `notifications`/`unread` strings). Fetching, banners and read
+   behaviour are unchanged — the badge reads the same shared poll.
+2. **FAQ floating button.** The FAQs entry leaves the avatar menu. A
+   circular help button is fixed to the bottom-right of the viewport
+   (safe-area-inset aware) on every page except `/faq` itself, linking
+   to the FAQ page with the localized `faqNav` label. The FAQ page
+   gains a Back action that returns to the previous in-app page
+   (falling back to Home on a direct load). FAQ content is unchanged.
+3. **Avatar menu order.** Profile; the role item (My Listings in
+   Donor mode, My Claims for Claimer/NGO); Browse Food; Post Surplus
+   Food (Donor mode only, as before); then Impact, NGO panel and
+   Admin with their existing role visibility. The Claimer/Donor
+   toggle sits indented below the links (USER accounts only), and
+   Logout — or Login + Register when signed out — shares a wrapping
+   row with the language toggle.
+4. **Branding.** The navbar brand is the 🥗 symbol only; the home
+   link keeps the accessible name "Food Waste Saver" via the
+   localized `appName` string.
+5. **Copy removals.** Three exact lines are removed from the UI: the
+   "Demo build for Hackathon 2K26…" line on Home, the impact wall
+   subtitle (`wallSubtitle`), and the My Impact intro (`impactIntro`)
+   — the latter two with their strings in all three locales (parity
+   341 keys × 3). No other disclaimers or labels change. The Browse
+   menu label already read "Browse food" / "अन्न पहा" / "खाना देखें"
+   in the existing strings, satisfying the approved rename with no
+   string change.

@@ -34,7 +34,6 @@ function LiveWall() {
   return (
     <div style={{ textAlign: 'center', paddingTop: 12 }}>
       <h1 style={{ fontSize: 40, marginBottom: 4 }}>🥗 Food Waste Saver — {t('liveImpact')}</h1>
-      <p className="muted" style={{ fontSize: 18 }}>{t('wallSubtitle')}</p>
       <div className="wall-grid">
         {big(p.portionsCollected, t('wallCollected'))}
         {big(p.portionsListed, t('wallListed'))}
