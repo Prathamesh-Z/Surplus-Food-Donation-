@@ -173,3 +173,14 @@ button.danger { background: var(--red); }
   .filterBar > select { flex: 1 1 42%; }
   .filterBar input, .filterBar select { padding: 4px 6px; }
 }
+
+/* My Claims card: prominent title with portions + time remaining pinned
+   top-right (title wraps freely, stats never shrink); contact + pickup
+   code grouped in one details panel; On the way is the primary action,
+   Cancel a quiet danger outline so it is not hit by accident. */
+.claimHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.claimTitle { font-size: 1.12rem; line-height: 1.25; min-width: 0; overflow-wrap: break-word; }
+.claimStats { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; font-weight: 700; white-space: nowrap; }
+.claimDetails { background: #f7faf5; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+button.dangerGhost { background: #fff; color: var(--red); border: 1.5px solid var(--red); }
+button.dangerGhost:hover { background: var(--red-bg); }

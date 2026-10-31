@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api, formatApiError } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { timeRemaining } from './MyListings.jsx';
@@ -26,14 +26,28 @@ export function MyClaims() {
     return () => clearInterval(t);
   }, []);
 
-  async function showCode(id) {
+  async function showCode(id, auto = false) {
     try {
       const data = await api(`/api/claims/${id}/code`);
-      setCodes({ ...codes, [id]: data.pickupCode });
+      setCodes((prev) => ({ ...prev, [id]: data.pickupCode }));
     } catch (err) {
-      setError(formatApiError(err));
+      codeRequestedRef.current.delete(id);
+      if (!auto) setError(formatApiError(err));
     }
   }
+
+  // Pickup codes render directly on confirmed cards, no click needed:
+  // fetch each confirmed claim's code once when it appears. The
+  // Show-code button remains as the fallback if a fetch fails.
+  const codeRequestedRef = useRef(new Set());
+  useEffect(() => {
+    for (const c of claims) {
+      if (c.status === 'CONFIRMED' && !codes[c.id] && !codeRequestedRef.current.has(c.id)) {
+        codeRequestedRef.current.add(c.id);
+        showCode(c.id, true);
+      }
+    }
+  }, [claims, codes]);
 
   async function onTheWay(id) {
     setWayBusy(id);
@@ -73,17 +87,27 @@ export function MyClaims() {
       {claims.length === 0 && <p className="muted">{t('noClaimsYet')}</p>}
       {claims.map((c) => (
         <div className="card" key={c.id}>
-          <div className="row">
-            <strong>{c.listing.foodName}</strong>
-            <span className="badge">{c.status}</span>
-            <span className="muted">{c.portionsClaimed} {t('portions')}</span>
-            <span className="muted">⏰ {timeRemaining(c.listing.collectionDeadline)}</span>
+          <div className="claimHead">
+            <strong className="claimTitle">{c.listing.foodName}</strong>
+            <div className="claimStats">
+              <span>{c.portionsClaimed} {t('portions')}</span>
+              <span>⏰ {timeRemaining(c.listing.collectionDeadline)}</span>
+            </div>
           </div>
-          {c.status === 'CONFIRMED' && c.listing.donorContact && (
-            <p style={{ margin: '6px 0 0' }}>
-              📞 {t('donorContactTitle')}:{' '}
-              <a href={`tel:+91${c.listing.donorContact}`}>{c.listing.donorContact}</a>
-            </p>
+          {c.status === 'CONFIRMED' && (
+            <div className="claimDetails">
+              {c.listing.donorContact && (
+                <p style={{ margin: '0 0 6px' }}>
+                  📞 {t('donorContactTitle')}:{' '}
+                  <a href={`tel:+91${c.listing.donorContact}`}>{c.listing.donorContact}</a>
+                </p>
+              )}
+              {codes[c.id] ? (
+                <PickupCodeDisplay code={codes[c.id]} />
+              ) : (
+                <button className="secondary" onClick={() => showCode(c.id)}>{t('showCode')}</button>
+              )}
+            </div>
           )}
           {c.status !== 'CONFIRMED' && (
             <p className="muted">
@@ -92,23 +116,18 @@ export function MyClaims() {
             </p>
           )}
           {c.status === 'CONFIRMED' && (
-            <div className="row">
-              {codes[c.id] ? (
-                <PickupCodeDisplay code={codes[c.id]} />
-              ) : (
-                <button className="secondary" onClick={() => showCode(c.id)}>{t('showCode')}</button>
-              )}
+            <div className="row" style={{ marginTop: 10 }}>
               {c.onTheWayAt ? (
                 <span className="success">
                   🚶 {t('donorNotified')} ·{' '}
                   {new Date(c.onTheWayAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               ) : (
-                <button className="secondary" onClick={() => onTheWay(c.id)} disabled={wayBusy === c.id}>
+                <button onClick={() => onTheWay(c.id)} disabled={wayBusy === c.id}>
                   🚶 {t('onTheWay')}
                 </button>
               )}
-              <button className="danger" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>
+              <button className="dangerGhost" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>
             </div>
           )}
           {c.status === 'CONFIRMED' && <DistanceMap claimId={c.id} listing={c.listing} />}
