@@ -19,3 +19,6 @@ inference/.venv/
 inference/.hf-cache/
 inference/eval/images/
 __pycache__/
+
+# NGO verification documents are private user files — never committed
+server/private/

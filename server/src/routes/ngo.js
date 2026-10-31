@@ -18,15 +18,16 @@ ngoRouter.use(requireAuth, requireRole('NGO'));
 
 // ── Verification documents ─────────────────────────────────────────────
 // Certificates / registration proofs for the admin verification
-// workflow. 20 MB per file; PDF or image scans only — the declared type
-// is checked by multer AND the file's magic bytes are verified after
-// upload, so a renamed file cannot pass. Files land in NGO_DOCS_DIR,
-// which is never statically served.
+// workflow. Multiple files per submission, 20 MB per file; PDF, JPEG
+// and PNG only — the declared type is checked by multer AND every
+// file's magic bytes are verified after upload, so a renamed file
+// cannot pass. A batch is atomic: if any file fails validation, all
+// files of the batch are removed and nothing is recorded. Files land
+// in NGO_DOCS_DIR, which is never statically served.
 const DOC_TYPES = {
   'application/pdf': { ext: '.pdf', magic: (b) => b.subarray(0, 4).toString('latin1') === '%PDF' },
   'image/jpeg': { ext: '.jpg', magic: (b) => b[0] === 0xff && b[1] === 0xd8 },
   'image/png': { ext: '.png', magic: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
-  'image/webp': { ext: '.webp', magic: (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP' },
 };
 const docUpload = multer({
   storage: multer.diskStorage({
@@ -36,10 +37,10 @@ const docUpload = multer({
       cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${spec ? spec.ext : ''}`);
     },
   }),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB per verification document
+  limits: { fileSize: 20 * 1024 * 1024, files: 10 }, // 20 MB per file, ≤10 files per submission
   fileFilter: (req, file, cb) => {
     if (!DOC_TYPES[file.mimetype]) {
-      const err = new Error('Document must be a PDF, JPEG, PNG or WebP file');
+      const err = new Error('Document must be a PDF, JPEG or PNG file');
       err.status = 422;
       return cb(err);
     }
@@ -47,12 +48,15 @@ const docUpload = multer({
   },
 });
 
-function uploadDocument(req, res, next) {
-  docUpload.single('file')(req, res, (err) => {
+function uploadDocuments(req, res, next) {
+  docUpload.array('file', 10)(req, res, (err) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         err.status = 413;
-        err.message = 'Document exceeds the 20 MB size limit';
+        err.message = 'A document exceeds the 20 MB size limit';
+      } else if (err.code === 'LIMIT_FILE_COUNT') {
+        err.status = 422;
+        err.message = 'Too many files — at most 10 documents per submission';
       }
       return next(err);
     }
@@ -68,27 +72,43 @@ const docView = (d) => ({
   createdAt: d.createdAt,
 });
 
-ngoRouter.post('/documents', uploadDocument, async (req, res, next) => {
+ngoRouter.post('/documents', uploadDocuments, async (req, res, next) => {
+  const files = req.files ?? [];
+  const cleanup = () => {
+    for (const f of files) fs.unlink(f.path, () => {});
+  };
   try {
-    if (!req.file) {
-      return res.status(422).json({ error: 'No file was uploaded' });
+    if (files.length === 0) {
+      return res.status(422).json({ error: 'No files were uploaded' });
     }
-    const head = fs.readFileSync(req.file.path).subarray(0, 12);
-    if (!DOC_TYPES[req.file.mimetype].magic(head)) {
-      fs.unlinkSync(req.file.path);
-      return res.status(422).json({ error: 'File contents do not match its declared type' });
+    // Verify every file's magic bytes BEFORE recording anything — a
+    // single bad file rejects the whole batch (no partial uploads,
+    // no orphaned files or rows).
+    for (const f of files) {
+      const head = fs.readFileSync(f.path).subarray(0, 12);
+      if (!DOC_TYPES[f.mimetype].magic(head)) {
+        cleanup();
+        return res.status(422).json({
+          error: `File "${path.basename(f.originalname)}" contents do not match its declared type`,
+        });
+      }
     }
-    const doc = await prisma.ngoDocument.create({
-      data: {
-        userId: req.user.id,
-        originalName: path.basename(req.file.originalname).slice(0, 200),
-        storedName: req.file.filename,
-        mimeType: req.file.mimetype,
-        sizeBytes: req.file.size,
-      },
-    });
-    return res.status(201).json({ document: docView(doc) });
+    const docs = await prisma.$transaction(
+      files.map((f) =>
+        prisma.ngoDocument.create({
+          data: {
+            userId: req.user.id,
+            originalName: path.basename(f.originalname).slice(0, 200),
+            storedName: f.filename,
+            mimeType: f.mimetype,
+            sizeBytes: f.size,
+          },
+        }),
+      ),
+    );
+    return res.status(201).json({ documents: docs.map(docView) });
   } catch (err) {
+    cleanup();
     return next(err);
   }
 });

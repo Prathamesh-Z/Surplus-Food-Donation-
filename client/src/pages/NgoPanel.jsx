@@ -10,7 +10,7 @@ export function NgoPanel() {
   const [forms, setForms] = useState({});
   const [error, setError] = useState('');
   const [docs, setDocs] = useState([]);
-  const [docFile, setDocFile] = useState(null);
+  const [staged, setStaged] = useState([]);
   const [docError, setDocError] = useState('');
   const [docMsg, setDocMsg] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -36,27 +36,42 @@ export function NgoPanel() {
     load();
   }, []);
 
-  // Verification documents: client-side checks mirror the server's
-  // (PDF/JPEG/PNG/WebP, 20 MB max) so mistakes surface before uploading;
-  // the server re-validates type by magic bytes and size by multer.
-  // XHR is used for real upload progress on large files.
-  function uploadDoc() {
-    if (!docFile) return;
-    const okTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-    if (!okTypes.includes(docFile.type)) {
-      setDocError('Document must be a PDF, JPEG, PNG or WebP file');
-      return;
+  // Verification documents: files are STAGED first — each selected file
+  // is validated on selection (PDF/JPEG/PNG, 20 MB max, mirroring the
+  // server) and listed with its size so it can be removed before
+  // submission; invalid files are refused with a message naming them,
+  // never silently dropped. Submission sends the whole batch at once;
+  // the server re-validates (magic bytes, size) and stores it
+  // atomically. XHR is used for real upload progress on large batches.
+  const DOC_OK_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+  const DOC_MAX_BYTES = 20 * 1024 * 1024;
+
+  function stageFiles(fileList) {
+    const rejected = [];
+    const accepted = [];
+    for (const f of fileList ?? []) {
+      if (!DOC_OK_TYPES.includes(f.type)) {
+        rejected.push(`${f.name} — must be a PDF, JPEG or PNG file`);
+      } else if (f.size > DOC_MAX_BYTES) {
+        rejected.push(`${f.name} — exceeds the 20 MB size limit`);
+      } else {
+        accepted.push(f);
+      }
     }
-    if (docFile.size > 20 * 1024 * 1024) {
-      setDocError('Document exceeds the 20 MB size limit');
-      return;
-    }
+    if (accepted.length) setStaged((prev) => [...prev, ...accepted].slice(0, 10));
+    setDocError(rejected.join('; '));
+    setDocMsg('');
+  }
+
+  function submitDocs() {
+    if (staged.length === 0 || uploading) return;
+    const count = staged.length;
     setDocError('');
     setDocMsg('');
     setUploading(true);
     setProgress(0);
     const form = new FormData();
-    form.append('file', docFile);
+    for (const f of staged) form.append('file', f);
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/ngo/documents');
     xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
@@ -66,8 +81,8 @@ export function NgoPanel() {
     xhr.onload = () => {
       setUploading(false);
       if (xhr.status === 201) {
-        setDocFile(null);
-        setDocMsg('Document uploaded — an admin can view it during verification.');
+        setStaged([]);
+        setDocMsg(`${count} document(s) uploaded — an admin can view them during verification.`);
         load();
       } else {
         try {
@@ -140,9 +155,9 @@ export function NgoPanel() {
 
       <h2>Verification documents</h2>
       <p className="muted">
-        Upload your registration certificate or supporting documents (PDF, JPEG, PNG or WebP,
-        up to 20 MB each). They are stored privately — only admins reviewing your verification
-        can access them.
+        Upload your registration certificate or supporting documents (PDF, JPEG or PNG,
+        up to 20 MB each — you can select several at once). They are stored privately —
+        only admins reviewing your verification can access them.
       </p>
       {docs.map((d) => (
         <div className="card" key={d.id}>
@@ -156,16 +171,27 @@ export function NgoPanel() {
       <div className="card">
         <input
           type="file"
-          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+          multiple
+          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
           onChange={(e) => {
-            setDocFile(e.target.files?.[0] ?? null);
-            setDocError('');
-            setDocMsg('');
+            stageFiles(e.target.files);
+            e.target.value = '';
           }}
         />
-        {docFile && (
-          <p className="muted">Selected: {docFile.name} ({(docFile.size / (1024 * 1024)).toFixed(2)} MB)</p>
-        )}
+        {staged.map((f, i) => (
+          <div className="row" key={`${f.name}-${i}`} style={{ marginTop: 6 }}>
+            <span>📄 {f.name}</span>
+            <span className="muted">{(f.size / (1024 * 1024)).toFixed(2)} MB</span>
+            <button
+              type="button"
+              className="secondary"
+              disabled={uploading}
+              onClick={() => setStaged((prev) => prev.filter((_, j) => j !== i))}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
         {uploading && (
           <div style={{ height: 6, background: '#eef3ea', borderRadius: 3, margin: '8px 0' }}>
             <div style={{ height: '100%', width: `${progress}%`, background: '#2e7d32', borderRadius: 3 }} />
@@ -173,8 +199,12 @@ export function NgoPanel() {
         )}
         {docError && <div className="error">{docError}</div>}
         {docMsg && <p className="success">{docMsg}</p>}
-        <button type="button" onClick={uploadDoc} disabled={!docFile || uploading}>
-          {uploading ? `Uploading… ${progress}%` : 'Upload document'}
+        <button type="button" onClick={submitDocs} disabled={staged.length === 0 || uploading} style={{ marginTop: 8 }}>
+          {uploading
+            ? `Uploading… ${progress}%`
+            : staged.length > 0
+              ? `Upload ${staged.length} document(s)`
+              : 'Upload documents'}
         </button>
       </div>
 

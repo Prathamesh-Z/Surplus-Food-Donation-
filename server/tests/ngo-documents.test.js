@@ -20,6 +20,7 @@ const app = createApp();
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
 const PDF = Buffer.from('%PDF-1.4\n% verification certificate (test bytes)\n');
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
 const NOT_PDF = Buffer.from('plain text pretending to be a pdf');
 
 async function makeAdmin() {
@@ -68,12 +69,44 @@ describe('NGO verification documents', () => {
       .set(auth(ngo.token))
       .attach('file', PDF, { filename: 'certificate.pdf', contentType: 'application/pdf' });
     expect(res.status).toBe(201);
-    expect(res.body.document.originalName).toBe('certificate.pdf');
-    expect(res.body.document.sizeBytes).toBe(PDF.length);
-    docId = res.body.document.id;
+    expect(res.body.documents).toHaveLength(1);
+    expect(res.body.documents[0].originalName).toBe('certificate.pdf');
+    expect(res.body.documents[0].sizeBytes).toBe(PDF.length);
+    docId = res.body.documents[0].id;
 
     const list = await request(app).get('/api/ngo/documents').set(auth(ngo.token));
     expect(list.body.documents.map((d) => d.id)).toContain(docId);
+  });
+
+  it('multiple files in one submission are all stored and associated with the NGO', async () => {
+    const res = await request(app)
+      .post('/api/ngo/documents')
+      .set(auth(ngo2.token))
+      .attach('file', PDF, { filename: 'reg-certificate.pdf', contentType: 'application/pdf' })
+      .attach('file', PNG, { filename: 'office-photo.png', contentType: 'image/png' });
+    expect(res.status).toBe(201);
+    expect(res.body.documents).toHaveLength(2);
+    expect(res.body.documents.map((d) => d.originalName).sort()).toEqual(['office-photo.png', 'reg-certificate.pdf']);
+
+    const list = await request(app).get('/api/ngo/documents').set(auth(ngo2.token));
+    expect(list.body.documents).toHaveLength(2);
+
+    // …and the admin queue associates both with this NGO.
+    const queue = await request(app).get('/api/admin/ngo/pending').set(auth(admin.token));
+    const entry = queue.body.pending.find((p) => p.userId === ngo2.user.id);
+    expect(entry.documents).toHaveLength(2);
+  });
+
+  it('a batch containing one invalid file is rejected atomically — nothing is stored', async () => {
+    const before = await request(app).get('/api/ngo/documents').set(auth(ngo.token));
+    const res = await request(app)
+      .post('/api/ngo/documents')
+      .set(auth(ngo.token))
+      .attach('file', PDF, { filename: 'good.pdf', contentType: 'application/pdf' })
+      .attach('file', NOT_PDF, { filename: 'bad.pdf', contentType: 'application/pdf' });
+    expect(res.status).toBe(422);
+    const after = await request(app).get('/api/ngo/documents').set(auth(ngo.token));
+    expect(after.body.documents).toHaveLength(before.body.documents.length);
   });
 
   it('rejects a disallowed file type (422)', async () => {
@@ -115,7 +148,8 @@ describe('NGO verification documents', () => {
 
   it("an NGO cannot see another NGO's documents", async () => {
     const list = await request(app).get('/api/ngo/documents').set(auth(ngo2.token));
-    expect(list.body.documents).toHaveLength(0);
+    expect(list.body.documents.map((d) => d.id)).not.toContain(docId);
+    expect(list.body.documents.map((d) => d.originalName)).not.toContain('certificate.pdf');
   });
 
   it('the admin queue carries the document metadata, and only an admin can download the bytes', async () => {
