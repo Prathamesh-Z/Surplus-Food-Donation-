@@ -69,9 +69,23 @@ check(
 );
 check('role toggle indented below the links', panel.includes('className="menuIndent"'));
 check(
-  'role toggle does not close the panel (Donor menu stays visible)',
+  'role toggle does not close the panel before the switch result',
   panel.includes('onClick={(e) => e.stopPropagation()}')
 );
+// v3.31: the panel closes only after a SUCCESSFUL switch; a failure
+// keeps it open with localized feedback; duplicate switches are blocked.
+check('switch awaits the result before deciding', nav.includes('const updated = await switchRole(role)'));
+check('success closes the menu', /if \(updated\) \{\s*setMenuOpen\(false\)/.test(nav));
+check('failure shows the localized switch error', nav.includes("setSwitchError(t('modeSwitchFailed'))") && nav.includes('{switchError &&'));
+check('toggle buttons disabled while a switch is in flight', (nav.match(/disabled=\{switching\}/g) ?? []).length === 2);
+check('in-flight guard returns early', nav.includes('if (switching) return;'));
+// v3.31: logout confirmation dialog (house overlay pattern).
+check('logout opens a confirmation, not the flow directly', nav.includes('setConfirmingLogout(true)'));
+check('dialog is modal and labelled', nav.includes('role="dialog"') && nav.includes('aria-modal="true"') && nav.includes('aria-labelledby="logout-confirm-title"'));
+check('dialog question is localized', nav.includes("t('logoutConfirm')"));
+check('cancel is the focused safe action', nav.includes('ref={cancelLogoutRef}') && nav.includes('cancelLogoutRef.current?.focus()'));
+check('escape cancels the dialog', nav.includes("e.key === 'Escape'") && nav.includes('setConfirmingLogout(false)'));
+check('confirm runs the existing logout flow', nav.includes('await handleLogout()'));
 check('auth + language row present', panel.includes('className="menuRow"') && panel.includes('languageButton'));
 check('toggle still USER-role gated', panel.includes("user?.role === 'CLAIMER' || user?.role === 'PROVIDER'"));
 

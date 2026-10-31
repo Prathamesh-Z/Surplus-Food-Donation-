@@ -1495,3 +1495,25 @@ notification-delivery behaviour changes.
    listing details stay public; claiming still requires a signed-in
    claimer/NGO — anonymous visitors see the existing login prompt
    on the detail page. No API, authorization, or server change.
+
+## Amendment v3.31 — Role-Switch Menu Close & Logout Confirmation (2026-11-01)
+
+1. **Menu closes after a successful role switch** — this supersedes
+   v3.30 §1's stay-open behaviour, by explicit user direction. The
+   toggle block still stop-propagates (the panel cannot close before
+   the result is known); the Nav switch handler awaits
+   `switchRole` — which returns the updated user on success and null
+   on failure — and closes the panel only on success. On failure the
+   panel stays open and shows a localized error under the toggle
+   (new string `modeSwitchFailed`). While a switch is in flight,
+   both toggle buttons are disabled and further clicks are ignored,
+   so no duplicate switch requests can be issued. The switch API,
+   active-role update, and navigation behaviour are unchanged.
+2. **Logout confirmation.** Clicking Logout opens a confirmation
+   dialog built on the app's existing modal pattern (fixed overlay,
+   `role="dialog"`, `aria-modal`, labelled by the question — new
+   string `logoutConfirm`; buttons reuse `cancel` and `logout`).
+   Focus starts on Cancel, Escape and backdrop clicks cancel, and
+   Cancel changes nothing (session and menu untouched). The Log out
+   action runs the existing logout flow (server revoke, menu close,
+   navigate Home). i18n parity 337 keys × 3.
