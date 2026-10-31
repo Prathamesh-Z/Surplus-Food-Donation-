@@ -10,6 +10,7 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 export function Profile() {
   const { t } = useLang();
   const [user, setUser] = useState(null);
+  const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
@@ -19,6 +20,7 @@ export function Profile() {
     api('/api/auth/me')
       .then((d) => {
         setUser(d.user);
+        setName(d.user.name ?? '');
         setMobile(d.user.mobile ?? '');
       })
       .catch((e) => setError(e.message));
@@ -28,19 +30,34 @@ export function Profile() {
     e.preventDefault();
     setMsg('');
     setError('');
+    if (!name.trim()) {
+      setError(t('nameRequired'));
+      return;
+    }
     if (!/^[6-9]\d{9}$/.test(mobile.trim())) {
       setError(t('contactInvalid'));
       return;
     }
     try {
+      let savedName = user.name;
+      if (name.trim() !== user.name) {
+        const res = await api('/api/users/me/name', {
+          method: 'PATCH',
+          body: { name: name.trim() },
+        });
+        savedName = res.name;
+        setName(res.name);
+      }
       const res = await api('/api/users/me/contact', {
         method: 'PATCH',
         body: { mobile: mobile.trim() },
       });
       setMobile(res.mobile);
-      setMsg(t('contactSaved'));
+      setMsg(t('profileSaved'));
+      setUser((u) => ({ ...u, name: savedName, mobile: res.mobile }));
       const stored = JSON.parse(localStorage.getItem('fws_user') ?? 'null');
       if (stored) {
+        stored.name = savedName;
         stored.mobile = res.mobile;
         localStorage.setItem('fws_user', JSON.stringify(stored));
       }
@@ -59,6 +76,10 @@ export function Profile() {
         {user.ngoProfile ? ` · ${user.ngoProfile.organisationName}` : ''}
       </p>
       <form onSubmit={save} style={{ maxWidth: 420 }}>
+        <label>
+          {t('profileName')}
+          <input value={name} onChange={(e) => setName(e.target.value)} required />
+        </label>
         <label>
           {t('contactNumber')}
           <input

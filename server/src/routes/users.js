@@ -35,6 +35,27 @@ usersRouter.patch('/me/contact', requireAuth, async (req, res, next) => {
   }
 });
 
+const nameSchema = z.object({
+  // Same rule as registration (validators/auth.js): a non-blank name,
+  // stored trimmed exactly as at registration.
+  name: z.string().trim().min(1, 'Name is required'),
+});
+
+// Profile name editing: updates ONLY the caller's own display name —
+// the user id comes from the auth token, as with contact and language.
+usersRouter.patch('/me/name', requireAuth, async (req, res, next) => {
+  try {
+    const { name } = nameSchema.parse(req.body);
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { name },
+    });
+    return res.json({ name: updated.name });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 // PRD FR-19: the language toggle persists per account (users.languagePref).
 usersRouter.patch('/me/language', requireAuth, async (req, res, next) => {
   try {
