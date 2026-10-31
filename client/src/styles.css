@@ -204,3 +204,12 @@ button.codeTap:focus-visible { outline: 2px solid #2e7d32; outline-offset: 2px; 
 .segmented { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: #fff; max-width: 100%; }
 .segmented button { background: transparent; color: var(--green-900); border: none; border-radius: 999px; padding: 6px 14px; margin: 0; }
 .segmented button[aria-selected='true'] { background: #2e7d32; color: #fff; }
+
+/* Admin user actions: one consistent row for Suspend / Unsuspend /
+   Unverify — identical size and spacing; colour carries the hierarchy
+   (solid danger = Suspend, amber caution = Unverify NGO, neutral
+   secondary = Unsuspend). Native buttons keep keyboard operation. */
+.adminActions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.adminActions button { min-width: 112px; }
+button.caution { background: #fff8e1; color: #8d6e00; border: 1.5px solid #e0b400; }
+button.caution:hover { background: #ffecb3; }

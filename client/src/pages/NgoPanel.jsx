@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api, formatApiError } from '../lib/api.js';
+import { api, formatApiError, getAccessToken } from '../lib/api.js';
 
 const DEST_TYPES = ['SHELTER', 'COMMUNITY_KITCHEN', 'OLD_AGE_HOME', 'SCHOOL', 'INDIVIDUALS', 'OTHER'];
 
@@ -9,14 +9,22 @@ export function NgoPanel() {
   const [entries, setEntries] = useState([]);
   const [forms, setForms] = useState({});
   const [error, setError] = useState('');
+  const [docs, setDocs] = useState([]);
+  const [docFile, setDocFile] = useState(null);
+  const [docError, setDocError] = useState('');
+  const [docMsg, setDocMsg] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   async function load() {
     try {
-      const [meData, claimsData, entriesData] = await Promise.all([
+      const [meData, claimsData, entriesData, docsData] = await Promise.all([
         api('/api/ngo/me'),
         api('/api/claims/mine'),
         api('/api/ngo/redistributions'),
+        api('/api/ngo/documents'),
       ]);
+      setDocs(docsData.documents);
       setMe(meData);
       setClaims(claimsData.claims.filter((c) => c.status === 'COLLECTED'));
       setEntries(entriesData.entries);
@@ -27,6 +35,63 @@ export function NgoPanel() {
   useEffect(() => {
     load();
   }, []);
+
+  // Verification documents: client-side checks mirror the server's
+  // (PDF/JPEG/PNG/WebP, 20 MB max) so mistakes surface before uploading;
+  // the server re-validates type by magic bytes and size by multer.
+  // XHR is used for real upload progress on large files.
+  function uploadDoc() {
+    if (!docFile) return;
+    const okTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!okTypes.includes(docFile.type)) {
+      setDocError('Document must be a PDF, JPEG, PNG or WebP file');
+      return;
+    }
+    if (docFile.size > 20 * 1024 * 1024) {
+      setDocError('Document exceeds the 20 MB size limit');
+      return;
+    }
+    setDocError('');
+    setDocMsg('');
+    setUploading(true);
+    setProgress(0);
+    const form = new FormData();
+    form.append('file', docFile);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/ngo/documents');
+    xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      setUploading(false);
+      if (xhr.status === 201) {
+        setDocFile(null);
+        setDocMsg('Document uploaded — an admin can view it during verification.');
+        load();
+      } else {
+        try {
+          setDocError(JSON.parse(xhr.responseText).error || 'Upload failed');
+        } catch {
+          setDocError('Upload failed');
+        }
+      }
+    };
+    xhr.onerror = () => {
+      setUploading(false);
+      setDocError('Upload failed — check your connection.');
+    };
+    xhr.send(form);
+  }
+
+  async function removeDoc(id) {
+    try {
+      await api(`/api/ngo/documents/${id}`, { method: 'DELETE' });
+      load();
+    } catch (err) {
+      setError(formatApiError(err));
+    }
+  }
 
   async function logRedistribution(claimId) {
     const f = forms[claimId] ?? {};
@@ -72,6 +137,46 @@ export function NgoPanel() {
           )}
         </div>
       )}
+
+      <h2>Verification documents</h2>
+      <p className="muted">
+        Upload your registration certificate or supporting documents (PDF, JPEG, PNG or WebP,
+        up to 20 MB each). They are stored privately — only admins reviewing your verification
+        can access them.
+      </p>
+      {docs.map((d) => (
+        <div className="card" key={d.id}>
+          <div className="row">
+            <span>📄 {d.originalName}</span>
+            <span className="muted">{(d.sizeBytes / 1024).toFixed(0)} KB · {new Date(d.createdAt).toLocaleDateString()}</span>
+            <button type="button" className="secondary" onClick={() => removeDoc(d.id)}>Remove</button>
+          </div>
+        </div>
+      ))}
+      <div className="card">
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+          onChange={(e) => {
+            setDocFile(e.target.files?.[0] ?? null);
+            setDocError('');
+            setDocMsg('');
+          }}
+        />
+        {docFile && (
+          <p className="muted">Selected: {docFile.name} ({(docFile.size / (1024 * 1024)).toFixed(2)} MB)</p>
+        )}
+        {uploading && (
+          <div style={{ height: 6, background: '#eef3ea', borderRadius: 3, margin: '8px 0' }}>
+            <div style={{ height: '100%', width: `${progress}%`, background: '#2e7d32', borderRadius: 3 }} />
+          </div>
+        )}
+        {docError && <div className="error">{docError}</div>}
+        {docMsg && <p className="success">{docMsg}</p>}
+        <button type="button" onClick={uploadDoc} disabled={!docFile || uploading}>
+          {uploading ? `Uploading… ${progress}%` : 'Upload document'}
+        </button>
+      </div>
 
       <h2>Log redistribution for collected food</h2>
       {claims.length === 0 && <p className="muted">No collected claims yet. Redistribution can be logged once food is collected.</p>}

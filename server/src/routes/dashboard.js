@@ -28,7 +28,11 @@ dashboardRouter.get('/public', async (req, res) => {
 });
 
 dashboardRouter.get('/', requireAuth, async (req, res) => {
-  const [platform, mine] = await Promise.all([platformImpact(), userImpact(req.user)]);
+  // Admins see platform impact only — they have no personal contribution
+  // view, so `mine` is empty for ADMIN (never another role's data, never
+  // platform figures dressed up as personal ones).
+  const platform = await platformImpact();
+  const mine = req.user.role === 'ADMIN' ? {} : await userImpact(req.user);
   return res.json({ platform, mine, role: req.user.role });
 });
 
@@ -39,7 +43,8 @@ function csvEscape(v) {
 }
 
 dashboardRouter.get('/export.csv', requireAuth, async (req, res) => {
-  const [platform, mine] = await Promise.all([platformImpact(), userImpact(req.user)]);
+  const platform = await platformImpact();
+  const mine = req.user.role === 'ADMIN' ? {} : await userImpact(req.user);
   const lines = ['section,metric,value'];
   for (const [k, v] of Object.entries(platform)) lines.push(`platform,${csvEscape(k)},${csvEscape(v)}`);
   for (const [k, v] of Object.entries(mine)) lines.push(`mine_${req.user.role.toLowerCase()},${csvEscape(k)},${csvEscape(v)}`);

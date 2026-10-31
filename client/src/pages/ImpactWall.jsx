@@ -56,13 +56,16 @@ function LiveWall() {
 // contribution data is only ever fetched and rendered when signed in.
 export function ImpactWall() {
   const { t } = useLang();
-  const { loggedIn } = useAuth();
+  const { loggedIn, user } = useAuth();
   const [params, setParams] = useSearchParams();
-  const view = loggedIn && params.get('view') === 'mine' ? 'mine' : 'live';
+  // Admins see Live Impact only — no My Impact tab, and ?view=mine
+  // falls back to the wall for their role.
+  const isAdmin = user?.role === 'ADMIN';
+  const view = loggedIn && !isAdmin && params.get('view') === 'mine' ? 'mine' : 'live';
 
   return (
     <section>
-      {loggedIn && (
+      {loggedIn && !isAdmin && (
         <div className="segmented" role="tablist" aria-label={t('impactNav')}>
           <button
             type="button"

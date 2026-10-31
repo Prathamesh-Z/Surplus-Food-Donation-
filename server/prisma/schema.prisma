@@ -129,6 +129,7 @@ model User {
   updatedAt        DateTime     @updatedAt
 
   ngoProfile         NgoProfile?
+  ngoDocuments       NgoDocument[]
   sessions           Session[]
   passwordResets     PasswordResetToken[]
   listings           Listing[]           @relation("ProviderListings")
@@ -137,6 +138,21 @@ model User {
   redistributionLogs RedistributionLog[] @relation("NgoRedistributions")
   notifications      Notification[]
   auditLogs          AuditLog[]          @relation("AdminAuditLogs")
+}
+
+// NGO verification documents: certificates / registration proofs an NGO
+// uploads for the admin verification workflow. Files live in a PRIVATE
+// directory (never statically served); bytes are reachable only through
+// the NGO's own list and the admin download endpoint.
+model NgoDocument {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalName String
+  storedName   String   @unique
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
 }
 
 model NgoProfile {

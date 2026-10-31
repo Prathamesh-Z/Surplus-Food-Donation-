@@ -1,6 +1,10 @@
 import { Router } from 'express';
+import multer from 'multer';
+import path from 'node:path';
+import fs from 'node:fs';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { NGO_DOCS_DIR } from '../lib/uploads.js';
 import {
   redistributionSchema,
   redistributionEditSchema,
@@ -11,6 +15,101 @@ import {
 // exceed the portions that NGO actually collected on it.
 export const ngoRouter = Router();
 ngoRouter.use(requireAuth, requireRole('NGO'));
+
+// ── Verification documents ─────────────────────────────────────────────
+// Certificates / registration proofs for the admin verification
+// workflow. 20 MB per file; PDF or image scans only — the declared type
+// is checked by multer AND the file's magic bytes are verified after
+// upload, so a renamed file cannot pass. Files land in NGO_DOCS_DIR,
+// which is never statically served.
+const DOC_TYPES = {
+  'application/pdf': { ext: '.pdf', magic: (b) => b.subarray(0, 4).toString('latin1') === '%PDF' },
+  'image/jpeg': { ext: '.jpg', magic: (b) => b[0] === 0xff && b[1] === 0xd8 },
+  'image/png': { ext: '.png', magic: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
+  'image/webp': { ext: '.webp', magic: (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP' },
+};
+const docUpload = multer({
+  storage: multer.diskStorage({
+    destination: NGO_DOCS_DIR,
+    filename: (req, file, cb) => {
+      const spec = DOC_TYPES[file.mimetype];
+      cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${spec ? spec.ext : ''}`);
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB per verification document
+  fileFilter: (req, file, cb) => {
+    if (!DOC_TYPES[file.mimetype]) {
+      const err = new Error('Document must be a PDF, JPEG, PNG or WebP file');
+      err.status = 422;
+      return cb(err);
+    }
+    return cb(null, true);
+  },
+});
+
+function uploadDocument(req, res, next) {
+  docUpload.single('file')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        err.status = 413;
+        err.message = 'Document exceeds the 20 MB size limit';
+      }
+      return next(err);
+    }
+    return next();
+  });
+}
+
+const docView = (d) => ({
+  id: d.id,
+  originalName: d.originalName,
+  mimeType: d.mimeType,
+  sizeBytes: d.sizeBytes,
+  createdAt: d.createdAt,
+});
+
+ngoRouter.post('/documents', uploadDocument, async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(422).json({ error: 'No file was uploaded' });
+    }
+    const head = fs.readFileSync(req.file.path).subarray(0, 12);
+    if (!DOC_TYPES[req.file.mimetype].magic(head)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(422).json({ error: 'File contents do not match its declared type' });
+    }
+    const doc = await prisma.ngoDocument.create({
+      data: {
+        userId: req.user.id,
+        originalName: path.basename(req.file.originalname).slice(0, 200),
+        storedName: req.file.filename,
+        mimeType: req.file.mimetype,
+        sizeBytes: req.file.size,
+      },
+    });
+    return res.status(201).json({ document: docView(doc) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+ngoRouter.get('/documents', async (req, res) => {
+  const docs = await prisma.ngoDocument.findMany({
+    where: { userId: req.user.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  return res.json({ documents: docs.map(docView) });
+});
+
+ngoRouter.delete('/documents/:id', async (req, res) => {
+  const doc = await prisma.ngoDocument.findUnique({ where: { id: req.params.id } });
+  if (!doc || doc.userId !== req.user.id) {
+    return res.status(404).json({ error: 'Document not found' });
+  }
+  await prisma.ngoDocument.delete({ where: { id: doc.id } });
+  fs.unlink(path.join(NGO_DOCS_DIR, doc.storedName), () => {});
+  return res.json({ ok: true });
+});
 
 ngoRouter.get('/me', async (req, res) => {
   const profile = await prisma.ngoProfile.findUnique({ where: { userId: req.user.id } });

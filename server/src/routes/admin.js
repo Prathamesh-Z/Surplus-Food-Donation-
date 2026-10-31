@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import path from 'node:path';
+import fs from 'node:fs';
 import { prisma } from '../lib/prisma.js';
+import { NGO_DOCS_DIR } from '../lib/uploads.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { platformImpact } from '../services/impactService.js';
 import { writeAudit } from '../services/auditService.js';
@@ -160,7 +163,41 @@ adminRouter.get('/ngo/pending', async (req, res) => {
     include: { user: { select: { id: true, name: true, email: true, mobile: true, createdAt: true } } },
     orderBy: { createdAt: 'asc' },
   });
-  return res.json({ pending: profiles });
+  // Attach each NGO's verification documents (metadata only — the bytes
+  // are served solely by the admin download endpoint below).
+  const userIds = profiles.map((p) => p.userId);
+  const docs = userIds.length
+    ? await prisma.ngoDocument.findMany({
+        where: { userId: { in: userIds } },
+        orderBy: { createdAt: 'desc' },
+      })
+    : [];
+  const byUser = new Map();
+  for (const d of docs) {
+    if (!byUser.has(d.userId)) byUser.set(d.userId, []);
+    byUser.get(d.userId).push({
+      id: d.id, originalName: d.originalName, mimeType: d.mimeType,
+      sizeBytes: d.sizeBytes, createdAt: d.createdAt,
+    });
+  }
+  return res.json({
+    pending: profiles.map((p) => ({ ...p, documents: byUser.get(p.userId) ?? [] })),
+  });
+});
+
+// Verification document download — admin only (this router is
+// ADMIN-gated). The file is streamed from the private directory with
+// its original name; documents are never reachable by public URL.
+adminRouter.get('/ngo-documents/:id', async (req, res) => {
+  const doc = await prisma.ngoDocument.findUnique({ where: { id: req.params.id } });
+  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  const filePath = path.join(NGO_DOCS_DIR, doc.storedName);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Document file is missing' });
+  }
+  res.setHeader('Content-Type', doc.mimeType);
+  res.setHeader('Content-Disposition', `attachment; filename="${doc.originalName.replaceAll('"', '')}"`);
+  return res.sendFile(filePath);
 });
 
 adminRouter.post('/ngo/:userId/verify', async (req, res, next) => {

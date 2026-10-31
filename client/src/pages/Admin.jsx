@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api, formatApiError } from '../lib/api.js';
+import { api, formatApiError, getAccessToken } from '../lib/api.js';
 
 export function Admin() {
   const [stats, setStats] = useState(null);
@@ -9,6 +9,7 @@ export function Admin() {
   const [listings, setListings] = useState([]);
   const [audit, setAudit] = useState([]);
   const [error, setError] = useState('');
+  const [msg, setMsg] = useState('');
 
   async function load() {
     try {
@@ -37,12 +38,37 @@ export function Admin() {
     setUsers(data.users);
   }
 
-  async function act(path, body = {}) {
+  async function act(path, body = {}, successText = '') {
+    setError('');
+    setMsg('');
     try {
       await api(path, { method: 'POST', body });
+      if (successText) setMsg(successText);
       load();
     } catch (err) {
       setError(formatApiError(err));
+    }
+  }
+
+  // Verification documents are private: the download goes through the
+  // admin-only endpoint with the access token, never a public URL.
+  async function downloadDoc(doc) {
+    try {
+      const res = await fetch(`/api/admin/ngo-documents/${doc.id}`, {
+        headers: { Authorization: `Bearer ${getAccessToken()}` },
+      });
+      if (!res.ok) throw new Error('download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.originalName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Could not download the document.');
     }
   }
 
@@ -50,6 +76,7 @@ export function Admin() {
     <section>
       <h1>Admin</h1>
       {error && <div className="error">{error}</div>}
+      {msg && <div className="success">{msg}</div>}
       {stats && (
         <div className="grid">
           <div className="card"><strong>{stats.totalUsers}</strong><div className="muted">Users</div></div>
@@ -69,7 +96,19 @@ export function Admin() {
             <span className="muted">{p.user.name} · {p.user.email} · {p.user.mobile}</span>
           </div>
           <p className="muted">Registration detail provided: {p.registrationDetail}</p>
-          <button onClick={() => act(`/api/admin/ngo/${p.userId}/verify`)}>Verify NGO</button>
+          {p.documents?.length > 0 && (
+            <div style={{ margin: '6px 0' }}>
+              <span className="muted">Verification documents:</span>
+              {p.documents.map((d) => (
+                <div className="row" key={d.id}>
+                  <span>📄 {d.originalName}</span>
+                  <span className="muted">{(d.sizeBytes / 1024).toFixed(0)} KB · {new Date(d.createdAt).toLocaleDateString()}</span>
+                  <button type="button" className="secondary" onClick={() => downloadDoc(d)}>Download</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => act(`/api/admin/ngo/${p.userId}/verify`, {}, 'NGO verified.')}>Verify NGO</button>
         </div>
       ))}
 
@@ -91,23 +130,25 @@ export function Admin() {
             {u.suspended && <span className="badge danger">Suspended</span>}
             <span className="muted">{u.email} · {u.mobile}</span>
           </div>
-          {u.role !== 'ADMIN' &&
-            (u.suspended ? (
-              <button className="secondary" onClick={() => act(`/api/admin/users/${u.id}/unsuspend`)}>Unsuspend</button>
-            ) : (
-              <button
-                className="danger"
-                onClick={() => {
-                  const reason = window.prompt('Reason for suspension?');
-                  if (reason) act(`/api/admin/users/${u.id}/suspend`, { reason });
-                }}
-              >
-                Suspend
-              </button>
-            ))}
-          {u.ngoProfile?.verificationStatus === 'VERIFIED' && (
-            <button className="secondary" onClick={() => act(`/api/admin/ngo/${u.id}/unverify`, {})}>Unverify NGO</button>
-          )}
+          <div className="adminActions">
+            {u.role !== 'ADMIN' &&
+              (u.suspended ? (
+                <button className="secondary" onClick={() => act(`/api/admin/users/${u.id}/unsuspend`, {}, 'User unsuspended.')}>Unsuspend</button>
+              ) : (
+                <button
+                  className="danger"
+                  onClick={() => {
+                    const reason = window.prompt('Reason for suspension?');
+                    if (reason) act(`/api/admin/users/${u.id}/suspend`, { reason }, 'User suspended.');
+                  }}
+                >
+                  Suspend
+                </button>
+              ))}
+            {u.ngoProfile?.verificationStatus === 'VERIFIED' && (
+              <button className="caution" onClick={() => act(`/api/admin/ngo/${u.id}/unverify`, {}, 'NGO unverified.')}>Unverify NGO</button>
+            )}
+          </div>
         </div>
       ))}
 
@@ -122,7 +163,7 @@ export function Admin() {
               className="danger"
               onClick={() => {
                 const reason = window.prompt('Reason for removal?');
-                if (reason) act(`/api/admin/listings/${l.id}/remove`, { reason });
+                if (reason) act(`/api/admin/listings/${l.id}/remove`, { reason }, 'Listing removed.');
               }}
             >
               Remove listing

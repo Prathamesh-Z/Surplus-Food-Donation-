@@ -14,3 +14,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  */
 export const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+/**
+ * PRIVATE storage for NGO verification documents (server/private/). This
+ * directory is deliberately NOT under UPLOADS_DIR and is never mounted
+ * by express.static — document bytes are served only by the auth-gated
+ * NGO/admin endpoints, never by a public URL.
+ */
+export const NGO_DOCS_DIR = path.join(__dirname, '../../private/ngo-documents');
+fs.mkdirSync(NGO_DOCS_DIR, { recursive: true });
