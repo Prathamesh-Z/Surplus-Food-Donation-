@@ -213,3 +213,19 @@ button.codeTap:focus-visible { outline: 2px solid #2e7d32; outline-offset: 2px; 
 .adminActions button { min-width: 112px; }
 button.caution { background: #fff8e1; color: #8d6e00; border: 1.5px solid #e0b400; }
 button.caution:hover { background: #ffecb3; }
+
+/* FAQ page: quiet accordion list in the app's card language. The
+   trigger is a native button (keyboard + focus built in); the global
+   green button style is deliberately overridden to a plain row. No
+   animation, so reduced-motion needs nothing extra. */
+.faqItem { border: 1px solid #dfe5d8; border-radius: 10px; margin: 8px 0; background: #fff; }
+.faqQ { margin: 0; font-size: 1rem; }
+.faqBtn {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  background: none; color: var(--ink); text-align: left; padding: 12px 14px;
+  font-size: 1rem; font-weight: 600; border-radius: 10px;
+}
+.faqBtn:hover { background: #f4f7f1; }
+.faqBtn:focus-visible { outline: 2px solid var(--green-600); outline-offset: -2px; }
+.faqA { padding: 0 14px 12px; }
+.faqA p { margin: 0; }

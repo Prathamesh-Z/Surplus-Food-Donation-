@@ -52,6 +52,7 @@ export function Nav() {
       <nav className={menuOpen ? 'open' : ''} onClick={() => setMenuOpen(false)}>
         <Link to="/browse">{t('browse')}</Link>
         <Link to="/impact">{t('impactNav')}</Link>
+        <Link to="/faq">{t('faqNav')}</Link>
         {loggedIn ? (
           <>
             {(user?.role === 'PROVIDER') && <Link to="/listings/new">{t('postFood')}</Link>}

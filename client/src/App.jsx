@@ -24,6 +24,7 @@ import { Admin } from './pages/Admin.jsx';
 import { NgoPanel } from './pages/NgoPanel.jsx';
 import { Recurring } from './pages/Recurring.jsx';
 import { ImpactWall } from './pages/ImpactWall.jsx';
+import { Faq } from './pages/Faq.jsx';
 
 function NotFound() {
   const { t } = useLang();
@@ -62,6 +63,7 @@ export function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/dashboard" element={<Navigate to="/impact?view=mine" replace />} />
           <Route path="/impact" element={<ImpactWall />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/ngo" element={<NgoPanel />} />
           <Route path="/recurring" element={<Recurring />} />
