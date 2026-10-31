@@ -130,3 +130,14 @@ button.danger { background: var(--red); }
 .notifHead { display: flex; align-items: baseline; gap: 10px; }
 .notifTitle { flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; font-size: 1.07rem; }
 .notifTime { flex: 0 0 auto; white-space: nowrap; margin-left: auto; }
+
+/* Browse food cards (2026-10-31): prominent title with the veg mark,
+   a compact indicator row, scannable portions/time stats, location,
+   then the full-width claim action. */
+.foodCardBody { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.foodTitleRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.foodTitleRow > :last-child { flex-shrink: 0; margin-top: 2px; }
+.foodTitle { font-size: 1.12rem; line-height: 1.25; min-width: 0; overflow-wrap: break-word; }
+.foodStats { display: flex; flex-wrap: wrap; gap: 4px 16px; font-weight: 700; font-size: 1.02rem; }
+.foodMeta { margin: 0; }
+.foodCta { display: block; text-align: center; }

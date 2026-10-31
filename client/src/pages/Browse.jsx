@@ -255,28 +255,33 @@ export function Browse() {
                 🍲
               </div>
             )}
-            <div className="row">
-              <strong>{l.foodName}</strong>
-              <DietMark type={l.dietaryType} />
-              {!soldOut && <PriorityBadge deadline={l.collectionDeadline} />}
-              {l.ngoSuitable && <span className="badge warn">NGO-suitable</span>}
-              {soldOut && (
-                <span className="badge" style={{ background: '#eceff1', color: '#546e7a', border: '1px solid #b0bec5' }}>
-                  {t('fullyClaimed')}
-                </span>
-              )}
+            <div className="foodCardBody">
+              <div className="foodTitleRow">
+                <strong className="foodTitle">{l.foodName}</strong>
+                <DietMark type={l.dietaryType} />
+              </div>
+              <div className="row" style={{ gap: 6 }}>
+                {!soldOut && <PriorityBadge deadline={l.collectionDeadline} />}
+                {l.ngoSuitable && <span className="badge warn">{t('ngoSuitable')}</span>}
+                {soldOut && (
+                  <span className="badge" style={{ background: '#eceff1', color: '#546e7a', border: '1px solid #b0bec5' }}>
+                    {t('fullyClaimed')}
+                  </span>
+                )}
+              </div>
+              <div className="foodStats">
+                <span>🍽 {l.portionsRemaining} of {l.totalPortions} {l.bulkUnit ? `${l.bulkUnit.toLowerCase()} (bulk)` : 'portions'} remaining</span>
+                <span>⏰ {timeRemaining(l.collectionDeadline)}</span>
+              </div>
+              <p className="muted foodMeta">
+                📍 {l.pickupLocationText}
+                {l.distanceKm !== null && l.distanceKm !== undefined && (
+                  <> · 📍 {formatDistance(l.distanceKm)} {t('awayFromYou')} · {t('straightLineDistance')}</>
+                )}
+                {l.categoryNote ? <> · {l.categoryNote}</> : ''}
+              </p>
+              <Link className="btn foodCta" to={`/listings/${l.id}`}>{soldOut ? t('viewDetails') : t('viewClaim')}</Link>
             </div>
-            <p>{l.foodDetails}</p>
-            <p className="muted">
-              {l.portionsRemaining} of {l.totalPortions} {l.bulkUnit ? `${l.bulkUnit.toLowerCase()} (bulk)` : 'portions'} remaining · ⏰ {timeRemaining(l.collectionDeadline)}
-              {l.categoryNote ? <><br />Other: {l.categoryNote}</> : ''}
-              <br />📍 {l.pickupLocationText}
-              {l.distanceKm !== null && l.distanceKm !== undefined && (
-                <> · 📍 {formatDistance(l.distanceKm)} {t('awayFromYou')} · {t('straightLineDistance')}</>
-              )}
-              <br />By {l.providerName}
-            </p>
-            <Link className="btn" to={`/listings/${l.id}`}>{soldOut ? t('viewDetails') : t('viewClaim')}</Link>
             {(() => {
               const mine = myClaimFor(l.id);
               if (!mine) return null;
