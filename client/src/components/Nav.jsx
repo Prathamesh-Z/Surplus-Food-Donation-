@@ -57,7 +57,6 @@ export function Nav() {
             <Link to="/dashboard">{t('dashboard')}</Link>
             {(user?.role === 'PROVIDER') && <Link to="/listings/new">{t('postFood')}</Link>}
             {(user?.role === 'PROVIDER') && <Link to="/my-listings">{t('myListings')}</Link>}
-            {(user?.role === 'PROVIDER') && <Link to="/recurring">{t('recurring')}</Link>}
             {(user?.role === 'CLAIMER' || user?.role === 'NGO') && <Link to="/my-claims">{t('myClaims')}</Link>}
             {user?.role === 'NGO' && <Link to="/ngo">NGO panel</Link>}
             {user?.role === 'ADMIN' && <Link to="/admin">{t('admin')}</Link>}
