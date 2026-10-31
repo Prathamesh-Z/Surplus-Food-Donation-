@@ -26,12 +26,26 @@ h2 { font-size: 20px; margin: 26px 0 10px; }
 
 /* ── Navigation ─────────────────────────────────────────────── */
 .nav {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 12px 20px; background: #fff; border-bottom: 1px solid var(--line);
   position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 6px rgba(20, 83, 45, 0.06);
 }
 .nav .brand { font-weight: 800; font-size: 20px; text-decoration: none; color: var(--green-900); white-space: nowrap; }
-.nav nav { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+/* The avatar button is the menu trigger at EVERY width: the nav links
+   live in the panel it opens (the same full-width column panel the
+   mobile layout always had), never inline in the header. */
+.nav nav { display: none; }
+.nav nav.open {
+  display: flex; flex-direction: column; align-items: flex-start;
+  width: 100%; padding-top: 4px; gap: 10px;
+}
+.avatarBtn {
+  background: none; border: 2px solid var(--line); border-radius: 50%;
+  width: 38px; height: 38px; padding: 0; overflow: hidden; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+}
+.avatarBtn:hover { border-color: var(--green-600); background: none; }
+.avatarBtn:focus-visible { outline: 2px solid var(--green-600); outline-offset: 2px; }
 .nav nav a { text-decoration: none; font-weight: 600; }
 .nav nav a:hover { text-decoration: underline; }
 
@@ -105,19 +119,12 @@ button.danger { background: var(--red); }
 
 /* ── Small screens ──────────────────────────────────────────── */
 /* QA-08: the header used to wrap ~10 links into ~299px of stacked rows.
-   Below 720px the links collapse behind a Menu button; the closed header
-   stays one row (brand + location + Menu). */
-.nav-toggle { display: none; }
+   The links live behind the avatar menu trigger (all widths — see
+   .nav nav above); below 720px the closed header stays one row
+   (brand + location + avatar) and the location label is hidden. */
 @media (max-width: 720px) {
-  .nav { flex-wrap: wrap; }
   .nav .brand { flex: 1 1 auto; }
   .nav .loc-label { display: none; }
-  .nav-toggle { display: inline-block; }
-  .nav nav { display: none; width: 100%; }
-  .nav nav.open {
-    display: flex; flex-direction: column; align-items: flex-start;
-    width: 100%; padding-top: 4px;
-  }
 }
 @media (max-width: 640px) {
   .hero h1 { font-size: 27px; }

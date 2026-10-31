@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api.js';
 import { DocumentStaging } from '../components/DocumentStaging.jsx';
 import { uploadDocuments } from '../lib/documents.js';
+import { PHOTO_ACCEPT, profilePhotoError, uploadProfilePhoto } from '../lib/profilePhoto.js';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 
@@ -25,7 +26,7 @@ function readInviteCode() {
 
 export function Register() {
   const navigate = useNavigate();
-  const { login: setAuth } = useAuth();
+  const { login: setAuth, updateUser } = useAuth();
   const { t } = useLang();
   const [inviteCode] = useState(readInviteCode);
   const [form, setForm] = useState({
@@ -43,6 +44,14 @@ export function Register() {
   // uploaded AFTER the account is created and signed in, through the
   // same endpoint/helper the NGO Panel uses — no second upload system.
   const [stagedDocs, setStagedDocs] = useState([]);
+  // Optional profile photo, staged the same way: uploaded after the
+  // account exists and is signed in; skipping (or never choosing)
+  // registers exactly as before.
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [photoSkipped, setPhotoSkipped] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [docUploading, setDocUploading] = useState(false);
   const [docProgress, setDocProgress] = useState(0);
   const [created, setCreated] = useState(false);
@@ -103,6 +112,25 @@ export function Register() {
         }
         setDocUploading(false);
       }
+      // Attach the staged profile photo, if any. Same failure contract
+      // as the documents: the account stands; the photo can be added
+      // later from the Profile page.
+      if (photoFile) {
+        setPhotoUploading(true);
+        try {
+          const updated = await uploadProfilePhoto(photoFile);
+          updateUser({ ...login.user, profilePhoto: updated.profilePhoto });
+        } catch (err) {
+          setPhotoUploading(false);
+          setCreated(true);
+          setError(
+            `Your account was created, but the profile photo could not be uploaded (${err.message}). ` +
+              'Press Continue to proceed — you can add it any time from your Profile.'
+          );
+          return;
+        }
+        setPhotoUploading(false);
+      }
       navigate('/browse');
     } catch (err) {
       setError(formatApiError(err));
@@ -145,6 +173,53 @@ export function Register() {
         <label>Email<input type="email" value={form.email} onChange={set('email')} autoComplete="email" required /></label>
         <label>Mobile (10 digits, e.g. 9812345678)<input value={form.mobile} onChange={set('mobile')} inputMode="tel" autoComplete="tel" placeholder="9812345678" required /></label>
         <label>Password (min 8 characters)<PasswordInput value={form.password} onChange={set('password')} autoComplete="new-password" required /></label>
+        <div>
+          <span className="muted">Profile photo (optional — JPEG, PNG or WebP, up to 5 MB)</span>
+          {!photoSkipped && !photoFile && (
+            <div className="row">
+              <input
+                type="file"
+                accept={PHOTO_ACCEPT}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  e.target.value = '';
+                  if (!f) return;
+                  const reason = profilePhotoError(f);
+                  if (reason) {
+                    setPhotoError(`${f.name} — ${reason}`);
+                    return;
+                  }
+                  setPhotoError('');
+                  setPhotoFile(f);
+                  setPhotoPreview(URL.createObjectURL(f));
+                }}
+              />
+              <button type="button" className="secondary" onClick={() => setPhotoSkipped(true)}>Skip</button>
+            </div>
+          )}
+          {photoSkipped && <p className="muted">No photo — you can add one later from your Profile.</p>}
+          {photoFile && (
+            <div className="row">
+              <img
+                src={photoPreview}
+                alt="Your selected profile photo"
+                style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover' }}
+              />
+              <span>{photoFile.name}</span>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  setPhotoFile(null);
+                  setPhotoPreview('');
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          {photoError && <div className="error">{photoError}</div>}
+        </div>
         {form.accountType === 'NGO' && (
           <>
             <label>Organisation name<input value={form.organisationName} onChange={set('organisationName')} required /></label>
@@ -160,8 +235,14 @@ export function Register() {
             <div style={{ height: '100%', width: `${docProgress}%`, background: '#2e7d32', borderRadius: 3 }} />
           </div>
         )}
-        <button type="submit" disabled={docUploading}>
-          {docUploading ? `Uploading documents… ${docProgress}%` : created ? 'Continue' : 'Create account'}
+        <button type="submit" disabled={docUploading || photoUploading}>
+          {docUploading
+            ? `Uploading documents… ${docProgress}%`
+            : photoUploading
+              ? 'Uploading photo…'
+              : created
+                ? 'Continue'
+                : 'Create account'}
         </button>
       </form>
     </section>

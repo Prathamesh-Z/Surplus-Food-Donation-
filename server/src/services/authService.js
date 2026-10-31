@@ -19,6 +19,7 @@ export function publicUser(user, ngoProfile = undefined) {
     mobile: user.mobile,
     role: user.role,
     accountType: user.accountType ?? 'USER',
+    profilePhoto: user.profilePhoto ?? null,
     languagePref: user.languagePref,
     suspended: user.suspended,
     inviteCode: user.inviteCode ?? null,

@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api, formatApiError } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { useAuth } from '../lib/AuthContext.jsx';
+import { Avatar } from '../components/Avatar.jsx';
+import { PHOTO_ACCEPT, profilePhotoError, uploadProfilePhoto } from '../lib/profilePhoto.js';
 
 /**
  * Profile / account settings (v3.4): account details (read-only) + the
@@ -9,7 +12,12 @@ import { useLang } from '../i18n/LanguageContext.jsx';
  */
 export function Profile() {
   const { t } = useLang();
+  const { updateUser } = useAuth();
   const [user, setUser] = useState(null);
+  const [photoError, setPhotoError] = useState('');
+  const [photoMsg, setPhotoMsg] = useState('');
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const photoInputRef = useRef(null);
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [msg, setMsg] = useState('');
@@ -66,6 +74,52 @@ export function Profile() {
     }
   }
 
+  // Applies a new profilePhoto value locally AND in the auth context,
+  // so the Nav avatar updates immediately — no refresh, no re-login.
+  function applyPhoto(profilePhoto) {
+    const merged = { ...user, profilePhoto };
+    setUser(merged);
+    updateUser(merged);
+  }
+
+  async function onPhotoSelected(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPhotoError('');
+    setPhotoMsg('');
+    const reason = profilePhotoError(file);
+    if (reason) {
+      setPhotoError(`${file.name} — ${reason}`);
+      return;
+    }
+    setPhotoBusy(true);
+    try {
+      const updated = await uploadProfilePhoto(file);
+      applyPhoto(updated.profilePhoto);
+      setPhotoMsg(t('photoSaved'));
+    } catch (err) {
+      setPhotoError(err.message || 'Upload failed');
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    setPhotoError('');
+    setPhotoMsg('');
+    setPhotoBusy(true);
+    try {
+      const res = await api('/api/users/me/photo', { method: 'DELETE' });
+      applyPhoto(res.user.profilePhoto);
+      setPhotoMsg(t('photoSaved'));
+    } catch (err) {
+      setPhotoError(formatApiError(err));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
   if (!user) return <p className="muted">{error || '…'}</p>;
   return (
     <section>
@@ -75,6 +129,31 @@ export function Profile() {
         <strong>{user.name}</strong> · {user.email} · {user.role}
         {user.ngoProfile ? ` · ${user.ngoProfile.organisationName}` : ''}
       </p>
+      <div className="card" style={{ maxWidth: 420 }}>
+        <div className="row">
+          <Avatar user={user} size={64} />
+          <strong>{t('profilePhoto')}</strong>
+        </div>
+        {photoError && <div className="error">{photoError}</div>}
+        {photoMsg && <p className="success">{photoMsg}</p>}
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept={PHOTO_ACCEPT}
+          style={{ display: 'none' }}
+          onChange={onPhotoSelected}
+        />
+        <div className="adminActions">
+          <button type="button" disabled={photoBusy} onClick={() => photoInputRef.current?.click()}>
+            {user.profilePhoto ? t('changePhoto') : t('setPhoto')}
+          </button>
+          {user.profilePhoto && (
+            <button type="button" className="secondary" disabled={photoBusy} onClick={removePhoto}>
+              {t('removePhoto')}
+            </button>
+          )}
+        </div>
+      </div>
       <form onSubmit={save} style={{ maxWidth: 420 }}>
         <label>
           {t('profileName')}

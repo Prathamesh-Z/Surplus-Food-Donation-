@@ -12,6 +12,7 @@ const AuthContext = createContext({
   login: () => {},
   logout: async () => {},
   switchRole: async () => {},
+  updateUser: () => {},
 });
 
 function readUser() {
@@ -40,6 +41,15 @@ export function AuthProvider({ children }) {
     setTokens(access, refresh);
     if (nextUser) localStorage.setItem('fws_user', JSON.stringify(nextUser));
     setUser(nextUser ?? readUser());
+  }, []);
+
+  // Replace the stored user with a fresher copy (e.g. after a profile
+  // photo change) so every consumer of the context — Nav avatar first
+  // of all — updates immediately, with no reload or re-login.
+  const updateUser = useCallback((nextUser) => {
+    if (!nextUser) return;
+    localStorage.setItem('fws_user', JSON.stringify(nextUser));
+    setUser(nextUser);
   }, []);
 
   // Active-role switching for USER accounts (Claimer <-> Donor). The
@@ -81,7 +91,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loggedIn: Boolean(user), login, logout, switchRole }}>
+    <AuthContext.Provider value={{ user, loggedIn: Boolean(user), login, logout, switchRole, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

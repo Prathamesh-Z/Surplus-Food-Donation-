@@ -131,6 +131,9 @@ model User {
   passwordHash     String
   role             Role
   accountType      AccountType @default(USER)
+  // Optional profile photo: the served path (/uploads/avatars/<file>)
+  // or null — null renders the default silhouette avatar everywhere.
+  profilePhoto     String?
   languagePref     LanguagePref @default(EN)
   suspended        Boolean      @default(false)
   suspensionReason String?

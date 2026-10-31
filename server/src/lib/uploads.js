@@ -23,3 +23,13 @@ fs.mkdirSync(UPLOADS_DIR, { recursive: true });
  */
 export const NGO_DOCS_DIR = path.join(__dirname, '../../private/ngo-documents');
 fs.mkdirSync(NGO_DOCS_DIR, { recursive: true });
+
+/**
+ * Profile photos (server/uploads/avatars) — a subfolder of the public
+ * uploads dir, so avatars are served by the same /uploads mount as
+ * listing photos (profile pictures are meant to be displayed; the
+ * filenames are random). Kept separate from listing photos so the two
+ * never mix.
+ */
+export const AVATARS_DIR = path.join(UPLOADS_DIR, 'avatars');
+fs.mkdirSync(AVATARS_DIR, { recursive: true });

@@ -1395,3 +1395,37 @@ notification-delivery behaviour changes.
    accountType was not backfilled. Existing sessions remain valid:
    the access token's embedded role claim was already ignored by the
    middleware in favour of the database row.
+
+## Amendment v3.28 — Profile Photos & Avatar Menu (2026-10-31)
+
+1. **Profile photo (optional).** `User.profilePhoto` (nullable) stores
+   the served path of the user's avatar. Endpoints:
+   `POST /api/users/me/photo` and `DELETE /api/users/me/photo`, both
+   authenticated and `/me`-scoped — a user can only ever change their
+   own photo. Validation follows the strict upload pattern: a
+   JPEG/PNG/WebP allowlist plus magic-byte verification of the actual
+   contents, and a 5 MB cap (413). Files live on local disk in
+   `server/uploads/avatars/` (random filenames, served by the existing
+   `/uploads` mount, separate from listing photos); changing a photo
+   deletes the previous file, and deleting restores the default.
+   `publicUser` exposes `profilePhoto` (null when unset).
+2. **Registration.** The registration form offers an optional profile
+   photo with a live preview and an explicit Skip. The photo uploads
+   after account creation and sign-in through the same endpoint (the
+   NGO-documents pattern); skipping changes nothing about
+   registration, and an upload failure leaves the account created with
+   a clear Continue path.
+3. **Avatar menu.** The Nav's menu trigger is a circular avatar at
+   every viewport width: the user's photo (cropped to a circle) when
+   set, otherwise a grey silhouette (inline SVG). The header keeps
+   brand + location + avatar; all navigation lives in the panel the
+   avatar opens — the existing panel behaviour, previously
+   mobile-only, now at all widths; the hamburger button is removed.
+   The Profile page's Set / Change / Remove photo controls update the
+   auth context in place, so the avatar changes immediately with no
+   refresh or re-login. New strings: `accountMenu`, `profilePhoto`,
+   `setPhoto`, `changePhoto`, `removePhoto`, `photoSaved` (i18n
+   parity 343 keys × 3).
+4. **Compatibility.** Accounts without a photo are unaffected (null
+   renders the silhouette everywhere). Listing-photo behaviour and
+   NGO-document behaviour are unchanged.

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../lib/NotificationsContext.jsx';
 import { hasUsableCoords } from '../lib/location.js';
 import { useAuth } from '../lib/AuthContext.jsx';
+import { Avatar } from './Avatar.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 
@@ -41,13 +42,13 @@ export function Nav() {
       </button>
       <button
         type="button"
-        className="secondary nav-toggle"
+        className="avatarBtn"
         aria-expanded={menuOpen}
-        aria-label="Menu"
-        title="Menu"
+        aria-label={t('accountMenu')}
+        title={t('accountMenu')}
         onClick={() => setMenuOpen((o) => !o)}
       >
-        ☰
+        <Avatar user={user} size={34} />
       </button>
       <nav className={menuOpen ? 'open' : ''} onClick={() => setMenuOpen(false)}>
         <Link to="/browse">{t('browse')}</Link>
