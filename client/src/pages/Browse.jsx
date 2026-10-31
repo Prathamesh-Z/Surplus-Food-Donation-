@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
-import { listingDistanceKm, formatDistance, applyBrowseRadius } from '../lib/distance.js';
+import { listingDistanceKm, applyBrowseRadius } from '../lib/distance.js';
 import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
 import { timeRemaining } from './MyListings.jsx';
 
@@ -270,15 +270,10 @@ export function Browse() {
                 )}
               </div>
               <div className="foodStats">
-                <span>🍽 {l.portionsRemaining} of {l.totalPortions} {l.bulkUnit ? `${l.bulkUnit.toLowerCase()} (bulk)` : 'portions'} remaining</span>
                 <span>⏰ {timeRemaining(l.collectionDeadline)}</span>
               </div>
               <p className="muted foodMeta">
                 📍 {l.pickupLocationText}
-                {l.distanceKm !== null && l.distanceKm !== undefined && (
-                  <> · 📍 {formatDistance(l.distanceKm)} {t('awayFromYou')} · {t('straightLineDistance')}</>
-                )}
-                {l.categoryNote ? <> · {l.categoryNote}</> : ''}
               </p>
               <Link className="btn foodCta" to={`/listings/${l.id}`}>{soldOut ? t('viewDetails') : t('viewClaim')}</Link>
             </div>
