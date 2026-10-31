@@ -45,7 +45,7 @@ export function App() {
     <NotificationsProvider>
       <Nav />
       <NotificationBanners />
-      <div className="container">
+      <div className="container inviteWrap">
         <InviteBanner />
       </div>
       <main className="container">

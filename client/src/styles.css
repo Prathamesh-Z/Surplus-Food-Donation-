@@ -36,6 +36,11 @@ h2 { font-size: 20px; margin: 26px 0 10px; }
 .nav nav a:hover { text-decoration: underline; }
 
 .container { max-width: 1020px; margin: 0 auto; padding: 24px 16px 64px; }
+/* The invite banner renders only for logged-out visitors carrying an
+   invite code; the rest of the time its wrapper would otherwise leave
+   an 88px band of pure padding (24px top + 64px bottom) between the
+   navbar and every page's content. Collapse it when empty. */
+.inviteWrap:empty { display: none; }
 
 /* ── Cards, badges, controls ────────────────────────────────── */
 .card {
