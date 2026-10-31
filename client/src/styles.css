@@ -150,4 +150,10 @@ button.danger { background: var(--red); }
   background: #fff; border: 1px solid var(--line); border-radius: 12px;
   padding: 8px 12px; margin-bottom: 12px; box-shadow: var(--card-shadow);
 }
+/* The global form rule sets width:100% on inputs/selects, which makes
+   each select a full-width flex item that wraps onto its own line.
+   Inside the bar they must size to content and share the row. */
+.filterBar input, .filterBar select { width: auto; margin: 0; }
+.filterBar select { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.filterBar > label { display: inline-flex; align-items: center; gap: 6px; }
 .filterBarNote { flex-basis: 100%; font-size: 12px; }
