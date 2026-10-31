@@ -189,3 +189,11 @@ button.dangerGhost:hover { background: var(--red-bg); }
    copy button — button chrome reset, clear keyboard focus ring kept. */
 button.codeTap { background: none; border: none; padding: 2px 4px; margin: 0; cursor: pointer; font: inherit; border-radius: 6px; }
 button.codeTap:focus-visible { outline: 2px solid #2e7d32; outline-offset: 2px; }
+
+/* Recurring page: even rhythm for the stacked form fields and the
+   weekday chip group (selected = primary button, unselected = secondary;
+   native buttons keep keyboard operation and focus visible). */
+.recurForm { display: flex; flex-direction: column; gap: 10px; }
+.fieldLabel { font-weight: 600; font-size: 14px; }
+.dayChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; max-width: 100%; }
+.dayChips .dayChip { padding: 6px 12px; }
