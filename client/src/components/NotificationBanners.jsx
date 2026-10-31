@@ -48,7 +48,7 @@ function BannerItem({ n, onOpen, onDismiss }) {
         if (e.key === 'Enter') onOpen(n);
       }}
       style={{
-        background: '#fff', border: '1px solid #b9d3ac', borderLeft: '4px solid var(--green-600, #2e7d32)',
+        background: '#fff', border: '1px solid #b9d3ac', borderLeft: '4px solid var(--green-600, var(--green-700))',
         borderRadius: 10, boxShadow: '0 6px 20px rgba(20,35,18,0.22)',
         padding: '10px 12px', cursor: 'pointer', pointerEvents: 'auto',
       }}

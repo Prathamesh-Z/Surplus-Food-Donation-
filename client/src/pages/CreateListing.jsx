@@ -6,6 +6,7 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { sameLocation } from '../lib/location.js';
 import { CameraCapture } from '../components/CameraCapture.jsx';
+import { CameraIcon, MapPinIcon } from '../components/icons.jsx';
 
 const ALL_IDS = CHECKLIST.map(([id]) => id);
 
@@ -19,7 +20,7 @@ function todayStr(d = new Date()) {
 function SplitDateTime({ label, date, setDate, time, setTime }) {
   const set = (k) => (e) => setTime({ ...time, [k]: e.target.value });
   return (
-    <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 12px', padding: '10px 12px' }}>
+    <fieldset style={{ border: '1px solid var(--line)', borderRadius: 10, margin: '0 0 12px', padding: '10px 12px' }}>
       <legend style={{ fontWeight: 600, fontSize: 14 }}>{label}</legend>
       <div className="row">
         <label style={{ flex: '1 1 160px' }}>
@@ -449,7 +450,7 @@ export function CreateListing() {
       )}
       <form onSubmit={submit}>
         {/* ── Photo + AI detection (v3.4: upload or camera, auto-detect) ── */}
-        <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
+        <fieldset style={{ border: '1px solid var(--line)', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
           <legend style={{ fontWeight: 600, fontSize: 14 }}>{t('photoDetect')}</legend>
           <div className="row">
             <label className="secondary" style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}>
@@ -457,7 +458,7 @@ export function CreateListing() {
               <input ref={photoInputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: 'none' }} />
             </label>
             <button type="button" className="secondary" onClick={() => setCameraOpen(true)}>
-              📷 {t('scanCamera')}
+              <CameraIcon size={16} /> {t('scanCamera')}
             </button>
           </div>
           {cameraOpen && (
@@ -467,7 +468,7 @@ export function CreateListing() {
             <div className="row" style={{ marginTop: 10, alignItems: 'center' }}>
               <p className="muted" style={{ margin: 0 }}>✍️ {t('manualModeNote')}</p>
               <button type="button" className="secondary" style={{ padding: '6px 12px' }} onClick={useScanning}>
-                📷 {t('useScanning')}
+                <CameraIcon size={16} /> {t('useScanning')}
               </button>
             </div>
           )}
@@ -547,7 +548,7 @@ export function CreateListing() {
                         style={{ padding: '6px 12px' }}
                         onClick={() => setCameraOpen(true)}
                       >
-                        📷 {t('captureAgain')}
+                        <CameraIcon size={16} /> {t('captureAgain')}
                       </button>
                     </div>
                   </div>
@@ -655,10 +656,10 @@ export function CreateListing() {
           />
         </label>
         <button type="button" className="secondary" onClick={useCurrentLocation} disabled={locating} style={{ marginBottom: 12 }}>
-          📍 {locating ? t('locating') : t('useCurrentLocation')}
+          <MapPinIcon size={15} /> {locating ? t('locating') : t('useCurrentLocation')}
         </button>
         <p className="muted" style={{ marginTop: -6 }}>{t('geocodePrivacyNote')}</p>
-        {pickupCoords && <p className="success" style={{ marginTop: -6 }}>📍 {t('pickupPointSet')}</p>}
+        {pickupCoords && <p className="success" style={{ marginTop: -6 }}><MapPinIcon size={14} /> {t('pickupPointSet')}</p>}
         {(() => {
           const seed = seedRef.current;
           const changed = savedLocObj && !sameLocation(seed, savedLocObj);
@@ -694,7 +695,7 @@ export function CreateListing() {
         })()}
 
         {/* ── Donor contact (v3.4): prefilled from the profile ── */}
-        <fieldset style={{ border: '1px solid #d9e8d2', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
+        <fieldset style={{ border: '1px solid var(--line)', borderRadius: 10, margin: '0 0 14px', padding: '12px' }}>
           <legend style={{ fontWeight: 600, fontSize: 14 }}>{t('donorContactTitle')}</legend>
           <label>
             {t('contactNumber')}

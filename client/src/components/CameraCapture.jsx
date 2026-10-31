@@ -74,7 +74,7 @@ export function CameraCapture({ onCapture, onClose }) {
   }
 
   return (
-    <div style={{ border: '1px solid #d9e8d2', borderRadius: 10, padding: 12, marginTop: 10 }}>
+    <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 12, marginTop: 10 }}>
       {error ? (
         <p className="error">{error}</p>
       ) : (

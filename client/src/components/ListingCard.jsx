@@ -2,12 +2,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { PriorityBadge, priorityCardStyle } from './PriorityBadge.jsx';
+import { ClockIcon, MapPinIcon } from './icons.jsx';
 import { timeRemaining } from '../pages/MyListings.jsx';
 
 /** Classic Indian veg/non-veg mark + label. Vegan counts as vegetarian. */
 export function DietMark({ type }) {
   const veg = type === 'VEG' || type === 'VEGAN';
-  const color = type === 'NON_VEG' ? '#b3261e' : '#1e7d32';
+  const color = type === 'NON_VEG' ? 'var(--red)' : 'var(--green-700)';
   const label = type === 'VEGAN' ? 'Vegan' : veg ? 'Veg' : 'Non-veg';
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color }}>
@@ -55,7 +56,7 @@ export function ListingCard({ listing: l, imgFailed = false, onImgError, childre
       ) : (
         <div
           style={{
-            height: 160, borderRadius: 8, background: '#eef4ea',
+            height: 160, borderRadius: 8, background: 'var(--surface-tint)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 40, color: '#7a8a72',
           }}
@@ -73,16 +74,16 @@ export function ListingCard({ listing: l, imgFailed = false, onImgError, childre
           {!soldOut && <PriorityBadge deadline={l.collectionDeadline} />}
           {l.ngoSuitable && <span className="badge warn">{t('ngoSuitable')}</span>}
           {soldOut && (
-            <span className="badge" style={{ background: '#eceff1', color: '#546e7a', border: '1px solid #b0bec5' }}>
+            <span className="badge grey" style={{ border: '1px solid var(--grey-border)' }}>
               {t('fullyClaimed')}
             </span>
           )}
         </div>
         <div className="foodStats">
-          <span>⏰ {timeRemaining(l.collectionDeadline)}</span>
+          <span><ClockIcon size={16} /> {timeRemaining(l.collectionDeadline)}</span>
         </div>
         <p className="muted foodMeta">
-          📍 {l.pickupLocationText}
+          <MapPinIcon size={14} /> {l.pickupLocationText}
         </p>
         <Link className="btn foodCta" to={`/listings/${l.id}`}>{soldOut ? t('viewDetails') : t('viewClaim')}</Link>
       </div>

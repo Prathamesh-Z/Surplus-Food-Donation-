@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { MapPinIcon } from './icons.jsx';
 import { validCoords } from '../lib/distance.js';
 
 /**
@@ -176,7 +177,7 @@ export function LocationPicker({ initial, onConfirm, onClose }) {
         <div
           ref={mapDivRef}
           style={{
-            height: 300, borderRadius: 10, border: '1px solid #d9e8d2',
+            height: 300, borderRadius: 10, border: '1px solid var(--line)',
             overflow: 'hidden', background: '#eef3ea', position: 'relative', zIndex: 0,
           }}
         />
@@ -185,11 +186,11 @@ export function LocationPicker({ initial, onConfirm, onClose }) {
           <p style={{ margin: '8px 0 0', fontSize: 13 }}>⚠ {t('pickerStartHint')}</p>
         )}
         {approxNote && (
-          <p style={{ margin: '8px 0 0', fontSize: 13 }}>📍 {t('searchApprox')}</p>
+          <p style={{ margin: '8px 0 0', fontSize: 13 }}><MapPinIcon size={13} /> {t('searchApprox')}</p>
         )}
         <p className="muted" style={{ margin: '8px 0 4px' }}>{t('dragPinHint')}</p>
         <p style={{ margin: '0 0 8px', fontSize: 13 }}>
-          📍 {selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}
+          <MapPinIcon size={13} /> {selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}
         </p>
         <label>
           {t('locationName')}

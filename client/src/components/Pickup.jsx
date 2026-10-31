@@ -63,7 +63,7 @@ export function PickupCodeDisplay({ code, variant }) {
             alt={`QR — ${code}`}
             width={132}
             height={132}
-            style={{ borderRadius: 8, background: '#fff', border: '1px solid #d9e8d2' }}
+            style={{ borderRadius: 8, background: '#fff', border: '1px solid var(--line)' }}
           />
         )}
         <span>
@@ -99,7 +99,7 @@ export function PickupCodeDisplay({ code, variant }) {
           alt={`QR — ${code}`}
           width={132}
           height={132}
-          style={{ borderRadius: 8, background: '#fff', border: '1px solid #d9e8d2' }}
+          style={{ borderRadius: 8, background: '#fff', border: '1px solid var(--line)' }}
         />
       )}
     </span>

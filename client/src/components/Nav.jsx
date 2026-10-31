@@ -4,6 +4,7 @@ import { useNotifications } from '../lib/NotificationsContext.jsx';
 import { hasUsableCoords } from '../lib/location.js';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { Avatar } from './Avatar.jsx';
+import { BrandMark, MapPinIcon, PencilIcon } from './icons.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 
@@ -84,7 +85,7 @@ export function Nav() {
         title={t('appName')}
         onClick={() => setMenuOpen(false)}
       >
-        🥗
+        <BrandMark size={30} />
       </Link>
       <button
         type="button"
@@ -93,7 +94,7 @@ export function Nav() {
         title={t('yourLocation')}
         style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
-        📍 <span className="loc-label">{location?.label ?? t('locPromptTitle')}</span>{location && !hasUsableCoords(location) ? ` (${t('areaOnlyShort')})` : ''} ✎
+        <MapPinIcon size={15} /> <span className="loc-label">{location?.label ?? t('locPromptTitle')}</span>{location && !hasUsableCoords(location) ? ` (${t('areaOnlyShort')})` : ''} <PencilIcon size={13} />
       </button>
       <Link
         to="/notifications"

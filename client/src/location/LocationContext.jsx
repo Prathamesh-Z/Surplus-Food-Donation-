@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { MapPinIcon } from '../components/icons.jsx';
 import { LocationPicker } from '../components/LocationPicker.jsx';
 import { accuracyBand, hasUsableCoords, locationSourceKey } from '../lib/location.js';
 
@@ -130,7 +131,7 @@ function LocationDetails({ onClose }) {
         style={{ background: '#fff', borderRadius: 12, padding: 20, maxWidth: 420, width: '100%' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginTop: 0 }}>📍 {t('savedLocationTitle')}</h3>
+        <h3 style={{ marginTop: 0 }}><MapPinIcon size={17} /> {t('savedLocationTitle')}</h3>
         {!location ? (
           <p className="muted">{t('noLocationSaved')}</p>
         ) : (
@@ -246,11 +247,11 @@ function LocationPrompt({ onClose }) {
         style={{ background: '#fff', borderRadius: 12, padding: 20, maxWidth: 420, width: '100%' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginTop: 0 }}>📍 {t('locPromptTitle')}</h3>
+        <h3 style={{ marginTop: 0 }}><MapPinIcon size={17} /> {t('locPromptTitle')}</h3>
         <p className="muted">{t('locPromptText')}</p>
         {error && <div className="error">{error}</div>}
         <button type="button" onClick={detect} disabled={busy} style={{ width: '100%', marginBottom: 10 }}>
-          {busy ? t('locating') : `📍 ${t('useCurrentLocation')}`}
+          {busy ? t('locating') : <><MapPinIcon size={15} /> {t('useCurrentLocation')}</>}
         </button>
         {fix && (
           <div

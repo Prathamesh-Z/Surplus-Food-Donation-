@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { MapPinIcon } from '../components/icons.jsx';
 import { api, formatApiError } from '../lib/api.js';
 import { VerifyPickup } from '../components/Pickup.jsx';
 import { LiveShareControl } from '../components/LiveShareControl.jsx';
@@ -103,7 +104,7 @@ export function MyListings() {
             <span className="muted">{l.portionsRemaining}/{l.totalPortions} {t('portions')} {t('remaining')}</span>
             <span className="muted">{timeRemaining(l.collectionDeadline)}</span>
           </div>
-          <p className="muted">📍 {l.pickupLocationText}</p>
+          <p className="muted"><MapPinIcon size={14} /> {l.pickupLocationText}</p>
           {(claims[l.id] ?? []).length > 0 && (
             <div>
               <strong>{t('claimsOnListing')}</strong>

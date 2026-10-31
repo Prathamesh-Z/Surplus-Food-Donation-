@@ -9,6 +9,8 @@ import {
 } from '../lib/routing.js';
 import { buildRouteDiagnostics } from '../lib/routing.js';
 import { accuracyBand } from '../lib/location.js';
+import { BikeIcon, ClockIcon, MapPinIcon, WalkingIcon } from './icons.jsx';
+import { NavigationIcon } from './icons.jsx';
 
 /**
  * Pickup map for a CONFIRMED claim (PRD v3.12 static map, extended by
@@ -263,7 +265,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
       routeLineRef.current = null;
     }
     if (route?.coords?.length >= 2) {
-      routeLineRef.current = L.polyline(route.coords, { color: '#1565c0', weight: 5, opacity: 0.85 }).addTo(map);
+      routeLineRef.current = L.polyline(route.coords, { color: '#1c7a37', weight: 5, opacity: 0.85 }).addTo(map);
       map.fitBounds(L.latLngBounds(route.coords), { padding: [36, 36] });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -303,23 +305,29 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
     const L = LRef.current;
     const map = mapRef.current;
     if (!mapReady || !L || !map || !dest) return;
-    const pin = (emoji, label, border, extra = '') =>
+    const pinSvg = (color) =>
+      `<svg width="13" height="13" viewBox="0 0 24 24" style="display:inline-block;vertical-align:-2px">` +
+      `<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" fill="${color}"/><circle cx="12" cy="10" r="3" fill="#fff"/></svg>`;
+    const navSvg =
+      `<svg width="12" height="12" viewBox="0 0 24 24" style="display:inline-block;vertical-align:-1px">` +
+      `<polygon points="3 11 22 2 13 21 11 13 3 11" fill="#b87908"/></svg>`;
+    const pin = (glyph, label, border, extra = '') =>
       L.divIcon({
         className: 'fws-pin',
         html:
           `<div style="display:inline-block;transform:translate(-50%,-110%);white-space:nowrap;` +
           `background:#fff;border:1px solid ${border};border-radius:999px;padding:2px 8px;` +
-          `font-size:12px;font-weight:600;color:#1d3a1a;box-shadow:0 1px 4px rgba(0,0,0,.3)">${emoji} ${extra}${label}</div>`,
+          `font-size:12px;font-weight:600;color:#1d3a1a;box-shadow:0 1px 4px rgba(0,0,0,.3)">${glyph} ${extra}${label}</div>`,
         iconSize: [0, 0],
       });
-    const destBorder = destKind === 'stale' ? '#9e9e9e' : '#2e7d32';
+    const destBorder = destKind === 'stale' ? '#9e9e9e' : '#1c7a37';
     const destLabel = destKind === 'pickup' ? t('pickupPoint') : t('donorLocation');
-    const destEmoji = destKind === 'stale' ? '⏳' : '📍';
+    const destGlyph = pinSvg(destKind === 'stale' ? '#9e9e9e' : '#1c7a37');
     if (!destRef.current) {
-      destRef.current = L.marker([dest.lat, dest.lng], { icon: pin(destEmoji, destLabel, destBorder) }).addTo(map);
+      destRef.current = L.marker([dest.lat, dest.lng], { icon: pin(destGlyph, destLabel, destBorder) }).addTo(map);
     } else {
       destRef.current.setLatLng([dest.lat, dest.lng]);
-      destRef.current.setIcon(pin(destEmoji, destLabel, destBorder));
+      destRef.current.setIcon(pin(destGlyph, destLabel, destBorder));
     }
     if (myPos) {
       const arrow =
@@ -327,17 +335,17 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
           ? `<span style="display:inline-block;transform:rotate(${heading - 90}deg);font-size:11px">➤</span> `
           : '';
       if (!youRef.current) {
-        youRef.current = L.marker([myPos.lat, myPos.lng], { icon: pin('🧭', t('yourLocation'), '#1565c0', arrow) }).addTo(map);
+        youRef.current = L.marker([myPos.lat, myPos.lng], { icon: pin(navSvg, t('yourLocation'), '#b87908', arrow) }).addTo(map);
       } else {
         youRef.current.setLatLng([myPos.lat, myPos.lng]);
-        youRef.current.setIcon(pin('🧭', t('yourLocation'), '#1565c0', arrow));
+        youRef.current.setIcon(pin(navSvg, t('yourLocation'), '#b87908', arrow));
       }
       const latlngs = [
         [myPos.lat, myPos.lng],
         [dest.lat, dest.lng],
       ];
       if (!lineRef.current) {
-        lineRef.current = L.polyline(latlngs, { color: '#2e7d32', weight: 3, dashArray: '6 6' }).addTo(map);
+        lineRef.current = L.polyline(latlngs, { color: '#1c7a37', weight: 3, dashArray: '6 6' }).addTo(map);
       } else {
         lineRef.current.setLatLngs(latlngs);
       }
@@ -376,7 +384,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
     return (
       <div
         style={{
-          marginTop: 12, border: '1px dashed #c9d6c3', borderRadius: 10,
+          marginTop: 12, border: '1px dashed var(--line)', borderRadius: 10,
           padding: '10px 12px', background: '#f7faf5',
         }}
       >
@@ -401,7 +409,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
           map is presentation only — the positions, donor polling and
           routing underneath keep running unchanged. */}
       {!minimal && (<>
-      <p className="muted" style={{ margin: '0 0 6px' }}>📍 {listing.pickupLocationText}</p>
+      <p className="muted" style={{ margin: '0 0 6px' }}><MapPinIcon size={14} /> {listing.pickupLocationText}</p>
       {donorLive?.state === 'live' && (
         <p className="success" style={{ margin: '0 0 6px' }}>
           ● {t('liveLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}
@@ -409,7 +417,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
       )}
       {donorLive?.state === 'stale' && (
         <p className="muted" style={{ margin: '0 0 6px' }}>
-          ⏳ {t('staleLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}
+          <ClockIcon size={14} /> {t('staleLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}
         </p>
       )}
       {donorLive?.state === 'waiting' && (
@@ -433,7 +441,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
               aria-pressed={mode === 'foot'}
               onClick={() => setMode('foot')}
             >
-              🚶 {t('modeWalking')}
+              <WalkingIcon size={16} /> {t('modeWalking')}
             </button>
             <button
               type="button"
@@ -441,14 +449,14 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
               aria-pressed={mode === 'bike'}
               onClick={() => setMode('bike')}
             >
-              🚴 {t('modeBicycle')}
+              <BikeIcon size={16} /> {t('modeBicycle')}
             </button>
             {routeStatus === 'loading' && <span className="muted">{t('routeLoading')}</span>}
           </div>
           {routeStatus === 'ok' && route && (
-            <p style={{ margin: '4px 0 0', fontWeight: 600, color: '#1565c0' }}>
-              {route.mode === 'foot' ? '🚶' : '🚴'} {route.mode === 'foot' ? t('modeWalking') : t('modeBicycle')}
-              {' · '}{formatDistance(route.distanceKm)}{' · '}⏱ {formatDuration(route.durationSec)}
+            <p style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--green-700)' }}>
+              {route.mode === 'foot' ? <WalkingIcon size={15} /> : <BikeIcon size={15} />} {route.mode === 'foot' ? t('modeWalking') : t('modeBicycle')}
+              {' · '}{formatDistance(route.distanceKm)}{' · '}<ClockIcon size={14} /> {formatDuration(route.durationSec)}
             </p>
           )}
           {routeStatus === 'unavailable' && (
@@ -460,8 +468,8 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
       {!myPos && (
         <div
           style={{
-            border: '1px dashed #c9d6c3', borderRadius: 10,
-            padding: '10px 12px', background: '#f7faf5', marginBottom: 8,
+            border: '1px dashed var(--line)', borderRadius: 10,
+            padding: '10px 12px', background: 'var(--green-50)', marginBottom: 8,
           }}
         >
           <p className="muted" style={{ margin: '0 0 8px' }}>{t('locationNeeded')}</p>
@@ -471,7 +479,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
             onClick={() => setOriginMode('live')}
             disabled={locating}
           >
-            📍 {locating ? t('locating') : t('originLiveGps')}
+            <MapPinIcon size={15} /> {locating ? t('locating') : t('originLiveGps')}
           </button>
           {geoError && <p className="error" style={{ margin: '8px 0 0' }}>{geoError}</p>}
         </div>
@@ -485,7 +493,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
           onClick={() => setOriginMode('saved')}
           disabled={!savedPos}
         >
-          📍 {t('originSaved')}
+          <MapPinIcon size={15} /> {t('originSaved')}
         </button>
         <button
           type="button"
@@ -510,7 +518,7 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
       <div
         ref={mapDivRef}
         style={{
-          height: 'clamp(220px, 45vh, 340px)', borderRadius: 10, border: '1px solid #d9e8d2',
+          height: 'clamp(220px, 45vh, 340px)', borderRadius: 10, border: '1px solid var(--line)',
           overflow: 'hidden', background: '#eef3ea', position: 'relative', zIndex: 0,
         }}
       />
@@ -522,11 +530,11 @@ export function DistanceMap({ claimId, listing, minimal = false }) {
             rel="noopener noreferrer"
             style={{
               display: 'inline-block', marginTop: 8, padding: '8px 16px',
-              background: '#2e7d32', color: '#fff', borderRadius: 8,
+              background: 'var(--green-700)', color: '#fff', borderRadius: 8,
               textDecoration: 'none', fontWeight: 600,
             }}
           >
-            🧭 {t('getDirections')}
+            <NavigationIcon size={15} /> {t('getDirections')}
           </a>
           {!minimal && (
             <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>{t('directionsPrivacy')}</p>

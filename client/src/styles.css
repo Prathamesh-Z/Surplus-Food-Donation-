@@ -1,36 +1,95 @@
+/* Food Waste Saver theme (PRD v3.32). Design tokens live in :root —
+   palette scales anchored on the original hand-picked values
+   (#14532d deep green, #f6faf1 warm cream, #b87908 amber), a type
+   scale, spacing/radius/shadow tokens, and semantic aliases.
+   Components reference tokens, not raw hexes. Webfonts are embedded
+   in fonts.css (data URIs — see that file for why). */
 :root {
-  --green-900: #14532d;
-  --green-700: #1c7a37;
-  --green-600: #22a04a;
+  /* Palette scales */
+  --green-50: #f4f9f0;
   --green-100: #e4f5e6;
+  --green-200: #cdeccf;
+  --green-300: #a5dba9;
+  --green-600: #22a04a;
+  --green-700: #1c7a37;
+  --green-800: #17632e;
+  --green-900: #14532d;
   --amber: #b87908;
   --amber-bg: #fdf0cd;
+  --amber-soft: #fff8e1;
+  --amber-soft-hover: #ffecb3;
+  --amber-text: #8d6e00;
+  --amber-border: #e0b400;
   --red: #b23a1e;
   --red-bg: #fde3da;
+  --red-border: #e5a48f;
   --ink: #1c2b1a;
   --muted: #5c6b57;
   --line: #d9e8d2;
+  --border-strong: #b9cdb0;
+  --success-border: #9cc48a;
+  --grey-bg: #eceff0;
+  --grey-text: #55606a;
+  --grey-border: #b0bec5;
+  --avatar-bg: #e6eae2;
+  --avatar-fg: #9aa79b;
+  --surface-tint: #eef4ea;
   --bg: #f6faf1;
+  /* Semantic aliases */
+  --primary: var(--green-700);
+  --primary-strong: var(--green-900);
+  --surface: #fff;
+  --text: var(--ink);
+  --text-muted: var(--muted);
+  --border: var(--line);
+  --success: var(--green-700);
+  --warning: var(--amber);
+  --danger: var(--red);
+  /* Type */
+  --font-ui: 'Public Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Devanagari', sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Noto Sans Devanagari', serif;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  /* Radii */
+  --radius-s: 9px;
+  --radius-m: 14px;
+  --radius-l: 18px;
+  --radius-pill: 999px;
+  /* Shadows */
   --card-shadow: 0 1px 3px rgba(20, 83, 45, 0.08), 0 4px 14px rgba(20, 83, 45, 0.05);
+  --shadow-card: var(--card-shadow);
+  --shadow-raised: 0 8px 28px rgba(20, 83, 45, 0.16), 0 2px 8px rgba(20, 83, 45, 0.1);
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif;
-  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  color: var(--text);
   background: var(--bg);
 }
 a { color: var(--green-700); }
-h1 { font-size: 28px; margin: 6px 0 12px; }
-h2 { font-size: 20px; margin: 26px 0 10px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: var(--text-2xl); margin: 6px 0 12px; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); margin: 26px 0 10px; }
 
 /* ── Navigation ─────────────────────────────────────────────── */
 .nav {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 12px 20px; background: #fff; border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 6px rgba(20, 83, 45, 0.06);
 }
-.nav .brand { font-weight: 800; font-size: 20px; text-decoration: none; color: var(--green-900); white-space: nowrap; }
+.nav .brand { display: inline-flex; align-items: center; text-decoration: none; color: var(--green-900); white-space: nowrap; }
 /* The avatar button is the menu trigger at EVERY width: the nav links
    live in the panel it opens (the same full-width column panel the
    mobile layout always had), never inline in the header. */
@@ -40,7 +99,7 @@ h2 { font-size: 20px; margin: 26px 0 10px; }
   width: 100%; padding-top: 4px; gap: 10px;
 }
 .avatarBtn {
-  background: none; border: 2px solid var(--line); border-radius: 50%;
+  background: none; border: 2px solid var(--border); border-radius: 50%;
   width: 38px; height: 38px; padding: 0; overflow: hidden; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; flex: none;
 }
@@ -58,7 +117,7 @@ h2 { font-size: 20px; margin: 26px 0 10px; }
 .bellBtn:focus-visible { outline: 2px solid var(--green-600); outline-offset: 2px; }
 .bellBadge {
   position: absolute; top: 0; right: 0; min-width: 18px; height: 18px;
-  padding: 0 4px; border-radius: 999px; background: var(--red); color: #fff;
+  padding: 0 4px; border-radius: var(--radius-pill); background: var(--danger); color: #fff;
   font-size: 11px; font-weight: 700; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center;
 }
@@ -74,7 +133,7 @@ h2 { font-size: 20px; margin: 26px 0 10px; }
   width: 52px; height: 52px; border-radius: 50%;
   background: var(--green-600); color: #fff; text-decoration: none;
   display: flex; align-items: center; justify-content: center;
-  font-size: 24px; font-weight: 800; z-index: 30;
+  font-family: var(--font-display); font-size: 24px; font-weight: 700; z-index: 30;
   box-shadow: 0 4px 14px rgba(20, 83, 45, 0.35);
 }
 .faqFab:hover { background: var(--green-900); }
@@ -91,34 +150,34 @@ h2 { font-size: 20px; margin: 26px 0 10px; }
 
 /* ── Cards, badges, controls ────────────────────────────────── */
 .card {
-  background: #fff; border: 1px solid var(--line); border-radius: 14px;
-  padding: 16px; margin-bottom: 14px; box-shadow: var(--card-shadow);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-m);
+  padding: var(--space-4); margin-bottom: 14px; box-shadow: var(--shadow-card);
 }
 .badge {
-  display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px;
+  display: inline-block; padding: 2px 9px; border-radius: var(--radius-pill); font-size: var(--text-xs);
   font-weight: 700; background: var(--green-100); color: var(--green-900);
 }
-.badge.warn { background: var(--amber-bg); color: var(--amber); }
-.badge.danger { background: var(--red-bg); color: var(--red); }
-.badge.grey { background: #eceff0; color: #55606a; }
+.badge.warn { background: var(--amber-bg); color: var(--warning); }
+.badge.danger { background: var(--red-bg); color: var(--danger); }
+.badge.grey { background: var(--grey-bg); color: var(--grey-text); }
 input, select, textarea {
   width: 100%; padding: 9px 10px; margin: 4px 0 12px;
-  border: 1px solid #b9cdb0; border-radius: 9px; font: inherit; background: #fff;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-s); font: inherit; background: var(--surface);
 }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--green-600); outline-offset: 0; border-color: var(--green-600); }
-label { font-weight: 600; font-size: 14px; }
+label { font-weight: 600; font-size: var(--text-sm); }
 button, .btn {
-  background: var(--green-700); color: #fff; border: 0; border-radius: 9px;
+  background: var(--primary); color: #fff; border: 0; border-radius: var(--radius-s);
   padding: 9px 16px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block;
 }
-button:hover, .btn:hover { background: var(--green-900); }
+button:hover, .btn:hover { background: var(--primary-strong); }
 button.secondary, .btn.secondary { background: var(--green-100); color: var(--green-900); }
-button.secondary:hover, .btn.secondary:hover { background: #d2ecd4; }
-button.danger { background: var(--red); }
+button.secondary:hover, .btn.secondary:hover { background: var(--green-200); }
+button.danger { background: var(--danger); }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 14px; }
-.error { background: var(--red-bg); border: 1px solid #e5a48f; padding: 10px 12px; border-radius: 9px; margin-bottom: 12px; }
-.success { background: var(--green-100); border: 1px solid #9cc48a; padding: 10px 12px; border-radius: 9px; margin-bottom: 12px; }
-.muted { color: var(--muted); font-size: 14px; }
+.error { background: var(--red-bg); border: 1px solid var(--red-border); padding: 10px 12px; border-radius: var(--radius-s); margin-bottom: 12px; }
+.success { background: var(--green-100); border: 1px solid var(--success-border); padding: 10px 12px; border-radius: var(--radius-s); margin-bottom: 12px; }
+.muted { color: var(--text-muted); font-size: var(--text-sm); }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .code {
   font-family: ui-monospace, Consolas, monospace; font-size: 20px; font-weight: 800;
@@ -126,16 +185,26 @@ button.danger { background: var(--red); }
 }
 
 /* ── Hero (home) ────────────────────────────────────────────── */
+/* The existing green gradient, plus a subtle dot pattern layer, the
+   Fraunces headline, and a short amber rule under the title — the
+   pass's one signature treatment, deliberately restrained. */
 .hero {
-  background: linear-gradient(120deg, var(--green-900), var(--green-700));
-  color: #fff; border-radius: 18px; padding: 34px 28px; margin-bottom: 20px;
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.09) 1.2px, transparent 1.3px),
+    linear-gradient(120deg, var(--green-900), var(--green-700));
+  background-size: 22px 22px, 100% 100%;
+  color: #fff; border-radius: var(--radius-l); padding: 34px 28px; margin-bottom: 20px;
 }
-.hero h1 { font-size: 34px; margin: 0 0 8px; color: #fff; }
+.hero h1 { font-size: var(--text-2xl); margin: 0 0 8px; color: #fff; }
+.hero h1::after {
+  content: ''; display: block; width: 64px; height: 3px;
+  background: var(--amber); border-radius: 2px; margin-top: 12px;
+}
 .hero p { font-size: 17px; margin: 0 0 16px; opacity: 0.92; max-width: 640px; }
 .hero .btn { background: #fff; color: var(--green-900); }
 .hero .btn.secondary { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.75); }
 .hero-stats { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 18px; }
-.hero-stats .n { font-size: 26px; font-weight: 800; }
+.hero-stats .n { font-family: var(--font-display); font-size: 26px; font-weight: 700; }
 .hero-stats .l { font-size: 13px; opacity: 0.85; }
 
 /* ── Impact wall (venue display) ────────────────────────────── */
@@ -144,11 +213,11 @@ button.danger { background: var(--red); }
   gap: 16px; margin: 24px 0;
 }
 .wall-stat {
-  background: #fff; border: 1px solid var(--line); border-radius: 16px;
-  padding: 26px 18px; box-shadow: var(--card-shadow);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 26px 18px; box-shadow: var(--shadow-card);
 }
-.wall-value { font-size: 52px; font-weight: 800; color: var(--green-900); line-height: 1.05; }
-.wall-label { color: var(--muted); font-size: 16px; margin-top: 6px; }
+.wall-value { font-family: var(--font-display); font-size: 52px; font-weight: 700; color: var(--green-900); line-height: 1.05; }
+.wall-label { color: var(--text-muted); font-size: 16px; margin-top: 6px; }
 
 /* ── Small screens ──────────────────────────────────────────── */
 /* QA-08: the header used to wrap ~10 links into ~299px of stacked rows.
@@ -162,7 +231,7 @@ button.danger { background: var(--red); }
 @media (max-width: 640px) {
   .hero h1 { font-size: 27px; }
   .wall-value { font-size: 42px; }
-  h1 { font-size: 24px; }
+  h1 { font-size: var(--text-xl); }
 }
 
 /* Notification swipe-to-dismiss (PRD v3.26): vertical scrolling stays
@@ -192,9 +261,9 @@ button.danger { background: var(--red); }
    narrow screens; notes take a single small line of their own. */
 .filterBar {
   display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;
-  background: #fff; border: 1px solid var(--line); border-radius: 10px;
-  padding: 6px 10px; margin-bottom: 10px; box-shadow: var(--card-shadow);
-  font-size: 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 6px 10px; margin-bottom: 10px; box-shadow: var(--shadow-card);
+  font-size: var(--text-sm);
 }
 /* The global form rule sets width:100% on inputs/selects, which makes
    each select a full-width flex item that wraps onto its own line.
@@ -202,7 +271,7 @@ button.danger { background: var(--red); }
 .filterBar input, .filterBar select { width: auto; margin: 0; padding: 5px 8px; }
 .filterBar select { flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .filterBar > label { display: inline-flex; align-items: center; gap: 6px; }
-.filterBarNote { font-size: 12px; }
+.filterBarNote { font-size: var(--text-xs); }
 @media (max-width: 640px) {
   /* Mobile: compact packed rows with NO internal scrolling — Search
      takes its own row, the dropdowns pair up, Sort and the checkboxes
@@ -221,29 +290,29 @@ button.danger { background: var(--red); }
 .claimHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .claimTitle { font-size: 1.12rem; line-height: 1.25; min-width: 0; overflow-wrap: break-word; }
 .claimStats { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; font-weight: 700; white-space: nowrap; }
-.claimDetails { background: #f7faf5; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
-button.dangerGhost { background: #fff; color: var(--red); border: 1.5px solid var(--red); }
+.claimDetails { background: var(--green-50); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+button.dangerGhost { background: var(--surface); color: var(--danger); border: 1.5px solid var(--danger); }
 button.dangerGhost:hover { background: var(--red-bg); }
 
 /* Tappable pickup code (My Claims card): the code text itself is the
    copy button — button chrome reset, clear keyboard focus ring kept. */
 button.codeTap { background: none; border: none; padding: 2px 4px; margin: 0; cursor: pointer; font: inherit; border-radius: 6px; }
-button.codeTap:focus-visible { outline: 2px solid #2e7d32; outline-offset: 2px; }
+button.codeTap:focus-visible { outline: 2px solid var(--green-700); outline-offset: 2px; }
 
 /* Recurring page: even rhythm for the stacked form fields and the
    weekday chip group (selected = primary button, unselected = secondary;
    native buttons keep keyboard operation and focus visible). */
 .recurForm { display: flex; flex-direction: column; gap: 10px; }
-.fieldLabel { font-weight: 600; font-size: 14px; }
+.fieldLabel { font-weight: 600; font-size: var(--text-sm); }
 .dayChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; max-width: 100%; }
 .dayChips .dayChip { padding: 6px 12px; }
 
 /* Unified Impact view switch (Live Impact / My Impact): a segmented
    pill of real buttons — native keyboard operation, aria-selected
    carries the state, selected is the solid primary colour. */
-.segmented { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: #fff; max-width: 100%; }
-.segmented button { background: transparent; color: var(--green-900); border: none; border-radius: 999px; padding: 6px 14px; margin: 0; }
-.segmented button[aria-selected='true'], .segmented button[aria-pressed='true'] { background: #2e7d32; color: #fff; }
+.segmented { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--surface); max-width: 100%; }
+.segmented button { background: transparent; color: var(--green-900); border: none; border-radius: var(--radius-pill); padding: 6px 14px; margin: 0; }
+.segmented button[aria-selected='true'], .segmented button[aria-pressed='true'] { background: var(--green-700); color: #fff; }
 
 /* Admin user actions: one consistent row for Suspend / Unsuspend /
    Unverify — identical size and spacing; colour carries the hierarchy
@@ -251,21 +320,21 @@ button.codeTap:focus-visible { outline: 2px solid #2e7d32; outline-offset: 2px; 
    secondary = Unsuspend). Native buttons keep keyboard operation. */
 .adminActions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .adminActions button { min-width: 112px; }
-button.caution { background: #fff8e1; color: #8d6e00; border: 1.5px solid #e0b400; }
-button.caution:hover { background: #ffecb3; }
+button.caution { background: var(--amber-soft); color: var(--amber-text); border: 1.5px solid var(--amber-border); }
+button.caution:hover { background: var(--amber-soft-hover); }
 
 /* FAQ page: quiet accordion list in the app's card language. The
    trigger is a native button (keyboard + focus built in); the global
    green button style is deliberately overridden to a plain row. No
    animation, so reduced-motion needs nothing extra. */
-.faqItem { border: 1px solid #dfe5d8; border-radius: 10px; margin: 8px 0; background: #fff; }
+.faqItem { border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; background: var(--surface); }
 .faqQ { margin: 0; font-size: 1rem; }
 .faqBtn {
   width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;
-  background: none; color: var(--ink); text-align: left; padding: 12px 14px;
+  background: none; color: var(--text); text-align: left; padding: 12px 14px;
   font-size: 1rem; font-weight: 600; border-radius: 10px;
 }
-.faqBtn:hover { background: #f4f7f1; }
+.faqBtn:hover { background: var(--green-50); }
 .faqBtn:focus-visible { outline: 2px solid var(--green-600); outline-offset: -2px; }
 .faqA { padding: 0 14px 12px; }
 .faqA p { margin: 0; }

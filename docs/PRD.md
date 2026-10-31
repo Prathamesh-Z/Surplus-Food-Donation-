@@ -1517,3 +1517,37 @@ notification-delivery behaviour changes.
    Cancel changes nothing (session and menu untouched). The Log out
    action runs the existing logout flow (server revoke, menu close,
    navigate Home). i18n parity 337 keys × 3.
+
+## Amendment v3.32 — Visual Theme Pass (2026-11-01)
+
+A visual consistency pass only: layouts, DOM structure, routes,
+strings, and behaviour are unchanged. (1) **Tokens.** `styles.css`
+`:root` now carries palette scales anchored on the original values
+(#14532d deep green, #f6faf1 warm cream, #b87908 amber), semantic
+aliases (primary/surface/text/text-muted/border/success/warning/
+danger), a 12–32px type scale, 4–32px spacing tokens, radius
+tokens (9/14/18/pill), and two shadow tokens; shared components
+(buttons, cards, badges, inputs, hero, impact wall) reference the
+tokens. (2) **Typography.** Fraunces (600/700) for headings, the
+hero, and impact-wall numbers; Public Sans (400/700) for UI text —
+both variable fonts, Latin subsets, SIL OFL 1.1, **embedded as
+data-URI `@font-face`** in `client/src/fonts.css`: binary font
+assets cannot travel through this project's GitHub snapshot
+workflow (verified empirically — the push validator rejects
+non-UTF-8 files) and the demo must not depend on a CDN. The system
+fallback stack, including Noto Sans Devanagari for Marathi/Hindi,
+is preserved. (3) **Icons.** `components/icons.jsx` provides one
+stroke-based, `currentColor` icon set (Lucide paths: pin, clock,
+mic, camera, pencil, footprints/walking, bike, navigation) plus
+the bowl-and-leaf **BrandMark**; interface emoji were replaced
+across Nav, ListingCard, MyListings, ListingDetail, MyClaims,
+CreateListing, DistanceMap, LiveShareControl, LocationPicker, and
+the location modals. The 🍲 no-photo placeholder stays (listing
+content, not chrome); map route colours moved to palette values
+(green-700 route/line, amber viewer marker). (4) **Brand.**
+`client/public/favicon.svg` carries the mark, linked from
+`index.html` with a matching `theme-color`. (5) **Polish.** The
+hero keeps its green gradient and gains a subtle dot pattern, the
+Fraunces headline, and a short amber rule. Stray hexes #1565c0,
+#2e7d32, and inline #d9e8d2 are eliminated from theme-bearing code
+(asserted by `client/checks/theme.check.mjs`).

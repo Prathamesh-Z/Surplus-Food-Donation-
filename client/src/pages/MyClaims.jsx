@@ -4,6 +4,7 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 import { timeRemaining } from './MyListings.jsx';
 import { PickupCodeDisplay } from '../components/Pickup.jsx';
 import { DistanceMap } from '../components/DistanceMap.jsx';
+import { ClockIcon, MapPinIcon, WalkingIcon } from '../components/icons.jsx';
 
 export function MyClaims() {
   const { t } = useLang();
@@ -91,7 +92,7 @@ export function MyClaims() {
             <strong className="claimTitle">{c.listing.foodName}</strong>
             <div className="claimStats">
               <span>{c.portionsClaimed} {t('portions')}</span>
-              <span>⏰ {timeRemaining(c.listing.collectionDeadline)}</span>
+              <span><ClockIcon size={15} /> {timeRemaining(c.listing.collectionDeadline)}</span>
             </div>
           </div>
           {c.status === 'CONFIRMED' && (
@@ -111,7 +112,7 @@ export function MyClaims() {
           )}
           {c.status !== 'CONFIRMED' && (
             <p className="muted">
-              📍 {c.listing.pickupLocationText} · {t('provider')}: {c.listing.providerName}
+              <MapPinIcon size={14} /> {c.listing.pickupLocationText} · {t('provider')}: {c.listing.providerName}
               <br />Deadline: {new Date(c.listing.collectionDeadline).toLocaleString()}
             </p>
           )}
@@ -119,12 +120,12 @@ export function MyClaims() {
             <div className="row" style={{ marginTop: 10 }}>
               {c.onTheWayAt ? (
                 <span className="success">
-                  🚶 {t('donorNotified')} ·{' '}
+                  <WalkingIcon size={15} /> {t('donorNotified')} ·{' '}
                   {new Date(c.onTheWayAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               ) : (
                 <button onClick={() => onTheWay(c.id)} disabled={wayBusy === c.id}>
-                  🚶 {t('onTheWay')}
+                  <WalkingIcon size={15} /> {t('onTheWay')}
                 </button>
               )}
               <button className="dangerGhost" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>

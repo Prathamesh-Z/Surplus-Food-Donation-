@@ -232,7 +232,7 @@ export function Register() {
         )}
         {docUploading && (
           <div style={{ height: 6, background: '#eef3ea', borderRadius: 3, margin: '8px 0' }}>
-            <div style={{ height: '100%', width: `${docProgress}%`, background: '#2e7d32', borderRadius: 3 }} />
+            <div style={{ height: '100%', width: `${docProgress}%`, background: 'var(--green-700)', borderRadius: 3 }} />
           </div>
         )}
         <button type="submit" disabled={docUploading || photoUploading}>

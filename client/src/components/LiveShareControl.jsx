@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { haversineKm } from '../lib/distance.js';
+import { MapPinIcon } from './icons.jsx';
 
 /**
  * Donor-side live location sharing (PRD v3.13), one control per
@@ -155,7 +156,7 @@ export function LiveShareControl({ claimId }) {
     return (
       <span>
         <button type="button" className="secondary" onClick={startSharing}>
-          📍 {t('shareLiveLocation')}
+          <MapPinIcon size={15} /> {t('shareLiveLocation')}
         </button>
         {error && (
           <span className="error" style={{ marginLeft: 8 }}>

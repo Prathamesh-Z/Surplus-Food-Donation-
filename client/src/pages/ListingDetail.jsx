@@ -5,6 +5,7 @@ import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { listingDistanceKm, formatDistance } from '../lib/distance.js';
 import { PriorityBadge } from '../components/PriorityBadge.jsx';
+import { ClockIcon, MapPinIcon } from '../components/icons.jsx';
 import { PickupCodeDisplay } from '../components/Pickup.jsx';
 import { ClaimSuccessModal } from '../components/ClaimSuccessModal.jsx';
 import { timeRemaining } from './MyListings.jsx';
@@ -93,17 +94,17 @@ export function ListingDetail() {
       <div className="card">
         <p>
           <strong>{listing.portionsRemaining}</strong> {t('ofTotal')} {listing.totalPortions} {t('portions')} {t('remaining')}
-          {' · '}⏰ {timeRemaining(listing.collectionDeadline)} <PriorityBadge deadline={listing.collectionDeadline} />
+          {' · '}<ClockIcon size={15} /> {timeRemaining(listing.collectionDeadline)} <PriorityBadge deadline={listing.collectionDeadline} />
           {' · '}Deadline: {new Date(listing.collectionDeadline).toLocaleString()}
         </p>
         <p>
-          📍 {t('pickup')}: {listing.pickupLocationText}
+          <MapPinIcon size={14} /> {t('pickup')}: {listing.pickupLocationText}
           {(() => {
             const d = listingDistanceKm(
               typeof location?.lat === 'number' ? { lat: location.lat, lng: location.lng } : null,
               listing
             );
-            return d !== null ? <> · 📍 {formatDistance(d)} {t('awayFromYou')} · {t('straightLineDistance')}</> : null;
+            return d !== null ? <> · <MapPinIcon size={14} /> {formatDistance(d)} {t('awayFromYou')} · {t('straightLineDistance')}</> : null;
           })()}
         </p>
         <p className="muted">

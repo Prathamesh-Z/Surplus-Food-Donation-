@@ -143,7 +143,7 @@ export function NgoPanel() {
         <DocumentStaging staged={staged} onChange={setStaged} disabled={uploading} />
         {uploading && (
           <div style={{ height: 6, background: '#eef3ea', borderRadius: 3, margin: '8px 0' }}>
-            <div style={{ height: '100%', width: `${progress}%`, background: '#2e7d32', borderRadius: 3 }} />
+            <div style={{ height: '100%', width: `${progress}%`, background: 'var(--green-700)', borderRadius: 3 }} />
           </div>
         )}
         {docError && <div className="error">{docError}</div>}

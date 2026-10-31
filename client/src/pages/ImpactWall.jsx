@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
+import { BrandMark } from '../components/icons.jsx';
 import { Dashboard } from './Dashboard.jsx';
 
 // Public live impact wall — big-number display for the demo venue screen.
@@ -33,7 +34,7 @@ function LiveWall() {
 
   return (
     <div style={{ textAlign: 'center', paddingTop: 12 }}>
-      <h1 style={{ fontSize: 40, marginBottom: 4 }}>🥗 Food Waste Saver — {t('liveImpact')}</h1>
+      <h1 style={{ fontSize: 40, marginBottom: 4 }}><BrandMark size={34} /> Food Waste Saver — {t('liveImpact')}</h1>
       <div className="wall-grid">
         {big(p.portionsCollected, t('wallCollected'))}
         {big(p.portionsListed, t('wallListed'))}
