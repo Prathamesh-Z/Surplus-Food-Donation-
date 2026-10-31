@@ -3,7 +3,7 @@ import { z } from 'zod';
 import path from 'node:path';
 import fs from 'node:fs';
 import { prisma } from '../lib/prisma.js';
-import { NGO_DOCS_DIR } from '../lib/uploads.js';
+import { NGO_DOCS_DIR, UPLOADS_DIR, AVATARS_DIR } from '../lib/uploads.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { platformImpact } from '../services/impactService.js';
 import { writeAudit } from '../services/auditService.js';
@@ -12,6 +12,15 @@ import { createNotification } from '../services/notificationService.js';
 
 const reasonSchema = z.object({ reason: z.string().trim().min(3) });
 const optionalReasonSchema = z.object({ reason: z.string().trim().min(3).optional() });
+
+// User management (v3.33): an account counts as an admin when EITHER
+// field says so — requireRole enforces on `role`, while account
+// management keys off `accountType`. Checking both keeps legacy rows
+// (role ADMIN whose accountType was never backfilled) protected by the
+// same invariants until a demote/promote rewrites both fields together.
+const adminWhere = { OR: [{ accountType: 'ADMIN' }, { role: 'ADMIN' }] };
+const isAdminAccount = (u) => u.accountType === 'ADMIN' || u.role === 'ADMIN';
+class LastAdminError extends Error {}
 
 // PRD FR-20 / FR-21 / FR-16 — everything under /admin is ADMIN-only,
 // enforced by requireRole on every route (a direct API call by a
@@ -93,6 +102,8 @@ adminRouter.get('/users', async (req, res) => {
       email: true,
       mobile: true,
       role: true,
+      accountType: true,
+      isMainAdmin: true,
       suspended: true,
       suspensionReason: true,
       createdAt: true,
@@ -143,6 +154,154 @@ adminRouter.post('/users/:id/unsuspend', async (req, res, next) => {
     });
     return res.json({ ok: true });
   } catch (err) {
+    return next(err);
+  }
+});
+
+// Promote a USER account to ADMIN. NGO accounts keep their fixed type
+// and are refused, as are accounts that are already admins. Both fields
+// change together: accountType drives management, role drives
+// requireRole — an ADMIN account's role is fixed (no role switching).
+adminRouter.post('/users/:id/promote', async (req, res, next) => {
+  try {
+    const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    if (isAdminAccount(target)) {
+      return res.status(409).json({ error: 'User is already an admin' });
+    }
+    if (target.accountType === 'NGO') {
+      return res.status(409).json({ error: 'NGO accounts cannot be promoted to admin' });
+    }
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id: target.id },
+        data: { accountType: 'ADMIN', role: 'ADMIN' },
+      });
+      await writeAudit(
+        { adminId: req.user.id, action: 'PROMOTE_USER', targetType: 'USER', targetId: target.id },
+        tx
+      );
+      return u;
+    });
+    return res.json({
+      user: { id: updated.id, accountType: updated.accountType, role: updated.role },
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Demote an ADMIN back to a USER account (active role CLAIMER). The
+// main admin can never be demoted, and the last remaining admin cannot
+// be demoted either — the count check and the update run in one
+// transaction so two concurrent demotions cannot both pass.
+adminRouter.post('/users/:id/demote', async (req, res, next) => {
+  try {
+    const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    if (target.isMainAdmin) {
+      return res.status(409).json({ error: 'The main admin cannot be demoted' });
+    }
+    if (!isAdminAccount(target)) {
+      return res.status(409).json({ error: 'User is not an admin' });
+    }
+    const updated = await prisma.$transaction(async (tx) => {
+      const admins = await tx.user.count({ where: adminWhere });
+      if (admins <= 1) throw new LastAdminError();
+      const u = await tx.user.update({
+        where: { id: target.id },
+        data: { accountType: 'USER', role: 'CLAIMER' },
+      });
+      await writeAudit(
+        { adminId: req.user.id, action: 'DEMOTE_USER', targetType: 'USER', targetId: target.id },
+        tx
+      );
+      return u;
+    });
+    return res.json({
+      user: { id: updated.id, accountType: updated.accountType, role: updated.role },
+    });
+  } catch (err) {
+    if (err instanceof LastAdminError) {
+      return res.status(409).json({ error: 'Cannot demote the last remaining admin' });
+    }
+    return next(err);
+  }
+});
+
+// Delete a user account and everything it owns, in FK-safe order,
+// inside one transaction. Refused for: the main admin, the last
+// remaining admin, and any account that has PERFORMED admin actions —
+// AuditLog.adminId is a required FK, so deleting an actor would
+// destroy append-only audit history; such an account can be demoted
+// instead. (Audit rows ABOUT the deleted user survive: targetId is a
+// plain string, including the DELETE_USER row written here.)
+// Files on disk (avatar, NGO documents, listing photos) are removed
+// after the database transaction commits.
+adminRouter.delete('/users/:id', async (req, res, next) => {
+  try {
+    const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    if (target.isMainAdmin) {
+      return res.status(409).json({ error: 'The main admin cannot be deleted' });
+    }
+    const auditActions = await prisma.auditLog.count({ where: { adminId: target.id } });
+    if (auditActions > 0) {
+      return res.status(409).json({
+        error:
+          'This user has performed admin actions recorded in the audit log and cannot be deleted. Demote the account instead.',
+      });
+    }
+    const [docs, listings] = await Promise.all([
+      prisma.ngoDocument.findMany({
+        where: { userId: target.id },
+        select: { storedName: true },
+      }),
+      prisma.listing.findMany({
+        where: { providerId: target.id },
+        select: { photoPath: true },
+      }),
+    ]);
+    await prisma.$transaction(async (tx) => {
+      if (isAdminAccount(target)) {
+        const admins = await tx.user.count({ where: adminWhere });
+        if (admins <= 1) throw new LastAdminError();
+      }
+      // FK-safe order: rows that Restrict the user's own rows go first;
+      // claims cascade their live locations and redistribution logs,
+      // and the final user delete cascades sessions, reset tokens,
+      // notifications, the NGO profile + document rows, and recurring
+      // schedules. Invite attribution is SetNull by the schema.
+      await tx.redistributionLog.deleteMany({ where: { ngoId: target.id } });
+      await tx.claim.deleteMany({ where: { claimerId: target.id } });
+      await tx.claim.deleteMany({ where: { listing: { providerId: target.id } } });
+      await tx.listing.deleteMany({ where: { providerId: target.id } });
+      await writeAudit(
+        { adminId: req.user.id, action: 'DELETE_USER', targetType: 'USER', targetId: target.id },
+        tx
+      );
+      await tx.user.delete({ where: { id: target.id } });
+    });
+    const files = [];
+    if (target.profilePhoto) {
+      files.push(path.join(AVATARS_DIR, path.basename(target.profilePhoto)));
+    }
+    for (const d of docs) files.push(path.join(NGO_DOCS_DIR, d.storedName));
+    for (const l of listings) {
+      if (l.photoPath) files.push(path.join(UPLOADS_DIR, path.basename(l.photoPath)));
+    }
+    for (const f of files) {
+      try {
+        await fs.promises.unlink(f);
+      } catch {
+        // Already gone — file cleanup is best-effort after the commit.
+      }
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    if (err instanceof LastAdminError) {
+      return res.status(409).json({ error: 'Cannot delete the last remaining admin' });
+    }
     return next(err);
   }
 });

@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api, formatApiError, getAccessToken } from '../lib/api.js';
+import { useAuth } from '../lib/AuthContext.jsx';
 
 export function Admin() {
+  const { user: me } = useAuth();
   const [stats, setStats] = useState(null);
   const [pending, setPending] = useState([]);
   const [users, setUsers] = useState([]);
@@ -10,6 +12,34 @@ export function Admin() {
   const [audit, setAudit] = useState([]);
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
+  // Delete confirmation (same dialog pattern as the logout confirm):
+  // holds the user row awaiting confirmation, or null.
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const cancelDeleteRef = useRef(null);
+
+  useEffect(() => {
+    if (!pendingDelete) return;
+    cancelDeleteRef.current?.focus();
+    const onKey = (e) => {
+      if (e.key === 'Escape') setPendingDelete(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [pendingDelete]);
+
+  async function confirmDelete() {
+    const target = pendingDelete;
+    setPendingDelete(null);
+    setError('');
+    setMsg('');
+    try {
+      await api(`/api/admin/users/${target.id}`, { method: 'DELETE' });
+      setMsg('User deleted.');
+      load();
+    } catch (err) {
+      setError(formatApiError(err));
+    }
+  }
 
   async function load() {
     try {
@@ -141,6 +171,8 @@ export function Admin() {
           <div className="row">
             <strong>{u.name}</strong>
             <span className="badge">{u.role}</span>
+            <span className="badge">{u.accountType}</span>
+            {u.isMainAdmin && <span className="badge">Main admin</span>}
             {u.ngoProfile && (
               <span className={`badge ${u.ngoProfile.verificationStatus === 'VERIFIED' ? '' : 'warn'}`}>
                 NGO {u.ngoProfile.verificationStatus}
@@ -166,6 +198,15 @@ export function Admin() {
               ))}
             {u.ngoProfile?.verificationStatus === 'VERIFIED' && (
               <button className="caution" onClick={() => act(`/api/admin/ngo/${u.id}/unverify`, {}, 'NGO unverified.')}>Unverify NGO</button>
+            )}
+            {u.id !== me?.id && u.accountType === 'USER' && (
+              <button className="secondary" onClick={() => act(`/api/admin/users/${u.id}/promote`, {}, 'User promoted to admin.')}>Promote to admin</button>
+            )}
+            {u.id !== me?.id && !u.isMainAdmin && (u.accountType === 'ADMIN' || u.role === 'ADMIN') && (
+              <button className="caution" onClick={() => act(`/api/admin/users/${u.id}/demote`, {}, 'Admin demoted to user.')}>Demote to user</button>
+            )}
+            {u.id !== me?.id && !u.isMainAdmin && (
+              <button className="danger" onClick={() => setPendingDelete(u)}>Delete user</button>
             )}
           </div>
         </div>
@@ -201,6 +242,52 @@ export function Admin() {
           <span className="muted">{new Date(a.createdAt).toLocaleString()}</span>
         </div>
       ))}
+
+      {pendingDelete && (
+        <div
+          onClick={() => setPendingDelete(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(20, 35, 18, 0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16, zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-user-confirm-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 14, padding: '22px 20px',
+              width: '100%', maxWidth: 380,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.35)', textAlign: 'center',
+            }}
+          >
+            <h2 id="delete-user-confirm-title" style={{ margin: '4px 0 6px', fontSize: 20 }}>
+              Delete this user?
+            </h2>
+            <p className="muted" style={{ margin: 0 }}>
+              {pendingDelete.name} · {pendingDelete.email}
+              <br />
+              Their listings, claims, notifications and other account data
+              will be permanently deleted. This cannot be undone.
+            </p>
+            <div className="row" style={{ marginTop: 16, justifyContent: 'center', gap: 10 }}>
+              <button
+                type="button"
+                className="secondary"
+                ref={cancelDeleteRef}
+                onClick={() => setPendingDelete(null)}
+              >
+                Cancel
+              </button>
+              <button type="button" className="danger" onClick={confirmDelete}>
+                Delete user
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

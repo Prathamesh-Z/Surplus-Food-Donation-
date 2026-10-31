@@ -5,9 +5,21 @@ Target: ~6 minutes, one laptop, projected. Two browser windows side by side
 Keep the **Impact Wall** (`/impact`) open on a third tab/screen — it updates
 live as the demo runs and is your closing visual.
 
-Before the demo: `start.bat` (or `npm run dev`), seed data loaded, both
-windows already logged in (`provider@demo.local` / `claimer@demo.local`,
-password `DemoPass1`). Say clearly: seeded figures are synthetic demo data.
+Before the demo (v3.33 clean-start flow — there are no seeded demo
+accounts or listings any more):
+
+1. Optional clean slate: `npm run db:reset-clean --workspace=server -- --yes`
+   (guarded: local `food_waste_saver` only; preserves exactly the main
+   admin). Then `start.bat` — the seed creates only the main admin
+   (`admin@demo.local`, password from `MAIN_ADMIN_PASSWORD` in
+   `server/.env`).
+2. Register the demo accounts fresh in the app and keep them logged in:
+   **Window A** — a User account switched to Donor (provider), **Window
+   B** — a User account as Claimer, plus an NGO account registered in a
+   third window for the trust-layer step; the main admin verifies the
+   NGO from the Admin page when you reach that step (or beforehand).
+3. Say clearly: the Impact Wall starts at zero — every figure on it is
+   produced live by the actions in this demo, stored in this database.
 
 ## The spine (timed)
 
@@ -41,10 +53,12 @@ expiry job removes it from browse and expires its claim, and the claimer got
 a notification. "No stale food is ever claimable in this system."
 
 **5:15 — NGO + trust layer (45 s)**
-Log in as `ngo@demo.local`: claim → collect → **redistribution log**
-("30 portions → shelter") — the dashboard credits the NGO, not the provider.
-Admin window (`admin@demo.local`): NGO verification queue + **audit log** —
-every admin action is written, append-only.
+In the NGO window (the account registered before the demo): claim → collect
+→ **redistribution log** ("30 portions → shelter") — the dashboard credits
+the NGO, not the provider. Main admin window: NGO verification queue +
+**audit log** — every admin action is written, append-only. If time allows,
+show user management: promote a registered User to admin, and point out
+that the main admin itself cannot be demoted or deleted.
 
 **6:00 — Close on the Impact Wall (30 s)**
 "Every number on this wall was produced by actions you just watched, stored
@@ -55,8 +69,8 @@ in this database. No estimates." Then the ask/vision slide.
   taken down by venue internet. If the laptop itself fails, use the backup
   screen recording + screenshots in `docs/demo-backup/` (record these during
   rehearsal).
-- **A step errors:** the seeded demo listings are still on Browse; skip to
-  the claim step using one of them.
+- **A step errors:** post a fresh listing from Window A (it takes under a
+  minute) and run the claim step against that instead.
 - **Questions on scale:** answer with the PRD — architecture is a standard
   stateless API + Postgres; the demo posture (single localhost server) is a
   hackathon choice, not a design limit.

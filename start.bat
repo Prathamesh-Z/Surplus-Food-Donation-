@@ -17,7 +17,7 @@ echo Installing dependencies - first run only...
 call npm install
 :deps_ok
 
-echo Preparing database - tables plus synthetic demo data...
+echo Preparing database - tables plus the main admin account...
 call npm run db:push --workspace=server
 call npm run db:seed --workspace=server
 
@@ -40,9 +40,8 @@ echo.
 echo ============================================================
 echo   Food Waste Saver is starting:  http://localhost:4000
 echo   AI service health:             http://127.0.0.1:8001/health
-echo   Demo logins - password DemoPass1:
-echo     provider@demo.local / claimer@demo.local
-echo     ngo@demo.local      / admin@demo.local
+echo   Main admin login: admin@demo.local - password is set in server\.env
+echo   Everyone else: please register in the app.
 echo   Stop with Ctrl+C, and close the FWS Recognition window.
 echo ============================================================
 echo.

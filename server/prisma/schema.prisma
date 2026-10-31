@@ -119,6 +119,9 @@ enum AuditAction {
   SUSPEND_USER
   UNSUSPEND_USER
   REMOVE_LISTING
+  PROMOTE_USER
+  DEMOTE_USER
+  DELETE_USER
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────
@@ -131,6 +134,11 @@ model User {
   passwordHash     String
   role             Role
   accountType      AccountType @default(USER)
+  // The ONE protected main admin (v3.33): set only by the seed from the
+  // MAIN_ADMIN_* environment configuration. The main admin cannot be
+  // demoted or deleted through the admin user-management endpoints,
+  // and the reset script preserves exactly this account.
+  isMainAdmin      Boolean      @default(false)
   // Optional profile photo: the served path (/uploads/avatars/<file>)
   // or null — null renders the default silhouette avatar everywhere.
   profilePhoto     String?

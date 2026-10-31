@@ -36,10 +36,6 @@ export function Login() {
         <button type="submit">Log in</button>
       </form>
       <p><Link to="/forgot-password">{t('forgotPassword')}</Link></p>
-      <p className="muted">
-        Demo accounts (synthetic): provider@demo.local / claimer@demo.local /
-        ngo@demo.local / admin@demo.local — password DemoPass1
-      </p>
     </section>
   );
 }

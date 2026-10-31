@@ -45,14 +45,17 @@ npm run build
 npm run dev --workspace=server     # http://localhost:4000
 ```
 
-### Seeded demo accounts (synthetic — for demonstration only)
+### Main admin account (the only seeded account)
 
-| Role | Email | Password |
-|---|---|---|
-| Provider | provider@demo.local | DemoPass1 |
-| Claimer | claimer@demo.local | DemoPass1 |
-| NGO | ngo@demo.local | DemoPass1 |
-| Admin | admin@demo.local | DemoPass1 |
+The seed creates **one** account: the protected main admin, configured
+through `server/.env` (see `server/.env.example`): `MAIN_ADMIN_EMAIL`
+(default `admin@demo.local`), `MAIN_ADMIN_NAME`, `MAIN_ADMIN_MOBILE`, and
+`MAIN_ADMIN_PASSWORD` (**required** — the seed refuses to run without it;
+no password is stored in source control). The seed is idempotent and
+creates nothing else: no demo users, listings, or claims. Every other
+account is created through normal registration in the app. An admin can
+promote a registered USER account to ADMIN from the Admin page (the main
+admin itself can never be demoted or deleted).
 
 ## What is built (module map)
 
@@ -98,6 +101,7 @@ npm run dev --workspace=server     # http://localhost:4000
 | v3.30 | Donor menu + public home listings: the avatar menu stays open when switching to Donor (Post Surplus Food visible immediately); Home's three info cards are replaced by a public preview of up to six available listings via the shared ListingCard extracted from Browse. i18n 335 keys × 3. |
 | v3.31 | Role-switch + logout UX: the avatar menu closes only after a successful Claimer/Donor switch (failure keeps it open with localized feedback; duplicate switches blocked in flight), and Logout now asks for confirmation with Cancel as the safe default. i18n 337 keys × 3. |
 | v3.32 | Visual theme pass: design tokens (palette scales, semantic aliases, type/spacing/radius/shadow scales), self-hosted Fraunces + Public Sans embedded as data-URI fonts (binary assets cannot travel the snapshot workflow), a Lucide-style SVG icon system and bowl-and-leaf brand mark with favicon, hero/wall polish, and a full stray-hex sweep. No layout, text, or behaviour changes. |
+| v3.33 | Clean database & admin user management: the seed creates only the protected main admin (env-configured `MAIN_ADMIN_*`, `User.isMainAdmin`) — no demo accounts or demo activity; admins can promote USERs to ADMIN, demote admins (never the main admin or the last admin), and delete accounts with FK-safe cleanup + file removal (audit actors are demote-only, preserving the append-only log); new PROMOTE_USER/DEMOTE_USER/DELETE_USER audit actions; a guarded `db:reset-clean` script (local `food_waste_saver` only, `--yes` required) resets an environment to just the main admin. |
 | v3.25 | Google Maps navigation handoff: confirmed claims' pickup maps gain a Get Directions link that opens Google Maps Directions in a new tab (on supported devices the browser may open the Google Maps app instead — app launching is not guaranteed) with the app's selected origin (Saved Location, or Live GPS only when explicitly selected), the routing destination (donor live point only while genuinely live, otherwise static pickup coordinates) and the walking/bicycling mode; coordinates go to Google only on click, never to the FWS backend; internal map preview, claims and QR/code verification unchanged | PRD v3.25 |
 
 Explicitly out of scope (per PRD): payments, delivery/transport, maps/GPS,

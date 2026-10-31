@@ -23,6 +23,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
+    "db:reset-clean": "node prisma/reset-clean.js",
     "dev": "node src/index.js",
     "start": "node src/index.js",
     "test": "vitest run"

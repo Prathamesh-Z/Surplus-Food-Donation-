@@ -1551,3 +1551,66 @@ hero keeps its green gradient and gains a subtle dot pattern, the
 Fraunces headline, and a short amber rule. Stray hexes #1565c0,
 #2e7d32, and inline #d9e8d2 are eliminated from theme-bearing code
 (asserted by `client/checks/theme.check.mjs`).
+
+## Amendment v3.33 — Clean Database & Admin User Management (2026-11-01)
+
+The application now starts clean and the admin can manage accounts.
+(1) **Main admin only.** `User.isMainAdmin` (default false) marks the
+ONE protected main admin. The seed (`server/prisma/seed.js`) creates
+or updates only that account, configured through the environment:
+`MAIN_ADMIN_EMAIL` (default `admin@demo.local`), `MAIN_ADMIN_NAME`,
+`MAIN_ADMIN_MOBILE`, and `MAIN_ADMIN_PASSWORD` — required, with no
+default and nothing hardcoded; the seed exits with a clear error when
+it is unset. Re-running the seed is idempotent: it re-applies the
+configured password hash and the ADMIN role/type/marker (the
+environment is the credential's source of truth), sets name/mobile
+only at creation, and moves the marker if it ever sits on another
+account, so exactly one main admin exists. The seed creates NO demo
+provider/claimer/NGO accounts, NO NGO profile, and NO listings or
+claims; a fresh database is empty apart from the main admin, and all
+other accounts arrive through normal registration. `start.bat`,
+`Login.jsx`, and the README no longer present demo credentials.
+(2) **Admin user management** (admin router, ADMIN-gated as before;
+every rule enforced server-side). `GET /api/admin/users` additionally
+returns `accountType` and `isMainAdmin` (never hashes or tokens).
+`POST /api/admin/users/:id/promote` — USER accounts only (NGO or
+already-admin → 409); sets `accountType: ADMIN` + `role: ADMIN`.
+`POST /api/admin/users/:id/demote` — sets `accountType: USER` +
+`role: CLAIMER`; refuses the main admin and, with the count check and
+update in one transaction, the last remaining admin. An account
+counts as an admin when either field says ADMIN, so legacy rows whose
+`accountType` was never backfilled stay protected. `DELETE
+/api/admin/users/:id` — refuses the main admin, the last admin, and
+any account that has PERFORMED admin actions (`AuditLog.adminId` is a
+required FK; deleting an actor would destroy append-only history —
+such an account may be demoted instead). Otherwise one transaction
+deletes in FK-safe order (redistribution logs as NGO → own claims →
+claims on own listings → own listings → the user; sessions, reset
+tokens, notifications, NGO profile/documents and recurring schedules
+cascade; invite attribution is SetNull), writes the `DELETE_USER`
+audit row first (its `targetId` is a plain string, so the record of
+the deletion survives it), and afterwards removes the account's
+avatar, NGO document, and listing-photo files. New `AuditAction`
+values: PROMOTE_USER, DEMOTE_USER, DELETE_USER — all three actions
+are audited. ADMIN accounts keep a fixed role: role switching remains
+USER-only (existing double guard), and a demoted account immediately
+regains CLAIMER/PROVIDER switching. The Admin page Users section shows
+account type and the main-admin marker, offers Promote / Demote /
+Delete where valid (hidden on the main admin and on the viewer's own
+row), and asks for confirmation in a dialog before deletion.
+(3) **Guarded reset script** (`server/prisma/reset-clean.js`,
+`npm run db:reset-clean`): parses `DATABASE_URL` and REFUSES to run
+unless the host is localhost/127.0.0.1 and the database name is
+exactly `food_waste_saver` (the test database and any remote target
+abort before any write); requires exactly one `isMainAdmin` account;
+prints the verified target and per-table counts; without `--yes` it
+is a dry run. With `--yes` it deletes every application row and audit
+log except the main admin's User row in one transaction, removes
+uploaded files (listing photos, avatars, NGO documents), verifies the
+clean state (one main admin, zero elsewhere), re-runs the seed, and
+verifies idempotency. Impact figures need no change: they are
+computed from database records, so a cleared database reports honest
+zeros. The script is executed only on explicit approval, per
+environment; the laptop runs it locally after pulling (the demo now
+registers its accounts fresh — `docs/DEMO_SCRIPT.md` updated to the
+clean-start flow).

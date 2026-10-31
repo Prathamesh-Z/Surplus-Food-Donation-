@@ -9,6 +9,7 @@
     "build": "npm run build --workspace=client",
     "db:push": "npm run db:push --workspace=server",
     "db:seed": "npm run db:seed --workspace=server",
+    "db:reset-clean": "npm run db:reset-clean --workspace=server",
     "dev": "npm run dev --workspace=server",
     "dev:client": "npm run dev --workspace=client",
     "test": "npm run test --workspace=server",
