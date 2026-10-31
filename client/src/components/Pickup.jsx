@@ -7,7 +7,7 @@ import { api, formatApiError } from '../lib/api.js';
 // scans it with the device camera (BarcodeDetector where available) or
 // falls back to typing the 8-character code. The code — and the whole
 // verification design behind it — is unchanged.
-export function PickupCodeDisplay({ code }) {
+export function PickupCodeDisplay({ code, variant }) {
   const { t } = useLang();
   const [qrUrl, setQrUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -48,6 +48,41 @@ export function PickupCodeDisplay({ code }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  }
+
+  // Card variant (My Claims): the QR sits directly under the donor
+  // contact and the code itself is the copy control — a real button, so
+  // keyboard and assistive tech get copying without a separate Copy
+  // button. Same copyCode behaviour and QR payload as the default.
+  if (variant === 'card') {
+    return (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 6 }}>
+        {qrUrl && (
+          <img
+            src={qrUrl}
+            alt={`QR — ${code}`}
+            width={132}
+            height={132}
+            style={{ borderRadius: 8, background: '#fff', border: '1px solid #d9e8d2' }}
+          />
+        )}
+        <span>
+          {t('pickupCode')}:{' '}
+          <button
+            type="button"
+            className="codeTap"
+            onClick={copyCode}
+            title={t('copyCode')}
+            aria-label={`${t('copyCode')}: ${code}`}
+          >
+            <span className="code">{code}</span>
+          </button>
+          {copied && (
+            <span className="success" role="status" style={{ marginLeft: 8 }}>✓ {t('copied')}</span>
+          )}
+        </span>
+      </span>
+    );
   }
 
   return (

@@ -62,7 +62,7 @@ function recordRouteDiagnostics(next, result) {
   console.debug('[FWS route]', record);
 }
 
-export function DistanceMap({ claimId, listing }) {
+export function DistanceMap({ claimId, listing, minimal = false }) {
   const { t } = useLang();
   const { location } = useLocation();
   const savedPos =
@@ -397,6 +397,10 @@ export function DistanceMap({ claimId, listing }) {
 
   return (
     <div style={{ marginTop: 12 }}>
+      {/* Minimal mode (My Claims card): every text/control block above the
+          map is presentation only — the positions, donor polling and
+          routing underneath keep running unchanged. */}
+      {!minimal && (<>
       <p className="muted" style={{ margin: '0 0 6px' }}>📍 {listing.pickupLocationText}</p>
       {donorLive?.state === 'live' && (
         <p className="success" style={{ margin: '0 0 6px' }}>
@@ -502,6 +506,7 @@ export function DistanceMap({ claimId, listing }) {
       {originMode === 'live' && livePos && liveAccuracy !== null && accuracyBand(liveAccuracy) === 'poor' && (
         <p className="error" style={{ margin: '4px 0' }}>⚠ {t('liveGpsPoor')}</p>
       )}
+      </>)}
       <div
         ref={mapDivRef}
         style={{
@@ -523,7 +528,9 @@ export function DistanceMap({ claimId, listing }) {
           >
             🧭 {t('getDirections')}
           </a>
-          <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>{t('directionsPrivacy')}</p>
+          {!minimal && (
+            <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>{t('directionsPrivacy')}</p>
+          )}
         </>
       )}
       {tilesFailed && (

@@ -103,7 +103,7 @@ export function MyClaims() {
                 </p>
               )}
               {codes[c.id] ? (
-                <PickupCodeDisplay code={codes[c.id]} />
+                <PickupCodeDisplay code={codes[c.id]} variant="card" />
               ) : (
                 <button className="secondary" onClick={() => showCode(c.id)}>{t('showCode')}</button>
               )}
@@ -130,7 +130,7 @@ export function MyClaims() {
               <button className="dangerGhost" onClick={() => cancel(c.id)}>{t('cancelClaim')}</button>
             </div>
           )}
-          {c.status === 'CONFIRMED' && <DistanceMap claimId={c.id} listing={c.listing} />}
+          {c.status === 'CONFIRMED' && <DistanceMap claimId={c.id} listing={c.listing} minimal />}
           {c.status === 'COLLECTED' && (
             <p className="success">Collected ✓ {c.collectedAt ? new Date(c.collectedAt).toLocaleString() : ''}</p>
           )}
