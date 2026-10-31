@@ -1464,3 +1464,34 @@ notification-delivery behaviour changes.
    menu label already read "Browse food" / "अन्न पहा" / "खाना देखें"
    in the existing strings, satisfying the approved rename with no
    string change.
+
+## Amendment v3.30 — Donor Menu Action & Public Home Listings (2026-11-01)
+
+1. **Donor menu action.** The avatar menu no longer closes when the
+   Claimer/Donor toggle is clicked: switching to Donor leaves the
+   panel open, so the Donor menu — including Post Surplus Food,
+   which routes to the existing listing-creation flow under the
+   existing provider authorization — is visible and usable at the
+   moment of switching. No separate button was added; role gating
+   and switching behaviour are otherwise unchanged.
+2. **Public home listings.** The Home page's three informational
+   cards (For providers / For claimers & NGOs / Honest impact) are
+   removed, along with their six strings in all three locales
+   (parity 335 keys × 3). The hero, its CTAs, the live stats and
+   the signed-in invite link are unchanged. In their place, a
+   public preview fetches the existing public `GET /api/listings`
+   and shows up to six available listings (ACTIVE, portions
+   remaining), soonest deadline first, with the localized
+   "No listings yet." empty state and a link to the full Browse
+   page. No search or filters are added to Home.
+3. **Shared listing card.** Browse's inline card is extracted,
+   unchanged, into `components/ListingCard.jsx` (with its DietMark
+   helper) and used by both Browse — which passes its signed-in
+   your-claim row as children — and the Home preview, which passes
+   nothing. The card renders only public listing fields (photo,
+   title, badges, time remaining, pickup text, detail link).
+4. **Privacy (unchanged guarantees).** Anonymous listing responses
+   remain shaped by the API (no donor contact, no claim data);
+   listing details stay public; claiming still requires a signed-in
+   claimer/NGO — anonymous visitors see the existing login prompt
+   on the detail page. No API, authorization, or server change.

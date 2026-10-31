@@ -68,6 +68,10 @@ check(
   iProfile !== -1 && iRole > iProfile && iBrowse > iRole && iPost > iBrowse
 );
 check('role toggle indented below the links', panel.includes('className="menuIndent"'));
+check(
+  'role toggle does not close the panel (Donor menu stays visible)',
+  panel.includes('onClick={(e) => e.stopPropagation()}')
+);
 check('auth + language row present', panel.includes('className="menuRow"') && panel.includes('languageButton'));
 check('toggle still USER-role gated', panel.includes("user?.role === 'CLAIMER' || user?.role === 'PROVIDER'"));
 

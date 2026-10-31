@@ -106,7 +106,10 @@ export function Nav() {
             {user?.role === 'NGO' && <Link to="/ngo">NGO panel</Link>}
             {user?.role === 'ADMIN' && <Link to="/admin">{t('admin')}</Link>}
             {(user?.role === 'CLAIMER' || user?.role === 'PROVIDER') && (
-              <div className="menuIndent">
+              // Switching role must NOT close the panel (the nav's
+              // click-to-close would hide the Donor menu — including
+              // Post Surplus Food — the moment Donor becomes active).
+              <div className="menuIndent" onClick={(e) => e.stopPropagation()}>
                 <span className="segmented" role="group" aria-label={t('modeLabel')}>
                   <button
                     type="button"

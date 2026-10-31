@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useAuth } from '../lib/AuthContext.jsx';
+import { ListingCard } from '../components/ListingCard.jsx';
 
 export function Home() {
   const { t } = useLang();
@@ -12,6 +13,27 @@ export function Home() {
       .then((r) => r.json())
       .then(setLive)
       .catch(() => {});
+  }, []);
+
+  // Public listings preview (PRD v3.30): the same public endpoint
+  // Browse uses — anonymous responses are already privacy-shaped by
+  // the API (no donor contact, no claim data). Show up to six
+  // available listings, soonest deadline first; claiming still
+  // requires sign-in on the detail page.
+  const [preview, setPreview] = useState(null);
+  const [imgFailed, setImgFailed] = useState(() => new Set());
+  useEffect(() => {
+    fetch('/api/listings')
+      .then((r) => r.json())
+      .then((d) =>
+        setPreview(
+          (d.listings ?? [])
+            .filter((l) => l.status === 'ACTIVE' && l.portionsRemaining > 0)
+            .sort((a, b) => new Date(a.collectionDeadline) - new Date(b.collectionDeadline))
+            .slice(0, 6)
+        )
+      )
+      .catch(() => setPreview([]));
   }, []);
 
   return (
@@ -37,23 +59,30 @@ export function Home() {
         )}
       </div>
 
-      <div className="grid">
-        <div className="card">
-          <h2 style={{ marginTop: 0 }}>{t('forProviders')}</h2>
-          <p>{t('forProvidersText')}</p>
-          <Link className="btn secondary" to="/register">Register as a provider</Link>
-        </div>
-        <div className="card">
-          <h2 style={{ marginTop: 0 }}>{t('forClaimers')}</h2>
-          <p>{t('forClaimersText')}</p>
-          <Link className="btn secondary" to="/browse">Find food near you</Link>
-        </div>
-        <div className="card">
-          <h2 style={{ marginTop: 0 }}>{t('honestImpact')}</h2>
-          <p>{t('honestImpactText')}</p>
-          <Link className="btn secondary" to="/impact">Open the impact wall</Link>
-        </div>
-      </div>
+      {preview !== null && (
+        <>
+          <h2>{t('browseCta')}</h2>
+          {preview.length === 0 ? (
+            <p className="muted">{t('noListingsYet')}</p>
+          ) : (
+            <>
+              <div className="grid">
+                {preview.map((l) => (
+                  <ListingCard
+                    key={l.id}
+                    listing={l}
+                    imgFailed={imgFailed.has(l.id)}
+                    onImgError={() => setImgFailed((prev) => new Set(prev).add(l.id))}
+                  />
+                ))}
+              </div>
+              <p style={{ marginTop: 12 }}>
+                <Link className="btn secondary" to="/browse">{t('browse')}</Link>
+              </p>
+            </>
+          )}
+        </>
+      )}
     </section>
   );
 }

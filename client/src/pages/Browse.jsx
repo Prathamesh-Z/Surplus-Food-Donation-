@@ -1,31 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useLang } from '../i18n/LanguageContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { listingDistanceKm, applyBrowseRadius } from '../lib/distance.js';
-import { PriorityBadge, priorityCardStyle } from '../components/PriorityBadge.jsx';
-import { timeRemaining } from './MyListings.jsx';
-
-/** Classic Indian veg/non-veg mark + label. Vegan counts as vegetarian. */
-function DietMark({ type }) {
-  const veg = type === 'VEG' || type === 'VEGAN';
-  const color = type === 'NON_VEG' ? '#b3261e' : '#1e7d32';
-  const label = type === 'VEGAN' ? 'Vegan' : veg ? 'Veg' : 'Non-veg';
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color }}>
-      <span
-        style={{
-          width: 14, height: 14, border: `2px solid ${color}`, borderRadius: 3,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
-      </span>
-      {label}
-    </span>
-  );
-}
+import { ListingCard } from '../components/ListingCard.jsx';
 
 const SORTS = ['urgent', 'timeHigh', 'vegFirst', 'nonvegFirst', 'nearest', 'farthest'];
 
@@ -220,71 +198,21 @@ export function Browse() {
       ) : null}
       <div className="grid">
         {sorted.map((l) => {
-          // Sold out = the backend says so: FULLY_CLAIMED status, or zero
-          // portions remaining. Such cards get a neutral treatment — no
-          // urgency accent, no priority badge, no "claim" wording.
-          const soldOut = l.status === 'FULLY_CLAIMED' || l.portionsRemaining <= 0;
+          const mine = myClaimFor(l.id);
           return (
-          <div
-            className="card"
-            key={l.id}
-            style={soldOut ? { borderLeft: '5px solid #9aa0a6', opacity: 0.82 } : priorityCardStyle(l.collectionDeadline)}
-          >
-            {l.photoPath && !imgFailed.has(l.id) ? (
-              <img
-                src={l.photoPath}
-                alt={l.foodName}
-                onError={() => setImgFailed((prev) => new Set(prev).add(l.id))}
-                style={{
-                  width: '100%', height: 160, borderRadius: 8, objectFit: 'cover',
-                  ...(soldOut ? { filter: 'grayscale(45%)' } : {}),
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  height: 160, borderRadius: 8, background: '#eef4ea',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 40, color: '#7a8a72',
-                }}
-                aria-label={t('noPhoto')}
-              >
-                🍲
-              </div>
-            )}
-            <div className="foodCardBody">
-              <div className="foodTitleRow">
-                <strong className="foodTitle">{l.foodName}</strong>
-                <DietMark type={l.dietaryType} />
-              </div>
-              <div className="row" style={{ gap: 6 }}>
-                {!soldOut && <PriorityBadge deadline={l.collectionDeadline} />}
-                {l.ngoSuitable && <span className="badge warn">{t('ngoSuitable')}</span>}
-                {soldOut && (
-                  <span className="badge" style={{ background: '#eceff1', color: '#546e7a', border: '1px solid #b0bec5' }}>
-                    {t('fullyClaimed')}
-                  </span>
-                )}
-              </div>
-              <div className="foodStats">
-                <span>⏰ {timeRemaining(l.collectionDeadline)}</span>
-              </div>
-              <p className="muted foodMeta">
-                📍 {l.pickupLocationText}
-              </p>
-              <Link className="btn foodCta" to={`/listings/${l.id}`}>{soldOut ? t('viewDetails') : t('viewClaim')}</Link>
-            </div>
-            {(() => {
-              const mine = myClaimFor(l.id);
-              if (!mine) return null;
-              return (
+            <ListingCard
+              key={l.id}
+              listing={l}
+              imgFailed={imgFailed.has(l.id)}
+              onImgError={() => setImgFailed((prev) => new Set(prev).add(l.id))}
+            >
+              {mine && (
                 <div className="row" style={{ marginTop: 8 }}>
                   <span className="badge">{t('yourClaim')}: {mine.portionsClaimed} {t('portions')}</span>
                   <button className="danger" onClick={() => cancelMyClaim(mine.id)}>{t('cancelClaim')}</button>
                 </div>
-              );
-            })()}
-          </div>
+              )}
+            </ListingCard>
           );
         })}
       </div>
