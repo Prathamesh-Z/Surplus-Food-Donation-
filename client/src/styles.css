@@ -203,7 +203,7 @@ button.codeTap:focus-visible { outline: 2px solid #2e7d32; outline-offset: 2px; 
    carries the state, selected is the solid primary colour. */
 .segmented { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: #fff; max-width: 100%; }
 .segmented button { background: transparent; color: var(--green-900); border: none; border-radius: 999px; padding: 6px 14px; margin: 0; }
-.segmented button[aria-selected='true'] { background: #2e7d32; color: #fff; }
+.segmented button[aria-selected='true'], .segmented button[aria-pressed='true'] { background: #2e7d32; color: #fff; }
 
 /* Admin user actions: one consistent row for Suspend / Unsuspend /
    Unverify — identical size and spacing; colour carries the hierarchy

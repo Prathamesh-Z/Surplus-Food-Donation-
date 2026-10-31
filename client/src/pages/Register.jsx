@@ -33,7 +33,7 @@ export function Register() {
     email: '',
     mobile: '',
     password: '',
-    role: 'CLAIMER',
+    accountType: 'USER',
     organisationName: '',
     registrationDetail: '',
   });
@@ -87,7 +87,7 @@ export function Register() {
       // Attach any staged verification documents to the new NGO account.
       // Registration is complete either way: if the upload fails, the
       // account stands and the NGO can upload later from the NGO Panel.
-      if (form.role === 'NGO' && stagedDocs.length > 0) {
+      if (form.accountType === 'NGO' && stagedDocs.length > 0) {
         setDocUploading(true);
         setDocProgress(0);
         try {
@@ -111,7 +111,7 @@ export function Register() {
 
   return (
     <section>
-      <h1>Register</h1>
+      <h1>{form.accountType === 'NGO' ? 'Register as NGO / Organisation' : 'Register as User'}</h1>
       {inviteCode && <p className="success">{t('joiningViaInvite')}</p>}
       {error && <div className="error">{error}</div>}
       {info && (
@@ -120,19 +120,32 @@ export function Register() {
         </div>
       )}
       <form onSubmit={submit}>
+        <div className="segmented" role="group" aria-label="Register as" style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            aria-pressed={form.accountType === 'USER'}
+            onClick={() => setForm({ ...form, accountType: 'USER' })}
+          >
+            User
+          </button>
+          <button
+            type="button"
+            aria-pressed={form.accountType === 'NGO'}
+            onClick={() => setForm({ ...form, accountType: 'NGO' })}
+          >
+            NGO / Organisation
+          </button>
+        </div>
+        <p className="muted">
+          {form.accountType === 'NGO'
+            ? 'NGO accounts are verified by an administrator; you can claim and redistribute food while unverified.'
+            : 'A User account can both claim food and donate surplus food — switch between Claimer and Donor any time after signing in.'}
+        </p>
         <label>Full name<input value={form.name} onChange={set('name')} autoComplete="name" required /></label>
         <label>Email<input type="email" value={form.email} onChange={set('email')} autoComplete="email" required /></label>
         <label>Mobile (10 digits, e.g. 9812345678)<input value={form.mobile} onChange={set('mobile')} inputMode="tel" autoComplete="tel" placeholder="9812345678" required /></label>
         <label>Password (min 8 characters)<PasswordInput value={form.password} onChange={set('password')} autoComplete="new-password" required /></label>
-        <label>
-          I am a
-          <select value={form.role} onChange={set('role')}>
-            <option value="CLAIMER">Claimer (individual)</option>
-            <option value="NGO">NGO / organisation</option>
-            <option value="PROVIDER">Food provider</option>
-          </select>
-        </label>
-        {form.role === 'NGO' && (
+        {form.accountType === 'NGO' && (
           <>
             <label>Organisation name<input value={form.organisationName} onChange={set('organisationName')} required /></label>
             <label>Registration detail<input value={form.registrationDetail} onChange={set('registrationDetail')} required /></label>

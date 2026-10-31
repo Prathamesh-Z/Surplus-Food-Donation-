@@ -20,6 +20,20 @@ enum Role {
   ADMIN
 }
 
+// Account type vs active role: a USER account is one person who can act
+// as Claimer and as Donor (backend role PROVIDER) — `role` on a USER
+// account is the ACTIVE role, switchable via POST /api/auth/switch-role.
+// NGO and ADMIN accounts have a fixed role. Existing rows were
+// backfilled from their role (PROVIDER/CLAIMER → USER, NGO → NGO,
+// ADMIN → ADMIN); the @default(USER) covers rows created before the
+// backfill and is safe because switching additionally requires the
+// current role to be CLAIMER or PROVIDER.
+enum AccountType {
+  USER
+  NGO
+  ADMIN
+}
+
 enum LanguagePref {
   EN
   MR
@@ -116,6 +130,7 @@ model User {
   mobile           String       @unique
   passwordHash     String
   role             Role
+  accountType      AccountType @default(USER)
   languagePref     LanguagePref @default(EN)
   suspended        Boolean      @default(false)
   suspensionReason String?

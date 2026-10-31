@@ -23,16 +23,21 @@ export const registerSchema = z
     email: z.string().trim().email('Invalid email'),
     mobile: z.preprocess(normalizeMobile, z.string().regex(/^[6-9]\d{9}$/, 'Mobile must be a 10-digit Indian number')),
     password: z.string().min(8, 'Password must be at least 8 characters'),
-    role: z.enum(['PROVIDER', 'CLAIMER', 'NGO']),
+    // Account model: clients register with accountType USER | NGO.
+    // `role` is kept as a legacy compatibility field — PROVIDER/CLAIMER
+    // select a USER account with that initial ACTIVE role, NGO selects
+    // an NGO account. Neither field can create an ADMIN.
+    accountType: z.enum(['USER', 'NGO']).optional(),
+    role: z.enum(['PROVIDER', 'CLAIMER', 'NGO']).optional(),
     inviteCode: z.string().trim().min(1).max(32).optional(),
     organisationName: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
     registrationDetail: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
   })
-  .refine((d) => d.role !== 'NGO' || Boolean(d.organisationName), {
+  .refine((d) => !(d.accountType === 'NGO' || d.role === 'NGO') || Boolean(d.organisationName), {
     message: 'organisationName is required for NGO registration',
     path: ['organisationName'],
   })
-  .refine((d) => d.role !== 'NGO' || Boolean(d.registrationDetail), {
+  .refine((d) => !(d.accountType === 'NGO' || d.role === 'NGO') || Boolean(d.registrationDetail), {
     message: 'registrationDetail is required for NGO registration',
     path: ['registrationDetail'],
   });

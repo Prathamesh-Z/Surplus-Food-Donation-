@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
-import { setTokens, clearTokens, getRefreshToken } from './api.js';
+import { api, setTokens, clearTokens, getRefreshToken } from './api.js';
 
 // QA-01: auth state lives in React state now. Previously Nav read
 // localStorage at render time and never re-rendered after an SPA login, so
@@ -11,6 +11,7 @@ const AuthContext = createContext({
   loggedIn: false,
   login: () => {},
   logout: async () => {},
+  switchRole: async () => {},
 });
 
 function readUser() {
@@ -41,6 +42,24 @@ export function AuthProvider({ children }) {
     setUser(nextUser ?? readUser());
   }, []);
 
+  // Active-role switching for USER accounts (Claimer <-> Donor). The
+  // server authorizes from the database role on every request, so once
+  // it confirms the switch, updating the stored user is all the client
+  // needs — tokens are untouched. On any failure the stored user is
+  // left exactly as it was (the toggle simply does not move).
+  const switchRole = useCallback(async (role) => {
+    try {
+      const res = await api('/api/auth/switch-role', { method: 'POST', body: { role } });
+      if (res.user) {
+        localStorage.setItem('fws_user', JSON.stringify(res.user));
+        setUser(res.user);
+      }
+      return res.user ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   // QA-13: logout revokes server-side first (best-effort — local state is
   // cleared regardless, so a failed call can never trap the user signed in).
   const logout = useCallback(async () => {
@@ -62,7 +81,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loggedIn: Boolean(user), login, logout }}>
+    <AuthContext.Provider value={{ user, loggedIn: Boolean(user), login, logout, switchRole }}>
       {children}
     </AuthContext.Provider>
   );

@@ -175,6 +175,39 @@ authRouter.get('/me', requireAuth, async (req, res) => {
 // Public invite-code lookup for the landing banner: resolves a code to the
 // inviter's first name only. Unknown codes answer { valid: false } —
 // nothing else about any account is revealed.
+// Active-role switching for USER accounts: one person acts as Claimer
+// or as Donor (backend role PROVIDER). Authorization always reads the
+// role from the database per request, so the switch takes effect on
+// the very next call with the existing token — no re-login or token
+// re-issue. NGO and ADMIN accounts have fixed roles and are refused;
+// eligibility ALSO requires the current role to be CLAIMER/PROVIDER,
+// so even an account whose accountType was never backfilled cannot
+// switch out of a fixed role.
+authRouter.post('/switch-role', requireAuth, async (req, res, next) => {
+  try {
+    const target = req.body?.role;
+    if (target !== 'CLAIMER' && target !== 'PROVIDER') {
+      return res.status(422).json({ error: 'Role must be CLAIMER or PROVIDER' });
+    }
+    const user = req.user;
+    const isUserAccount = (user.accountType ?? 'USER') === 'USER';
+    const inSwitchableRole = user.role === 'CLAIMER' || user.role === 'PROVIDER';
+    if (!isUserAccount || !inSwitchableRole) {
+      return res.status(403).json({ error: 'Role switching is only available for User accounts' });
+    }
+    if (user.role === target) {
+      return res.json({ user: publicUser(user) });
+    }
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { role: target },
+    });
+    return res.json({ user: publicUser(updated) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 authRouter.get('/invite/:code', async (req, res) => {
   const code = String(req.params.code ?? '').trim().toUpperCase();
   if (!code) return res.json({ valid: false });

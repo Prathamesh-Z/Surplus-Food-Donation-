@@ -21,6 +21,7 @@ async function main() {
       mobile: '9000000001',
       passwordHash,
       role: 'PROVIDER',
+      accountType: 'USER',
     },
   });
 
@@ -33,6 +34,7 @@ async function main() {
       mobile: '9000000002',
       passwordHash,
       role: 'CLAIMER',
+      accountType: 'USER',
     },
   });
 
@@ -45,6 +47,7 @@ async function main() {
       mobile: '9000000003',
       passwordHash,
       role: 'NGO',
+      accountType: 'NGO',
     },
   });
   await prisma.ngoProfile.upsert({
@@ -67,6 +70,7 @@ async function main() {
       mobile: '9000000004',
       passwordHash,
       role: 'ADMIN',
+      accountType: 'ADMIN',
     },
   });
 

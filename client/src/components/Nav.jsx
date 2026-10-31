@@ -9,7 +9,7 @@ import { useLocation } from '../location/LocationContext.jsx';
 export function Nav() {
   // QA-01: auth state now comes from context, so the header re-renders on
   // login/logout with no reload (it used to read localStorage at render).
-  const { user, loggedIn, logout } = useAuth();
+  const { user, loggedIn, logout, switchRole } = useAuth();
   const navigate = useNavigate();
   const { lang, setLang, t } = useLang();
   const { location, openPrompt, openDetails } = useLocation();
@@ -66,6 +66,24 @@ export function Nav() {
                 <span className="badge danger" style={{ marginLeft: 6 }}>{unreadCount}</span>
               )}
             </Link>
+            {(user?.role === 'CLAIMER' || user?.role === 'PROVIDER') && (
+              <span className="segmented" role="group" aria-label={t('modeLabel')}>
+                <button
+                  type="button"
+                  aria-pressed={user.role === 'CLAIMER'}
+                  onClick={() => switchRole('CLAIMER')}
+                >
+                  {t('modeClaimer')}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={user.role === 'PROVIDER'}
+                  onClick={() => switchRole('PROVIDER')}
+                >
+                  {t('modeDonor')}
+                </button>
+              </span>
+            )}
             <Link to="/profile">{t('profile')}</Link>
             <button onClick={handleLogout}>
               {t('logout')}

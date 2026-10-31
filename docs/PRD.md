@@ -1350,3 +1350,48 @@ notification-delivery behaviour changes.
    against the shipped pure module, and the interactions themselves are
    manual-verified (Testing Record M6-17, M7-8).
 
+
+## Amendment v3.27 — User Accounts with Claimer/Donor Role Toggle (2026-10-31)
+
+1. **Account model.** Registration now offers two account types:
+   **User** and **NGO / Organisation**. A new `User.accountType` enum
+   (`USER | NGO | ADMIN`) records the type; `User.role` keeps its
+   existing meaning and, for USER accounts, is the **active role**.
+   NGO and ADMIN accounts keep a single fixed role, exactly as
+   before. A new USER account starts with active role CLAIMER.
+2. **Registration.** The register endpoint accepts
+   `accountType: USER | NGO`. NGO registration (organisation name and
+   registration detail required; optional verification documents) is
+   unchanged, including its validation. The legacy `role` field
+   remains accepted as a compatibility shim: PROVIDER/CLAIMER create a
+   USER account with that initial active role, NGO creates an NGO
+   account — existing clients, the test suite and the demo seed are
+   unaffected. Public registration can still never create an ADMIN.
+3. **Role switching.** `POST /api/auth/switch-role`
+   (`{ role: CLAIMER | PROVIDER }`, authenticated) switches a USER
+   account's active role and returns the updated user. It refuses
+   NGO/ADMIN accounts (403) and any other target role (422).
+   Authorization reads the role from the database on every request
+   (unchanged), so the switch applies to the very next request with
+   the existing token — no re-login and no token re-issue. All
+   authorization boundaries are unchanged: in Claimer mode every
+   provider-gated endpoint refuses (403) and vice versa; the
+   self-claim guard, the suspension write-block, and the NGO
+   verification flow are untouched.
+4. **Client.** The registration form opens with a User / NGO toggle
+   and a dynamic heading ("Register as User" / "Register as NGO /
+   Organisation") and renders only the relevant fields; shared fields
+   keep their values when the type is switched. Signed-in USER
+   accounts get a Claimer | Donor segmented toggle in the Nav (header
+   and mobile menu, beside Profile; strings `modeLabel`,
+   `modeClaimer`, `modeDonor`, i18n parity 337 keys × 3). Navigation,
+   the Browse radius, dashboards and available actions follow the
+   active role; My Impact shows the active role's contributions
+   (user decision, 2026-10-31). NGO accounts receive no toggle.
+5. **Compatibility.** Existing accounts are backfilled from their
+   role (PROVIDER/CLAIMER → USER, NGO → NGO, ADMIN → ADMIN). Switch
+   eligibility additionally requires the current role to be CLAIMER
+   or PROVIDER, so a fixed-role account can never switch even if its
+   accountType was not backfilled. Existing sessions remain valid:
+   the access token's embedded role claim was already ignored by the
+   middleware in favour of the database row.

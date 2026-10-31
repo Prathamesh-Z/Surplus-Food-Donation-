@@ -18,6 +18,7 @@ export function publicUser(user, ngoProfile = undefined) {
     email: user.email,
     mobile: user.mobile,
     role: user.role,
+    accountType: user.accountType ?? 'USER',
     languagePref: user.languagePref,
     suspended: user.suspended,
     inviteCode: user.inviteCode ?? null,
@@ -79,6 +80,18 @@ export async function registerUser(data) {
     const inviter = await prisma.user.findUnique({ where: { inviteCode: rawCode } });
     if (inviter) invitedById = inviter.id;
   }
+  // Resolve the account model from the registration payload: an NGO
+  // account (accountType NGO, or the legacy role NGO) is fixed-role;
+  // every other registration is a USER account whose ACTIVE role is the
+  // legacy PROVIDER/CLAIMER choice when given, else CLAIMER (the
+  // approved default — the user can switch to Donor at any time).
+  const accountType = data.accountType ?? (data.role === 'NGO' ? 'NGO' : 'USER');
+  const role =
+    accountType === 'NGO'
+      ? 'NGO'
+      : data.role === 'PROVIDER' || data.role === 'CLAIMER'
+        ? data.role
+        : 'CLAIMER';
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
       data: {
@@ -86,12 +99,13 @@ export async function registerUser(data) {
         email: data.email,
         mobile: data.mobile,
         passwordHash,
-        role: data.role,
+        role,
+        accountType,
         inviteCode: await generateUniqueInviteCode(tx),
         invitedById,
       },
     });
-    if (data.role === 'NGO') {
+    if (accountType === 'NGO') {
       await tx.ngoProfile.create({
         data: {
           userId: created.id,
