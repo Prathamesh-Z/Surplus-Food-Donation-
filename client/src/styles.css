@@ -63,7 +63,7 @@ button:hover, .btn:hover { background: var(--green-900); }
 button.secondary, .btn.secondary { background: var(--green-100); color: var(--green-900); }
 button.secondary:hover, .btn.secondary:hover { background: #d2ecd4; }
 button.danger { background: var(--red); }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 14px; }
 .error { background: var(--red-bg); border: 1px solid #e5a48f; padding: 10px 12px; border-radius: 9px; margin-bottom: 12px; }
 .success { background: var(--green-100); border: 1px solid #9cc48a; padding: 10px 12px; border-radius: 9px; margin-bottom: 12px; }
 .muted { color: var(--muted); font-size: 14px; }
@@ -159,8 +159,12 @@ button.danger { background: var(--red); }
 .filterBar > label { display: inline-flex; align-items: center; gap: 6px; }
 .filterBarNote { font-size: 12px; }
 @media (max-width: 640px) {
-  /* Mobile: one horizontally scrollable navbar row instead of a tall
-     wrapped stack, so the listing grid owns the screen. */
-  .filterBar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
-  .filterBar > * { flex-shrink: 0; }
+  /* Mobile: compact packed rows with NO internal scrolling — Search
+     takes its own row, the dropdowns pair up, Sort and the checkboxes
+     flow after them. Nothing may exceed the viewport width. */
+  .filterBar { gap: 6px; padding: 6px 8px; font-size: 13px; }
+  .filterBar > * { min-width: 0; }
+  .filterBar > input { flex: 1 1 100%; max-width: none; }
+  .filterBar > select { flex: 1 1 42%; }
+  .filterBar input, .filterBar select { padding: 4px 6px; }
 }

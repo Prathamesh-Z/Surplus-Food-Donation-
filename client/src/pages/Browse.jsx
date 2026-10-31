@@ -156,7 +156,6 @@ export function Browse() {
 
   return (
     <section>
-      <h1>{t('availableFood')}</h1>
       {/* QA-09: the label used to show the FALLBACK sort ("Time remaining")
          while the dropdown still showed the chosen distance sort — a silent
          switch. The label now matches the chosen sort; the note below the
