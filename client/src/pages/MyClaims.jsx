@@ -85,10 +85,12 @@ export function MyClaims() {
               <a href={`tel:+91${c.listing.donorContact}`}>{c.listing.donorContact}</a>
             </p>
           )}
-          <p className="muted">
-            📍 {c.listing.pickupLocationText} · {t('provider')}: {c.listing.providerName}
-            <br />Deadline: {new Date(c.listing.collectionDeadline).toLocaleString()}
-          </p>
+          {c.status !== 'CONFIRMED' && (
+            <p className="muted">
+              📍 {c.listing.pickupLocationText} · {t('provider')}: {c.listing.providerName}
+              <br />Deadline: {new Date(c.listing.collectionDeadline).toLocaleString()}
+            </p>
+          )}
           {c.status === 'CONFIRMED' && (
             <div className="row">
               {codes[c.id] ? (

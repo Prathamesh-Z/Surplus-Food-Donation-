@@ -397,6 +397,26 @@ export function DistanceMap({ claimId, listing }) {
 
   return (
     <div style={{ marginTop: 12 }}>
+      <p className="muted" style={{ margin: '0 0 6px' }}>📍 {listing.pickupLocationText}</p>
+      {donorLive?.state === 'live' && (
+        <p className="success" style={{ margin: '0 0 6px' }}>
+          ● {t('liveLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}
+        </p>
+      )}
+      {donorLive?.state === 'stale' && (
+        <p className="muted" style={{ margin: '0 0 6px' }}>
+          ⏳ {t('staleLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}
+        </p>
+      )}
+      {donorLive?.state === 'waiting' && (
+        <p className="muted" style={{ margin: '0 0 6px' }}>{t('waitingForDonor')}</p>
+      )}
+      {donorLive?.state === 'stopped' && (
+        <p className="muted" style={{ margin: '0 0 6px' }}>{t('donorStoppedSharing')}</p>
+      )}
+      {netDown && (
+        <p className="error" style={{ margin: '0 0 6px' }}>{t('connectionLost')}</p>
+      )}
       <p style={{ margin: '0 0 2px', fontWeight: 600 }}>
         {t('distanceToPickup')}: {km !== null ? `${formatDistance(km)} ${t('away')} · ${t('straightLine')}` : '—'}
       </p>
@@ -431,43 +451,7 @@ export function DistanceMap({ claimId, listing }) {
             <p className="muted" style={{ margin: '4px 0 0' }}>⚠ {t('routeUnavailable')}</p>
           )}
           <p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{t('routingAttribution')}</p>
-          {directionsUrl && (
-            <>
-              <a
-                href={directionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-block', marginTop: 8, padding: '8px 16px',
-                  background: '#2e7d32', color: '#fff', borderRadius: 8,
-                  textDecoration: 'none', fontWeight: 600,
-                }}
-              >
-                🧭 {t('getDirections')}
-              </a>
-              <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>{t('directionsPrivacy')}</p>
-            </>
-          )}
         </div>
-      )}
-      {donorLive?.state === 'live' && (
-        <p className="success" style={{ margin: '0 0 6px' }}>
-          ● {t('liveLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}
-        </p>
-      )}
-      {donorLive?.state === 'stale' && (
-        <p className="muted" style={{ margin: '0 0 6px' }}>
-          ⏳ {t('staleLabel')} · {t('donorLocation')} · {t('lastUpdated')} {donorTime}
-        </p>
-      )}
-      {donorLive?.state === 'waiting' && (
-        <p className="muted" style={{ margin: '0 0 6px' }}>{t('waitingForDonor')}</p>
-      )}
-      {donorLive?.state === 'stopped' && (
-        <p className="muted" style={{ margin: '0 0 6px' }}>{t('donorStoppedSharing')}</p>
-      )}
-      {netDown && (
-        <p className="error" style={{ margin: '0 0 6px' }}>{t('connectionLost')}</p>
       )}
       {!myPos && (
         <div
@@ -488,14 +472,7 @@ export function DistanceMap({ claimId, listing }) {
           {geoError && <p className="error" style={{ margin: '8px 0 0' }}>{geoError}</p>}
         </div>
       )}
-      <div
-        ref={mapDivRef}
-        style={{
-          height: 260, borderRadius: 10, border: '1px solid #d9e8d2',
-          overflow: 'hidden', background: '#eef3ea', position: 'relative', zIndex: 0,
-        }}
-      />
-      <div className="row" style={{ marginTop: 6, alignItems: 'center' }} role="group" aria-label={t('distanceFrom')}>
+      <div className="row" style={{ margin: '6px 0', alignItems: 'center' }} role="group" aria-label={t('distanceFrom')}>
         <span className="muted">{t('distanceFrom')}:</span>
         <button
           type="button"
@@ -518,12 +495,36 @@ export function DistanceMap({ claimId, listing }) {
         {originMode === 'live' && geoError && <span className="error">{geoError}</span>}
       </div>
       {originMode === 'live' && livePos && liveAccuracy !== null && (
-        <p className="muted" style={{ margin: '4px 0 0' }}>
+        <p className="muted" style={{ margin: '4px 0' }}>
           {t('gpsAccuracy')} {Math.round(liveAccuracy).toLocaleString()} m
         </p>
       )}
       {originMode === 'live' && livePos && liveAccuracy !== null && accuracyBand(liveAccuracy) === 'poor' && (
-        <p className="error" style={{ margin: '4px 0 0' }}>⚠ {t('liveGpsPoor')}</p>
+        <p className="error" style={{ margin: '4px 0' }}>⚠ {t('liveGpsPoor')}</p>
+      )}
+      <div
+        ref={mapDivRef}
+        style={{
+          height: 'clamp(220px, 45vh, 340px)', borderRadius: 10, border: '1px solid #d9e8d2',
+          overflow: 'hidden', background: '#eef3ea', position: 'relative', zIndex: 0,
+        }}
+      />
+      {directionsUrl && (
+        <>
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-block', marginTop: 8, padding: '8px 16px',
+              background: '#2e7d32', color: '#fff', borderRadius: 8,
+              textDecoration: 'none', fontWeight: 600,
+            }}
+          >
+            🧭 {t('getDirections')}
+          </a>
+          <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>{t('directionsPrivacy')}</p>
+        </>
       )}
       {tilesFailed && (
         <p className="muted" style={{ marginTop: 4 }}>⚠ {t('tilesFailed')}</p>

@@ -1299,3 +1299,54 @@ Implemented 30 October 2026. The team decided to stop fine-tuning the internal r
 5. **Privacy.** The two coordinate pairs are included in the Google Maps URL and are shared with Google ONLY when the user clicks Get Directions — the caption under the button says so in all three languages. This feature sends no coordinates to the FWS backend, stores nothing new, and adds no tracking.
 
 Verification at release: helper + binding checks 20/20 (exact URLs for both modes, lat-first ordering, missing/invalid/unsupported inputs including the three inherited-property mode names, source-verified myPos/routeDest bindings; the production bundle contains the action and still no §AP debug strings); i18n 270 keys x3 (`getDirections`, `directionsPrivacy`); full regression 118/118. Manual verification: Testing Record M6-16 (Not Tested).
+
+---
+
+## Amendment v3.26 — Claim Card Layout & Notification Interactions (2026-10-31)
+
+A client-only UI/UX amendment with two parts. No API, schema, claim-state or
+notification-delivery behaviour changes.
+
+1. **Claim card layout (My Claims, CONFIRMED claims).** The confirmed-claim
+   card is reorganised into three bands. (a) A compact section: the title row
+   (food name, status badge, portions, time remaining), the donor contact
+   when shared, and the action row (pickup code, On the way, Cancel claim).
+   The pickup address and the full deadline line no longer appear in this
+   band (the deadline remains conveyed by the time-remaining display);
+   cards for non-CONFIRMED claims keep their existing information line.
+   (b) The map section (DistanceMap): the pickup address as its caption,
+   then the donor live-location status, the straight-line distance, the
+   travel-mode control with its route readout and attribution, the origin
+   (Saved / Live GPS) control with its accuracy readouts, and the map
+   itself — now with a responsive height of clamp(220px, 45vh, 340px)
+   instead of a fixed 260 px. (c) Get Directions sits directly below the
+   map canvas, with its privacy caption beneath it.
+2. **Unchanged map behaviour.** The Get Directions URL, the origin
+   discipline (Saved, or Live GPS only when explicitly selected), the
+   destination discipline (fresh donor live point, else the static pickup
+   coordinates), the travel-mode mapping, the routing requests and every
+   derivation are exactly as in v3.19–v3.25; only JSX blocks moved.
+3. **Notification interactions (Notifications page).** The whole card
+   body is now the click target that opens a linked notification (the
+   same guarded open path as before: mark-on-open plus the v3.21 radius
+   guard); the View Details button is removed. The per-item Mark Read
+   button is removed; opening still marks read, and the bulk Mark All
+   Read action is unchanged. The Dismiss button is replaced by a × close
+   control with a localized accessible label (new string key
+   `dismissNotification`, i18n 271 keys × 3); it stops propagation, so it
+   never opens the notification, and calls the same owner-only DELETE.
+4. **Swipe to dismiss.** On the Notifications page, a horizontal pointer
+   drag on a card dismisses it on release past an 80 px threshold. The
+   axis/verdict rules are pure functions (`client/src/lib/swipe.js`,
+   node-checked): vertical wins every tie, so vertical scrolling can
+   never dismiss; below-threshold horizontal drags snap back; any
+   horizontal swipe suppresses the trailing click so a swipe never also
+   opens details. `touch-action: pan-y` keeps vertical scrolling native.
+   The toast banners (v3.17) are unchanged.
+5. **Scope limits.** No server code, endpoint, payload or read-state
+   semantics changed; the notifications polling, the shared
+   NotificationsContext and the banner stack are untouched. There is no
+   client test runner: the swipe rules are verified by node checks
+   against the shipped pure module, and the interactions themselves are
+   manual-verified (Testing Record M6-17, M7-8).
+

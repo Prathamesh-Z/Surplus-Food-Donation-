@@ -119,3 +119,12 @@ button.danger { background: var(--red); }
   .wall-value { font-size: 42px; }
   h1 { font-size: 24px; }
 }
+
+/* Notification swipe-to-dismiss (PRD v3.26): vertical scrolling stays
+   native (pan-y); horizontal drags are handled in JS. */
+.swipeCard { touch-action: pan-y; transition: transform 0.18s ease; }
+.closeBtn {
+  background: transparent; color: #55606a; font-size: 20px; line-height: 1;
+  padding: 6px 10px; min-width: 36px; min-height: 36px; border-radius: 8px;
+}
+.closeBtn:hover { background: #eceff0; }
