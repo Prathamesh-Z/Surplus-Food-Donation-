@@ -106,6 +106,13 @@ ngoRouter.post('/documents', uploadDocuments, async (req, res, next) => {
         }),
       ),
     );
+    // A fresh submission asks for a new review: if an admin previously
+    // kept this NGO unverified, it re-enters the review queue. The last
+    // decision's note stays visible to the NGO until the next decision.
+    await prisma.ngoProfile.updateMany({
+      where: { userId: req.user.id },
+      data: { verificationReviewedAt: null, verificationReviewedById: null },
+    });
     return res.status(201).json({ documents: docs.map(docView) });
   } catch (err) {
     cleanup();

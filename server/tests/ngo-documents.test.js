@@ -190,3 +190,107 @@ describe('NGO verification documents', () => {
     expect(res.body.mine).toEqual({});
   });
 });
+
+describe('Admin review decisions + registration document association', () => {
+  let ngo;
+  let admin;
+
+  beforeAll(async () => {
+    await prisma.$connect();
+    await cleanDb();
+    ngo = await authedUser(app, request, {
+      role: 'NGO', organisationName: 'Review Test NGO', registrationDetail: 'REG-REV',
+    });
+    admin = await makeAdmin();
+  });
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  const queueIds = async () => {
+    const q = await request(app).get('/api/admin/ngo/pending').set(auth(admin.token));
+    return q.body.pending.map((p) => p.userId);
+  };
+
+  it('a fresh NGO registration has no documents and is UNVERIFIED; uploading does not verify it', async () => {
+    const docs = await request(app).get('/api/ngo/documents').set(auth(ngo.token));
+    expect(docs.body.documents).toHaveLength(0);
+    const me = await request(app).get('/api/ngo/me').set(auth(ngo.token));
+    expect(me.body.verified).toBe(false);
+
+    // The registration flow's API sequence: register (above) → upload
+    // with the new account's token → documents belong to that NGO.
+    const up = await request(app)
+      .post('/api/ngo/documents')
+      .set(auth(ngo.token))
+      .attach('file', PDF, { filename: 'at-registration.pdf', contentType: 'application/pdf' })
+      .attach('file', PNG, { filename: 'at-registration.png', contentType: 'image/png' });
+    expect(up.status).toBe(201);
+    const me2 = await request(app).get('/api/ngo/me').set(auth(ngo.token));
+    expect(me2.body.verified).toBe(false);
+    expect(await queueIds()).toContain(ngo.user.id);
+  });
+
+  it('admin keeps the NGO unverified with a reason: status preserved, note shown to the NGO, queue clears, notification sent', async () => {
+    const res = await request(app)
+      .post(`/api/admin/ngo/${ngo.user.id}/keep-unverified`)
+      .set(auth(admin.token))
+      .send({ reason: 'Certificate is expired — please upload a current one' });
+    expect(res.status).toBe(200);
+
+    const me = await request(app).get('/api/ngo/me').set(auth(ngo.token));
+    expect(me.body.verified).toBe(false);
+    expect(me.body.profile.verificationNote).toContain('Certificate is expired');
+    expect(me.body.profile.verificationReviewedAt).toBeTruthy();
+
+    const notes = await request(app).get('/api/notifications').set(auth(ngo.token));
+    expect(notes.body.notifications.some((n) => n.title === 'Verification reviewed — still unverified')).toBe(true);
+
+    expect(await queueIds()).not.toContain(ngo.user.id);
+  });
+
+  it('a fresh document upload returns the NGO to the review queue', async () => {
+    const up = await request(app)
+      .post('/api/ngo/documents')
+      .set(auth(ngo.token))
+      .attach('file', PDF, { filename: 'renewed-certificate.pdf', contentType: 'application/pdf' });
+    expect(up.status).toBe(201);
+    expect(await queueIds()).toContain(ngo.user.id);
+  });
+
+  it('keep-unverified without a reason succeeds and clears the note', async () => {
+    const res = await request(app)
+      .post(`/api/admin/ngo/${ngo.user.id}/keep-unverified`)
+      .set(auth(admin.token))
+      .send({});
+    expect(res.status).toBe(200);
+    const me = await request(app).get('/api/ngo/me').set(auth(ngo.token));
+    expect(me.body.profile.verificationNote).toBeNull();
+  });
+
+  it('keep-unverified is admin-only (403 for the NGO itself, 401 anonymous)', async () => {
+    const asNgo = await request(app)
+      .post(`/api/admin/ngo/${ngo.user.id}/keep-unverified`)
+      .set(auth(ngo.token))
+      .send({});
+    expect(asNgo.status).toBe(403);
+    const anon = await request(app).post(`/api/admin/ngo/${ngo.user.id}/keep-unverified`).send({});
+    expect(anon.status).toBe(401);
+  });
+
+  it('a verified NGO cannot be kept unverified (409) — Unverify still works and returns it to the queue', async () => {
+    const verify = await request(app).post(`/api/admin/ngo/${ngo.user.id}/verify`).set(auth(admin.token)).send({});
+    expect(verify.status).toBe(200);
+    const keep = await request(app)
+      .post(`/api/admin/ngo/${ngo.user.id}/keep-unverified`)
+      .set(auth(admin.token))
+      .send({});
+    expect(keep.status).toBe(409);
+    const unverify = await request(app).post(`/api/admin/ngo/${ngo.user.id}/unverify`).set(auth(admin.token)).send({});
+    expect(unverify.status).toBe(200);
+    const me = await request(app).get('/api/ngo/me').set(auth(ngo.token));
+    expect(me.body.verified).toBe(false);
+    expect(me.body.profile.verificationNote).toBeNull();
+    expect(await queueIds()).toContain(ngo.user.id);
+  });
+});

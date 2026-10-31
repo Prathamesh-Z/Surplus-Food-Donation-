@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { PasswordInput } from '../components/PasswordInput.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, formatApiError } from '../lib/api.js';
+import { DocumentStaging } from '../components/DocumentStaging.jsx';
+import { uploadDocuments } from '../lib/documents.js';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { useLang } from '../i18n/LanguageContext.jsx';
 
@@ -37,11 +39,24 @@ export function Register() {
   });
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  // NGO verification documents staged on the form (optional). They are
+  // uploaded AFTER the account is created and signed in, through the
+  // same endpoint/helper the NGO Panel uses — no second upload system.
+  const [stagedDocs, setStagedDocs] = useState([]);
+  const [docUploading, setDocUploading] = useState(false);
+  const [docProgress, setDocProgress] = useState(0);
+  const [created, setCreated] = useState(false);
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   async function submit(e) {
     e.preventDefault();
+    // Account already created (only the document upload failed on the
+    // first pass): the button now just continues into the app.
+    if (created) {
+      navigate('/browse');
+      return;
+    }
     setError('');
     setInfo('');
     try {
@@ -68,6 +83,25 @@ export function Register() {
         localStorage.removeItem(INVITE_STORAGE_KEY);
       } catch {
         /* ignore */
+      }
+      // Attach any staged verification documents to the new NGO account.
+      // Registration is complete either way: if the upload fails, the
+      // account stands and the NGO can upload later from the NGO Panel.
+      if (form.role === 'NGO' && stagedDocs.length > 0) {
+        setDocUploading(true);
+        setDocProgress(0);
+        try {
+          await uploadDocuments(stagedDocs, setDocProgress);
+        } catch (err) {
+          setDocUploading(false);
+          setCreated(true);
+          setError(
+            `Your account was created, but the documents could not be uploaded (${err.message}). ` +
+              'Press Continue to proceed — you can upload them any time from the NGO Panel.'
+          );
+          return;
+        }
+        setDocUploading(false);
       }
       navigate('/browse');
     } catch (err) {
@@ -102,9 +136,20 @@ export function Register() {
           <>
             <label>Organisation name<input value={form.organisationName} onChange={set('organisationName')} required /></label>
             <label>Registration detail<input value={form.registrationDetail} onChange={set('registrationDetail')} required /></label>
+            <div>
+              <span className="muted">Verification documents (optional — PDF, JPEG or PNG, up to 20 MB each)</span>
+              <DocumentStaging staged={stagedDocs} onChange={setStagedDocs} disabled={docUploading || created} />
+            </div>
           </>
         )}
-        <button type="submit">Create account</button>
+        {docUploading && (
+          <div style={{ height: 6, background: '#eef3ea', borderRadius: 3, margin: '8px 0' }}>
+            <div style={{ height: '100%', width: `${docProgress}%`, background: '#2e7d32', borderRadius: 3 }} />
+          </div>
+        )}
+        <button type="submit" disabled={docUploading}>
+          {docUploading ? `Uploading documents… ${docProgress}%` : created ? 'Continue' : 'Create account'}
+        </button>
       </form>
     </section>
   );

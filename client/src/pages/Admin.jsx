@@ -108,7 +108,26 @@ export function Admin() {
               ))}
             </div>
           )}
-          <button onClick={() => act(`/api/admin/ngo/${p.userId}/verify`, {}, 'NGO verified.')}>Verify NGO</button>
+          {p.verificationNote && (
+            <p className="muted">Previous review note: {p.verificationNote}</p>
+          )}
+          <div className="adminActions">
+            <button onClick={() => act(`/api/admin/ngo/${p.userId}/verify`, {}, 'NGO verified.')}>Verify NGO</button>
+            <button
+              className="caution"
+              onClick={() => {
+                const reason = window.prompt('Reason for keeping this NGO unverified (optional)?');
+                if (reason === null) return;
+                act(
+                  `/api/admin/ngo/${p.userId}/keep-unverified`,
+                  { reason: reason.trim() || undefined },
+                  'NGO kept unverified — the decision was shared with the NGO.'
+                );
+              }}
+            >
+              Keep Unverified
+            </button>
+          </div>
         </div>
       ))}
 

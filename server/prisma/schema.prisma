@@ -101,6 +101,7 @@ enum NotificationType {
 enum AuditAction {
   VERIFY_NGO
   UNVERIFY_NGO
+  KEEP_NGO_UNVERIFIED
   SUSPEND_USER
   UNSUSPEND_USER
   REMOVE_LISTING
@@ -164,6 +165,14 @@ model NgoProfile {
   verificationStatus VerificationStatus @default(UNVERIFIED)
   verifiedById       String?
   verifiedAt         DateTime?
+  // Latest admin review decision when the NGO was KEPT unverified:
+  // the optional reason shown to the NGO, and when/by whom it was
+  // reviewed. A fresh document upload clears verificationReviewedAt
+  // so the NGO returns to the review queue; verifying or unverifying
+  // clears all three.
+  verificationNote       String?
+  verificationReviewedAt DateTime?
+  verificationReviewedById String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 }

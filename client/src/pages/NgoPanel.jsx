@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { api, formatApiError, getAccessToken } from '../lib/api.js';
+import { api, formatApiError } from '../lib/api.js';
+import { DocumentStaging } from '../components/DocumentStaging.jsx';
+import { uploadDocuments } from '../lib/documents.js';
 
 const DEST_TYPES = ['SHELTER', 'COMMUNITY_KITCHEN', 'OLD_AGE_HOME', 'SCHOOL', 'INDIVIDUALS', 'OTHER'];
 
@@ -36,67 +38,27 @@ export function NgoPanel() {
     load();
   }, []);
 
-  // Verification documents: files are STAGED first — each selected file
-  // is validated on selection (PDF/JPEG/PNG, 20 MB max, mirroring the
-  // server) and listed with its size so it can be removed before
-  // submission; invalid files are refused with a message naming them,
-  // never silently dropped. Submission sends the whole batch at once;
-  // the server re-validates (magic bytes, size) and stores it
-  // atomically. XHR is used for real upload progress on large batches.
-  const DOC_OK_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-  const DOC_MAX_BYTES = 20 * 1024 * 1024;
-
-  function stageFiles(fileList) {
-    const rejected = [];
-    const accepted = [];
-    for (const f of fileList ?? []) {
-      if (!DOC_OK_TYPES.includes(f.type)) {
-        rejected.push(`${f.name} — must be a PDF, JPEG or PNG file`);
-      } else if (f.size > DOC_MAX_BYTES) {
-        rejected.push(`${f.name} — exceeds the 20 MB size limit`);
-      } else {
-        accepted.push(f);
-      }
-    }
-    if (accepted.length) setStaged((prev) => [...prev, ...accepted].slice(0, 10));
-    setDocError(rejected.join('; '));
-    setDocMsg('');
-  }
-
-  function submitDocs() {
+  // Verification documents: files are staged with the shared
+  // DocumentStaging picker (validation mirrors the server) and
+  // submitted as one batch through the shared uploadDocuments helper;
+  // the server re-validates (magic bytes, size) and stores atomically.
+  async function submitDocs() {
     if (staged.length === 0 || uploading) return;
     const count = staged.length;
     setDocError('');
     setDocMsg('');
     setUploading(true);
     setProgress(0);
-    const form = new FormData();
-    for (const f of staged) form.append('file', f);
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/ngo/documents');
-    xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => {
+    try {
+      await uploadDocuments(staged, setProgress);
+      setStaged([]);
+      setDocMsg(`${count} document(s) uploaded — an admin can view them during verification.`);
+      load();
+    } catch (err) {
+      setDocError(err.message || 'Upload failed');
+    } finally {
       setUploading(false);
-      if (xhr.status === 201) {
-        setStaged([]);
-        setDocMsg(`${count} document(s) uploaded — an admin can view them during verification.`);
-        load();
-      } else {
-        try {
-          setDocError(JSON.parse(xhr.responseText).error || 'Upload failed');
-        } catch {
-          setDocError('Upload failed');
-        }
-      }
-    };
-    xhr.onerror = () => {
-      setUploading(false);
-      setDocError('Upload failed — check your connection.');
-    };
-    xhr.send(form);
+    }
   }
 
   async function removeDoc(id) {
@@ -150,6 +112,15 @@ export function NgoPanel() {
           ) : (
             <span className="badge warn">Unverified — an admin can verify your registration details. You can claim and redistribute meanwhile.</span>
           )}
+          {!me.verified && (me.profile?.verificationReviewedAt || me.profile?.verificationNote) && (
+            <p className="muted" style={{ marginTop: 6 }}>
+              Admin review{me.profile?.verificationReviewedAt
+                ? ` on ${new Date(me.profile.verificationReviewedAt).toLocaleDateString()}`
+                : ''}: your organisation remains unverified.
+              {me.profile?.verificationNote && <> Reason given: {me.profile.verificationNote}</>}
+              {' '}You can upload more documents below to ask for another review.
+            </p>
+          )}
         </div>
       )}
 
@@ -169,29 +140,7 @@ export function NgoPanel() {
         </div>
       ))}
       <div className="card">
-        <input
-          type="file"
-          multiple
-          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-          onChange={(e) => {
-            stageFiles(e.target.files);
-            e.target.value = '';
-          }}
-        />
-        {staged.map((f, i) => (
-          <div className="row" key={`${f.name}-${i}`} style={{ marginTop: 6 }}>
-            <span>📄 {f.name}</span>
-            <span className="muted">{(f.size / (1024 * 1024)).toFixed(2)} MB</span>
-            <button
-              type="button"
-              className="secondary"
-              disabled={uploading}
-              onClick={() => setStaged((prev) => prev.filter((_, j) => j !== i))}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+        <DocumentStaging staged={staged} onChange={setStaged} disabled={uploading} />
         {uploading && (
           <div style={{ height: 6, background: '#eef3ea', borderRadius: 3, margin: '8px 0' }}>
             <div style={{ height: '100%', width: `${progress}%`, background: '#2e7d32', borderRadius: 3 }} />

@@ -29,6 +29,51 @@ adminRouter.get('/stats', async (req, res) => {
   return res.json({ platform, totalUsers, pendingNgoVerifications: pendingNgo, suspendedUsers });
 });
 
+// Review decision: the admin reviewed the NGO (documents included) and
+// deliberately leaves it UNVERIFIED. The optional reason is stored on
+// the profile and shown to the NGO (panel status + notification), the
+// decision is audited, and the NGO leaves the review queue until it
+// uploads a fresh document. A verified NGO cannot be "kept unverified"
+// — it must be unverified through the Unverify action instead (409).
+adminRouter.post('/ngo/:userId/keep-unverified', async (req, res, next) => {
+  try {
+    const { reason } = optionalReasonSchema.parse(req.body ?? {});
+    const profile = await prisma.ngoProfile.findUnique({ where: { userId: req.params.userId } });
+    if (!profile) return res.status(404).json({ error: 'NGO profile not found' });
+    if (profile.verificationStatus === 'VERIFIED') {
+      return res.status(409).json({ error: 'NGO is verified — use Unverify to remove verification' });
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.ngoProfile.update({
+        where: { id: profile.id },
+        data: {
+          verificationNote: reason ?? null,
+          verificationReviewedAt: new Date(),
+          verificationReviewedById: req.user.id,
+        },
+      });
+      await writeAudit(
+        { adminId: req.user.id, action: 'KEEP_NGO_UNVERIFIED', targetType: 'NGO', targetId: req.params.userId, reason },
+        tx
+      );
+      await createNotification(
+        {
+          userId: req.params.userId,
+          type: 'ADMIN_ALERT',
+          title: 'Verification reviewed — still unverified',
+          body: reason
+            ? `An administrator reviewed your verification and kept it unverified. Reason: ${reason} You can upload more documents in the NGO Panel and ask for another review.`
+            : 'An administrator reviewed your verification and kept it unverified. You can upload more documents in the NGO Panel and ask for another review.',
+        },
+        tx
+      );
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 adminRouter.get('/users', async (req, res) => {
   const q = req.query.q ? String(req.query.q) : null;
   const where = q
@@ -159,7 +204,10 @@ adminRouter.post('/listings/:id/remove', async (req, res, next) => {
 // ── NGO verification queue (FR-16) ──────────────────────────────────────────
 adminRouter.get('/ngo/pending', async (req, res) => {
   const profiles = await prisma.ngoProfile.findMany({
-    where: { verificationStatus: 'UNVERIFIED' },
+    // The review queue holds unverified NGOs still awaiting a decision;
+    // a keep-unverified decision (verificationReviewedAt set) takes the
+    // NGO out until it uploads a fresh document.
+    where: { verificationStatus: 'UNVERIFIED', verificationReviewedAt: null },
     include: { user: { select: { id: true, name: true, email: true, mobile: true, createdAt: true } } },
     orderBy: { createdAt: 'asc' },
   });
@@ -208,7 +256,10 @@ adminRouter.post('/ngo/:userId/verify', async (req, res, next) => {
     await prisma.$transaction(async (tx) => {
       await tx.ngoProfile.update({
         where: { id: profile.id },
-        data: { verificationStatus: 'VERIFIED', verifiedById: req.user.id, verifiedAt: new Date() },
+        data: {
+          verificationStatus: 'VERIFIED', verifiedById: req.user.id, verifiedAt: new Date(),
+          verificationNote: null, verificationReviewedAt: null, verificationReviewedById: null,
+        },
       });
       await writeAudit(
         { adminId: req.user.id, action: 'VERIFY_NGO', targetType: 'NGO', targetId: req.params.userId },
@@ -238,7 +289,10 @@ adminRouter.post('/ngo/:userId/unverify', async (req, res, next) => {
     await prisma.$transaction(async (tx) => {
       await tx.ngoProfile.update({
         where: { id: profile.id },
-        data: { verificationStatus: 'UNVERIFIED', verifiedById: null, verifiedAt: null },
+        data: {
+          verificationStatus: 'UNVERIFIED', verifiedById: null, verifiedAt: null,
+          verificationNote: null, verificationReviewedAt: null, verificationReviewedById: null,
+        },
       });
       await writeAudit(
         { adminId: req.user.id, action: 'UNVERIFY_NGO', targetType: 'NGO', targetId: req.params.userId, reason },
