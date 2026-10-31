@@ -123,8 +123,10 @@ button.danger { background: var(--red); }
 /* Notification swipe-to-dismiss (PRD v3.26): vertical scrolling stays
    native (pan-y); horizontal drags are handled in JS. */
 .swipeCard { touch-action: pan-y; transition: transform 0.18s ease; }
-.closeBtn {
-  background: transparent; color: #55606a; font-size: 20px; line-height: 1;
-  padding: 6px 10px; min-width: 36px; min-height: 36px; border-radius: 8px;
-}
-.closeBtn:hover { background: #eceff0; }
+
+/* Notification card header (v3.26.1): the timestamp is pinned to a
+   fixed right-hand position; the title (which carries the food name)
+   takes the remaining width and wraps without shifting the time. */
+.notifHead { display: flex; align-items: baseline; gap: 10px; }
+.notifTitle { flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; font-size: 1.07rem; }
+.notifTime { flex: 0 0 auto; white-space: nowrap; margin-left: auto; }

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { resolveNotificationNavigation, guardReasonKey } from '../lib/notificationNav.js';
 import { swipeAxis, swipeReleaseVerdict } from '../lib/swipe.js';
+import { notificationAccent, formatNotificationTime } from '../lib/notificationStyle.js';
 import { useAuth } from '../lib/AuthContext.jsx';
 import { useLocation } from '../location/LocationContext.jsx';
 import { formatDistance } from '../lib/distance.js';
@@ -140,6 +141,7 @@ export function Notifications() {
             style={{
               opacity: n.read ? 0.65 : 1,
               cursor: linked ? 'pointer' : 'default',
+              borderLeft: `4px solid ${notificationAccent(n.type)}`,
               transform: dragDx ? `translateX(${dragDx}px)` : undefined,
               transition: dragDx ? 'none' : undefined,
             }}
@@ -149,19 +151,9 @@ export function Notifications() {
             onPointerUp={(e) => onCardPointerUp(e, n)}
             onPointerCancel={onCardPointerCancel}
           >
-            <div className="row">
-              <strong>{n.title}</strong>
-              <span className="muted">{new Date(n.createdAt).toLocaleString()}</span>
-              <button
-                type="button"
-                className="closeBtn"
-                aria-label={t('dismissNotification')}
-                title={t('dismissNotification')}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); dismiss(n.id); }}
-              >
-                ×
-              </button>
+            <div className="notifHead">
+              <strong className="notifTitle">{n.title}</strong>
+              <span className="muted notifTime">{formatNotificationTime(n.createdAt)}</span>
             </div>
             <p>{n.body}</p>
           </div>
