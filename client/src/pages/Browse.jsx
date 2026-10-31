@@ -161,15 +161,13 @@ export function Browse() {
          while the dropdown still showed the chosen distance sort — a silent
          switch. The label now matches the chosen sort; the note below the
          filters (already present) explains the fallback order. */}
-      <p className="muted">{sortLabels[sortBy]}</p>
       {error && <div className="error">{error}</div>}
-      <div className="card">
-        <div className="row">
+      <div className="filterBar">
           <input
             placeholder={t('searchFood')}
             value={filters.q}
             onChange={set('q')}
-            style={{ flex: '1 1 210px', maxWidth: 280 }}
+            style={{ flex: '1 1 150px', maxWidth: 220 }}
           />
           <select value={filters.category} onChange={set('category')}>
             <option value="">{t('allCategories')}</option>
@@ -204,8 +202,8 @@ export function Browse() {
           <label style={{ fontWeight: 400 }}>
             <input type="checkbox" checked={filters.availableOnly} onChange={set('availableOnly')} style={{ width: 'auto' }} /> {t('availableOnly')}
           </label>
-        </div>
-        {distanceSort && !userCoords && <p className="muted" style={{ marginBottom: 0 }}>{t('distanceNeedsLocation')}</p>}
+        <span className="muted filterBarNote">{sortLabels[sortBy]}</span>
+        {distanceSort && !userCoords && <span className="muted filterBarNote">{t('distanceNeedsLocation')}</span>}
       </div>
       {canClaimRole && !userCoords && (
         <p className="muted">

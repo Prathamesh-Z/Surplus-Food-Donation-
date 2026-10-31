@@ -141,3 +141,13 @@ button.danger { background: var(--red); }
 .foodStats { display: flex; flex-wrap: wrap; gap: 4px 16px; font-weight: 700; font-size: 1.02rem; }
 .foodMeta { margin: 0; }
 .foodCta { display: block; text-align: center; }
+
+/* Browse filter bar (2026-10-31): all filter controls in one compact
+   horizontal bar so the listing grid owns the page. Wraps tightly on
+   narrow screens; notes take a single small line of their own. */
+.filterBar {
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 12px; margin-bottom: 12px; box-shadow: var(--card-shadow);
+}
+.filterBarNote { flex-basis: 100%; font-size: 12px; }
