@@ -176,7 +176,6 @@ export function Profile() {
       {user.inviteCode && (
         <>
           <h3>{t('inviteFriends')}</h3>
-          <p className="muted">{t('inviteLinkHint')}</p>
           <p style={{ wordBreak: 'break-all' }}>
             {`${window.location.origin}/?invite=${user.inviteCode}`}
           </p>
@@ -219,9 +218,6 @@ export function Profile() {
               {t('shareOnWhatsApp')}
             </a>
           </div>
-          <p className="muted">
-            {t('invitedCount')}: {user.invitesCount ?? 0}
-          </p>
         </>
       )}
     </section>
