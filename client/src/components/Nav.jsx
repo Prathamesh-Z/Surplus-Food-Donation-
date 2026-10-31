@@ -51,10 +51,9 @@ export function Nav() {
       </button>
       <nav className={menuOpen ? 'open' : ''} onClick={() => setMenuOpen(false)}>
         <Link to="/browse">{t('browse')}</Link>
-        <Link to="/impact">Live impact</Link>
+        <Link to="/impact">{t('impactNav')}</Link>
         {loggedIn ? (
           <>
-            <Link to="/dashboard">{t('dashboard')}</Link>
             {(user?.role === 'PROVIDER') && <Link to="/listings/new">{t('postFood')}</Link>}
             {(user?.role === 'PROVIDER') && <Link to="/my-listings">{t('myListings')}</Link>}
             {(user?.role === 'CLAIMER' || user?.role === 'NGO') && <Link to="/my-claims">{t('myClaims')}</Link>}
